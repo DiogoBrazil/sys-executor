@@ -23,6 +23,7 @@ type Dados struct {
 	Autos  *autos.Autos
 	Pecas  []segment.Peca
 	Midias []segment.MidiaReferida
+	Datas  []autos.DataMencionada // todas as menções, inclusive divergentes (A03)
 	Indice *autos.Indice
 	Compat segment.Compatibilidade
 }
@@ -121,6 +122,7 @@ func (p *Pipeline) classificar(ctx context.Context, c *workflow.Contexto) (workf
 	}
 	d.Pecas = segment.Segmentar(d.Autos)
 	d.Midias = segment.DetectarMidias(d.Autos, d.Pecas)
+	d.Datas = d.Autos.Datas()
 	if d.Indice != nil {
 		_ = d.Indice.Fechar()
 	}
