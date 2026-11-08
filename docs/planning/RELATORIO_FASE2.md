@@ -50,7 +50,13 @@ Ambiente: suíte Go completa nativa no Windows 11 do usuário (13 pacotes), com 
 ## 4. Pendências que dependem do usuário
 
 1. ~~**`acao_ajax`**~~ **Resolvido (08/11/2026):** o usuário inspecionou o ícone PDF (link comum) e a função `gerar()` (envio de formulário): a geração não usa `controlador_ajax.php`. A guarda mantém todo `acao_ajax` bloqueado; o simulador passou a reproduzir o HTML real.
-2. **P-09 — estrutura de um PDF real**: rodar `autos-mapa.exe` sobre um PDF consolidado real e colar o resultado (só estrutura, sem texto, dígitos mascarados) para calibrar a segmentação, hoje baseada numa suposição de rodapé "Referência: Processo nº … SEI nº …".
+2. **P-09 — estrutura de um PDF real** (em andamento). A 1ª e a 2ª execução do `autos-mapa` sobre um PDF real de 67 páginas (08/11/2026; só estrutura, sem texto) mostraram:
+   - **não há** o rodapé "Referência: Processo nº … SEI nº …" suposto; o SEI **carimba toda página** com `<nome do documento na árvore> (<nº SEI>) SEI <nº do processo> / pg. <página>` (parênteses às vezes ausentes);
+   - documentos trazidos de outro processo mantêm **carimbos antigos** na mesma linha;
+   - algumas fontes faziam o modo por retângulos do pdfium devolver letras separadas e duplicadas;
+   - nomes reais da árvore: capa, memorando, despacho, ofício, certidão, defesa prévia, notificações, "Anexo - Ciência…", atas de presença por videoconferência, alegações finais, termo de remessa.
+   Correções aplicadas: segmentação pelo carimbo deste processo (número de processo dominante e `pg.` = página), função pelo nome da árvore, texto pelo modo por caractere, carimbo ignorado na decisão de OCR e de página em branco, funções "capa" e "ciência", atas de videoconferência como instrução na cronologia. **Falta** a 3ª execução para conferir a nova segmentação no PDF real.
+   - Limitação da ferramenta: palavras genéricas permitidas podem revelar o gênero gramatical ("a militar"); nenhuma outra informação identificável foi observada.
 3. **Teste com o SEI real** no app (pacote de teste em `Documentos\sys-executor-teste`).
 
 ## 5. Limitações conhecidas
