@@ -13,13 +13,18 @@ const __docs = [];
 })(document);
 const __norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 const __visivel = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+// Campo por name OU id, preferindo o visível. No SEI/RO a senha usa o
+// componente MaskedPassword: o campo visível tem só id="pwdSenha" (sem name)
+// e repassa os caracteres a um campo oculto name="pwdSenha".
 const __campo = nome => {
+  const todos = [];
   for (const d of __docs) {
-    const els = [...d.getElementsByName(nome)].filter(e => (e.tagName === 'INPUT' || e.tagName === 'SELECT') && e.type !== 'hidden');
-    const v = els.find(__visivel) || els[0];
-    if (v) return v;
+    const porId = d.getElementById(nome);
+    if (porId) todos.push(porId);
+    todos.push(...d.getElementsByName(nome));
   }
-  return null;
+  const els = [...new Set(todos)].filter(e => (e.tagName === 'INPUT' || e.tagName === 'SELECT') && e.type !== 'hidden');
+  return els.find(__visivel) || els[0] || null;
 };
 const __clicaveis = () => __docs.flatMap(d => [...d.querySelectorAll('button,input[type=submit],input[type=button],a,img[title],img[alt]')]);
 const __rotulo = el => __norm(el.innerText || el.value || el.title || el.alt || el.getAttribute('aria-label'));
@@ -62,14 +67,11 @@ var jsPreencher = script(`((nome, valor) => {
     c.dispatchEvent(new Event('change', { bubbles: true }));
     return true;
   }
-  // O SEI/RO tem campos homônimos (ex.: pwdSenha como senha e como texto do
-  // "mostrar senha"): preenche todos os do mesmo formulário.
-  const alvos = [...(c.form ? c.form.elements : [c])].filter(e => e.name === nome && e.tagName === 'INPUT' && e.type !== 'hidden');
-  for (const e of (alvos.length ? alvos : [c])) {
-    e.focus();
-    e.value = valor;
-    for (const t of ['input', 'change', 'keyup']) e.dispatchEvent(new Event(t, { bubbles: true }));
-  }
+  // Preenche o campo visível; os scripts da página (ex.: MaskedPassword)
+  // repassam o valor aos campos ocultos ao receber os eventos.
+  c.focus();
+  c.value = valor;
+  for (const t of ['input', 'change', 'keyup']) c.dispatchEvent(new Event(t, { bubbles: true }));
   return true;
 })(%s, %s)`)
 
@@ -134,16 +136,34 @@ func script(corpo string) string {
 	return "(() => {\n" + scriptBase + "\nreturn (" + corpo + ");\n})()"
 }
 
-// jsResumo descreve a tela atual para diagnóstico: títulos, ações, nomes de
-// campos e rótulos de botões. Nenhum valor digitado ou texto da página.
+// jsResumo descreve a tela atual para diagnóstico: títulos, ações, campos
+// (tipo, visibilidade, trava, TAMANHO do valor e eventos tratados), botões e o
+// código das funções chamadas pelos botões (código público do SEI). Nenhum
+// valor digitado nem texto da página.
 var jsResumo = script(`(() => {
   const acao = d => { try { return new URL(d.location.href).searchParams.get('acao') || d.location.pathname; } catch (e) { return '?'; } };
-  return JSON.stringify(__docs.map(d => ({
+  const eventos = el => [...el.attributes].filter(a => a.name.startsWith('on')).map(a => a.name + '=' + a.value.slice(0, 80));
+  const funcoes = new Set();
+  const docs = __docs.map(d => ({
     titulo: (d.title || '').slice(0, 60),
     acao: acao(d),
-    campos: [...d.querySelectorAll('input,select,textarea')].filter(e => e.type !== 'hidden').map(e => e.name || e.id || '?').slice(0, 12),
-    botoes: [...d.querySelectorAll('button,input[type=submit],input[type=button]')].map(b => (b.innerText || b.value || '').trim().slice(0, 25)).filter(Boolean).slice(0, 8),
-  })));
+    campos: [...d.querySelectorAll('input,select,textarea')].filter(e => e.type !== 'hidden').slice(0, 12).map(e => {
+      const st = d.defaultView ? d.defaultView.getComputedStyle(e) : null;
+      return { nome: e.name || e.id || '?', id: e.id, tipo: e.type, visivel: __visivel(e), oculto: st ? (st.display === 'none' || st.visibility === 'hidden' || st.opacity === '0') : null,
+        trava: e.readOnly, desab: e.disabled, tamanho: (e.value || '').length, foco: d.activeElement === e, eventos: eventos(e) };
+    }),
+    botoes: [...d.querySelectorAll('button,input[type=submit],input[type=button]')].slice(0, 6).map(b => {
+      (b.getAttribute('onclick') || '').replace(/([A-Za-z_$][\w$]*)\s*\(/g, (m, f) => { funcoes.add(f); return m; });
+      return { rotulo: (b.innerText || b.value || '').trim().slice(0, 25), tipo: b.type, eventos: eventos(b) };
+    }),
+    formularios: [...d.querySelectorAll('form')].map(f => ({ id: f.id, eventos: eventos(f) })),
+  }));
+  const codigo = {};
+  for (const f of funcoes) {
+    if (['return', 'if', 'function'].includes(f)) continue;
+    for (const d of __docs) { try { const fn = d.defaultView[f]; if (typeof fn === 'function') { codigo[f] = String(fn).slice(0, 700); break; } } catch (e) {} }
+  }
+  return JSON.stringify({ docs, codigo });
 })()`)
 
 // estadoTela é o resumo devolvido por jsEstado.

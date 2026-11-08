@@ -72,8 +72,8 @@ func VisaoErro(e *erros.Erro) *ErroVisao {
 	v := &ErroVisao{Codigo: string(e.Codigo), Titulo: e.Titulo, Mensagem: e.Mensagem, Acao: e.Acao}
 	if e.Causa != nil && os.Getenv("SYSEXEC_DIAGNOSTICO") == "1" {
 		d := digitos.ReplaceAllString(e.Causa.Error(), "#")
-		if r := []rune(d); len(r) > 300 {
-			d = string(r[:300]) + "…"
+		if r := []rune(d); len(r) > 4500 {
+			d = string(r[:4500]) + "…"
 		}
 		v.Detalhe = d
 	}

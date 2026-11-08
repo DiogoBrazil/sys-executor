@@ -469,8 +469,8 @@ func (s *sessaoNavegador) resumoTela() string {
 	if d != "" {
 		r += " | último aviso da página: " + d
 	}
-	if len(r) > 900 {
-		r = r[:900] + "…"
+	if len(r) > 4000 {
+		r = r[:4000] + "…"
 	}
 	return reDigito.ReplaceAllString(r, "#")
 }

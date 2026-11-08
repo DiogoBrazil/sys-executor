@@ -191,38 +191,29 @@ function gerar() {
 
 func formValidar(usuario string) string {
 	return `<h2>Identificação de Acesso</h2>
-<form method="post" action="controlador.php?acao=usuario_validar_acesso&id_procedimento=2&infra_hash=h4">
+<form id="frmValidar" method="post" action="controlador.php?acao=usuario_validar_acesso&id_procedimento=2&infra_hash=h4">
   <label>Usuário:</label><input type="text" name="txtUsuario" value="` + html.EscapeString(usuario) + `" readonly>
-  <label>Senha:</label><input type="password" name="pwdSenha"><input type="text" name="pwdSenha" style="display:none">
+  <label>Senha:</label><input type="password" id="pwdSenha" name="pwdSenha" autocomplete="off">
   <input type="hidden" name="hdnInfraTipoPagina" value="2">
   <button type="submit" name="sbmAcessar">Acessar</button>
-</form>`
+</form>
+<script>` + jsSenhaMascarada + `
+validarAoEnviar('frmValidar');
+</script>`
 }
 
 func (s *Simulador) login(w http.ResponseWriter, r *http.Request) {
 	formLogin := func(msg string) {
 		pagina(w, "SEI / RO", msg+`
 <form id="frmLogin" method="post" action="/sip/login.php?sigla_orgao_sistema=RO&sigla_sistema=SEI">
-  <input type="text" name="txtUsuario"> <input type="password" id="pwdSenha" name="pwdSenha"> <input type="text" id="pwdSenhaVis" name="pwdSenha" style="display:none">
+  <input type="text" name="txtUsuario"> <input type="password" id="pwdSenha" name="pwdSenha" autocomplete="off">
   <select name="selOrgao"><option value="0">Selecione</option><option value="10">PM</option><option value="11">SESDEC</option></select>
   <input type="hidden" name="hdnAcao" value="2">
   <button type="submit" name="sbmLogin">ACESSAR</button>
   <a href="#">Entrar com gov.br</a> <a href="#">Autenticação em dois fatores</a>
 </form>
-<script>
-// Como no SEI/RO real (1º teste do usuário): a senha só conta se for digitada.
-let digitada = '';
-const pw = document.getElementById('pwdSenha');
-pw.addEventListener('keydown', e => {
-  if (e.key && e.key.length === 1) digitada += e.key;
-  else if (e.key === 'Backspace') digitada = digitada.slice(0, -1);
-});
-pw.addEventListener('focus', () => { digitada = ''; });
-document.getElementById('frmLogin').addEventListener('submit', e => {
-  if (!digitada) { e.preventDefault(); alert('Informe a Senha.'); return; }
-  pw.value = digitada;
-  document.getElementById('pwdSenhaVis').value = digitada;
-});
+<script>`+jsSenhaMascarada+`
+validarAoEnviar('frmLogin');
 </script>`)
 	}
 	formOTP := func(msg string) {
@@ -246,10 +237,8 @@ document.getElementById('frmLogin').addEventListener('submit', e => {
 	}
 	switch r.PostFormValue("hdnAcao") {
 	case "2":
-		// O SEI/RO envia os dois campos pwdSenha (senha e "mostrar senha"); o
-		// simulador exige que ambos tragam a senha e responde por alert().
-		senhas := r.PostForm["pwdSenha"]
-		ok := len(senhas) == 2 && senhas[0] == s.Senha && senhas[1] == s.Senha
+		// Só o campo oculto (name=pwdSenha) do componente mascarado vai ao servidor.
+		ok := len(r.PostForm["pwdSenha"]) == 1 && r.PostFormValue("pwdSenha") == s.Senha
 		if r.PostFormValue("txtUsuario") != s.Usuario || !ok || r.PostFormValue("selOrgao") != "10" {
 			formLogin(`<script>alert('Usuário ou senha inválida.');</script>`)
 			return
@@ -278,3 +267,36 @@ document.getElementById('frmLogin').addEventListener('submit', e => {
 		formLogin("")
 	}
 }
+
+// jsSenhaMascarada reproduz (com código próprio) o comportamento do componente
+// de senha mascarada do SEI/RO observado na página pública de login: o campo
+// original vira um campo OCULTO type=password com name="pwdSenha" (o que vai
+// ao servidor) e um campo VISÍVEL de texto com id="pwdSenha", sem name, que
+// mostra "●" e repassa cada caractere digitado ao oculto. A validação da
+// página lê o campo visível por id ("Informe a Senha." se vazio).
+const jsSenhaMascarada = `
+(function () {
+  const orig = document.getElementById('pwdSenha');
+  const oculto = document.createElement('input');
+  oculto.type = 'password'; oculto.name = 'pwdSenha'; oculto.style.display = 'none';
+  const visivel = document.createElement('input');
+  visivel.type = 'text'; visivel.id = 'pwdSenha'; visivel.setAttribute('autocomplete', 'off');
+  orig.replaceWith(oculto);
+  oculto.after(visivel);
+  const mascarar = () => {
+    let plano = '';
+    for (let i = 0; i < visivel.value.length; i++) {
+      const ch = visivel.value.charAt(i);
+      plano += ch === '\u25CF' ? oculto.value.charAt(i) : ch;
+    }
+    oculto.value = plano;
+    visivel.value = '\u25CF'.repeat(plano.length);
+  };
+  for (const ev of ['input', 'change', 'keyup']) visivel.addEventListener(ev, mascarar);
+})();
+function validarAoEnviar(idForm) {
+  document.getElementById(idForm).addEventListener('submit', e => {
+    if (document.getElementById('pwdSenha').value === '') { e.preventDefault(); alert('Informe a Senha.'); }
+  });
+}
+`
