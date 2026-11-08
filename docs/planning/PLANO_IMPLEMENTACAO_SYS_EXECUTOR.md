@@ -547,7 +547,7 @@ Cada tarefa vai receber, em `PLANO_IMPLEMENTACAO`, a lista de arquivos, os teste
 - F2-06 Visualizador PDF.js com realce.
 - F2-07 Cliente SEI + guarda + OTP/reautenticação + offline→upload.
 
-*Saída:* A01–A06, T02–T06, T17 (parte de extração). **Implementada em 08/11/2026** (`RELATORIO_FASE2.md`); fechamento aguarda validações do usuário com SEI e PDF reais.
+*Saída:* A01–A06, T02–T06, T17 (parte de extração). **Concluída em 08/11/2026** (`RELATORIO_FASE2.md`), validada com PDF real e com o SEI/RO real.
 
 **Fatia vertical (marco M1, após F1+F2.1–2.5+F3):** PDF PADS sintético → imputações (IA) → confirmação → cálculo → minuta esqueleto DOCX/PDF → validação de escopo. *Objetivo:* expor cedo o risco de qualidade dos modelos pequenos.
 

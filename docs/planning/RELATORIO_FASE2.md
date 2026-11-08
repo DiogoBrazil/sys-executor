@@ -3,7 +3,7 @@
 - **Data:** 08/11/2026
 - **Autorização:** expressa do usuário ("Pode seguir com a fase 2"), incluindo o push da branch `development`.
 - **Escopo:** F2-01 a F2-07 (plano §16): envio do PDF, extração (pdfium), OCR, segmentação e função documental, evidências/busca/cobertura, visualizador com realce e cliente SEI com guarda.
-- **Situação:** implementação concluída e testada com componentes reais (Edge, Tesseract, pdfium). **Faltam três validações do usuário** com dados reais (§4).
+- **Situação:** **concluída** (08/11/2026). Testada com componentes reais (Edge, Tesseract, pdfium) e validada pelo usuário com PDF real e com o SEI/RO real (§4).
 
 ## 1. Critérios de saída (PLANO_TESTES_ACEITACAO §12)
 
@@ -58,10 +58,11 @@ Ambiente: suíte Go completa nativa no Windows 11 do usuário (13 pacotes), com 
    Correções aplicadas: segmentação pelo carimbo deste processo (número de processo dominante e `pg.` = página), função pelo nome da árvore, texto pelo modo por caractere, carimbo ignorado na decisão de OCR e de página em branco, funções "capa" e "ciência", atas de videoconferência como instrução na cronologia. **3ª execução (08/11/2026): validada.** 67 de 67 páginas com carimbo (3 processos distintos nos carimbos; os antigos foram descartados); **30 peças**, na mesma ordem e com os mesmos tipos da árvore do processo vista no mapeamento do SEI; memorando encontrado (PADS compatível); blocos de assinatura/autenticação do SEI agora legíveis; 1 página escaneada (só carimbo como texto) corretamente enviada ao OCR e mantida na peça certa. Conferência com a árvore do processo (print do usuário): **31 documentos na árvore, 30 peças no PDF, mesma ordem e mesmos limites**; o documento ausente é um vídeo (arquivo compactado), que o SEI não inclui no PDF consolidado. As 4 peças sem tipo eram Termo de Juntada, Representação, Procuração e Informação, agora reconhecidas.
    - **Melhoria registrada para a Fase 4 (V4 §17; A08–A10):** na obtenção pelo SEI, ler a lista de documentos da árvore (nome e tipo de arquivo, sem conteúdo) e comparar com as peças do PDF, para apontar mídias e arquivos que ficaram fora (como o vídeo). No envio manual, só as menções no texto permitem detectar a mídia.
    - Limitação da ferramenta: palavras genéricas permitidas podem revelar o gênero gramatical ("a militar"); nenhuma outra informação identificável foi observada.
-3. **Teste com o SEI real** no app (pacote de teste em `Documentos\sys-executor-teste`). Rodadas de 08/11/2026:
+3. ~~**Teste com o SEI real**~~ **Concluído** no app (pacote de teste em `Documentos\sys-executor-teste`). Rodadas de 08/11/2026:
    - 1ª: SEI-005 sem pista → diagnóstico passou a descrever a tela (estrutura, sem valores).
    - 2ª e 3ª: a página respondeu "Informe a Senha.". Causa (página pública de login): o SEI/RO usa o componente **MaskedPassword**, que troca o campo de senha por um campo **oculto** `name="pwdSenha"` (enviado ao servidor) e um campo **visível** `id="pwdSenha"` **sem name**, que mostra "●" e repassa os caracteres; a validação lê o campo visível por id. O cliente procurava só por `name` e caía no campo oculto. Correção: campos localizados por `name` ou `id`, preferindo o visível, com digitação real; simulador reproduz o componente (código próprio) também na reautenticação; contraprova confirma que a busca só por `name` reproduz o erro.
    - 4ª: login, 2FA, pesquisa e reautenticação de sigiloso **funcionaram** no SEI real; falhou na geração do PDF ("elemento não encontrado"). Provável causa: o rótulo da opção "Todos os documentos disponíveis"; a opção passa a ser localizada também pelo id `optTodos` (o que `gerar()` consulta) e aceita como já marcada; cada passo informa qual elemento faltou, com a estrutura da tela.
+   - **5ª (08/11/2026): fluxo completo no SEI real** — login, 2FA, pesquisa, reautenticação de processo sigiloso, geração do PDF com todos os documentos, download e leitura (67 páginas, 30 peças, mesmo resultado do envio manual). Executado com a janela do Edge visível (modo de acompanhamento); falta só confirmar o modo padrão, sem janela.
 
 ## 5. Limitações conhecidas
 
