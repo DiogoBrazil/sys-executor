@@ -33,6 +33,12 @@ let doc: pdfjs.PDFDocumentProxy | null = null;
 let carga: pdfjs.PDFDocumentLoadingTask | null = null;
 let tarefaRender: pdfjs.RenderTask | null = null;
 let escala = 1;
+// Último trecho mostrado, para redesenhar quando a largura da área muda
+// (ex.: a lista de resultados da busca aparece) sem perder o realce.
+let atual = { n: props.pagina, inicio: props.inicio, fim: props.fim };
+let observador: ResizeObserver | null = null;
+let larguraAnterior = 0;
+let espera: ReturnType<typeof setTimeout> | undefined;
 
 async function carregar() {
   const end = await fontes.enderecoPDF();
@@ -52,6 +58,7 @@ async function carregar() {
 
 async function mostrar(n: number, inicio = 0, fim = 0) {
   if (!doc || n < 1 || n > total.value) return;
+  atual = { n, inicio, fim };
   paginaAtual.value = n;
   const pagina = await doc.getPage(n);
   const base = pagina.getViewport({ scale: 1 });
@@ -102,6 +109,16 @@ function tecla(e: KeyboardEvent) {
 
 onMounted(async () => {
   document.addEventListener("keydown", tecla);
+  if (area.value && typeof ResizeObserver !== "undefined") {
+    observador = new ResizeObserver(() => {
+      const w = area.value?.clientWidth ?? 0;
+      if (Math.abs(w - larguraAnterior) < 4) return;
+      larguraAnterior = w;
+      clearTimeout(espera);
+      espera = setTimeout(() => void mostrar(atual.n, atual.inicio, atual.fim), 120);
+    });
+    observador.observe(area.value);
+  }
   fecharBtn.value?.focus();
   try {
     await carregar();
@@ -118,6 +135,8 @@ watch(
 
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", tecla);
+  observador?.disconnect();
+  clearTimeout(espera);
   tarefaRender?.cancel();
   void carga?.destroy();
   carga = null;
@@ -224,7 +243,7 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 0.2rem;
 }
-.area { flex: 1; overflow: auto; padding: 1rem; }
+.area { flex: 1; min-width: 0; overflow: auto; padding: 1rem; }
 .folha { position: relative; width: fit-content; margin: 0 auto; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15); background: #fff; }
 canvas { display: block; }
 .realce {
