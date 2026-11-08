@@ -27,18 +27,20 @@ type Caixa struct {
 	X0, Y0, X1, Y1 float64
 }
 
-// Trecho é um pedaço de texto contíguo e a sua caixa na página.
-type Trecho struct {
-	Texto string
-	Caixa Caixa
+// Caractere da camada de texto, na ordem de leitura calculada pelo pdfium
+// (que já insere os espaços e quebras de linha entre palavras e linhas).
+type Caractere struct {
+	Runa     rune
+	Caixa    Caixa
+	SemCaixa bool // caractere gerado pelo pdfium (espaço/quebra), sem posição
 }
 
 // Pagina é o conteúdo textual nativo de uma página.
 type Pagina struct {
-	Indice  int // base 0
-	Largura float64
-	Altura  float64
-	Trechos []Trecho
+	Indice     int // base 0
+	Largura    float64
+	Altura     float64
+	Caracteres []Caractere
 }
 
 // Extrator abre documentos PDF (porta PDFExtractor do plano §4).
@@ -144,20 +146,29 @@ func (d *documentoPdfium) Pagina(ctx context.Context, i int) (Pagina, error) {
 	if err != nil {
 		return Pagina{}, erros.Com(erros.PDFCorrompido, err)
 	}
+	// Modo por caractere: o modo por retângulos devolve regiões e duplica
+	// letras quando as caixas se sobrepõem (visto em PDF real do SEI).
 	st, err := d.inst.GetPageTextStructured(&requests.GetPageTextStructured{
 		Page: d.ref(i),
-		Mode: requests.GetPageTextStructuredModeRects,
+		Mode: requests.GetPageTextStructuredModeChars,
 	})
 	if err != nil {
 		return Pagina{}, erros.Com(erros.PDFCorrompido, err)
 	}
 	p := Pagina{Indice: i, Largura: tam.Width, Altura: tam.Height}
-	for _, r := range st.Rects {
-		if r.Text == "" {
+	for _, c := range st.Chars {
+		rs := []rune(c.Text)
+		if len(rs) == 0 || rs[0] == 0 {
 			continue
 		}
-		pp := r.PointPosition
-		p.Trechos = append(p.Trechos, Trecho{Texto: r.Text, Caixa: normalizar(pp.Left, pp.Top, pp.Right, pp.Bottom, tam.Height)})
+		pp := c.PointPosition
+		car := Caractere{Runa: rs[0]}
+		if pp.Right-pp.Left <= 0 && pp.Top-pp.Bottom == 0 {
+			car.SemCaixa = true
+		} else {
+			car.Caixa = normalizar(pp.Left, pp.Top, pp.Right, pp.Bottom, tam.Height)
+		}
+		p.Caracteres = append(p.Caracteres, car)
 	}
 	return p, nil
 }

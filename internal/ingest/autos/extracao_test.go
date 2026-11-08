@@ -11,6 +11,7 @@ import (
 
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/ocr"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/pdf"
+	"github.com/DiogoBrazil/sys-executor/internal/testutil/pdfsint"
 )
 
 var (
@@ -85,7 +86,7 @@ func TestExtrairFixtureSEI(t *testing.T) {
 		t.Errorf("OCR deveria rodar só na página escaneada; rodou %d vezes", o.chamado.Load())
 	}
 	p1 := a.Paginas[0]
-	if !strings.Contains(p1.Texto, "MEMORANDO DISCIPLINAR") || !strings.Contains(p1.Texto, "SEI nº 0090000001") {
+	if !strings.Contains(p1.Texto, "MEMORANDO DISCIPLINAR") || !strings.Contains(p1.Texto, "(0090000001) SEI 0000.000001/2026-01 / pg. 1") {
 		t.Fatalf("texto da pág. 1: %q", p1.Texto)
 	}
 	// O realce do título cai no alto da página.
@@ -95,6 +96,12 @@ func TestExtrairFixtureSEI(t *testing.T) {
 		t.Fatalf("caixa do título: %+v", cx)
 	}
 	p4 := a.Paginas[3]
+	if len(p4.Carimbos) != 1 || p4.Carimbos[0].SEI != "0090000007" {
+		t.Fatalf("o carimbo da página escaneada deve ser lido: %+v", p4.Carimbos)
+	}
+	if c := a.Paginas[8].Carimbos; len(c) != 2 {
+		t.Fatalf("pág. 9 tem carimbo antigo e atual: %+v", c)
+	}
 	if p4.Origem != OrigemOCR || !strings.HasPrefix(p4.Texto, "TERMO DE INQUIRIÇÃO\ngravação") {
 		t.Fatalf("pág. 4 (OCR): %+v", p4)
 	}
@@ -160,5 +167,25 @@ func TestExtrairComTesseractReal(t *testing.T) {
 		if !strings.Contains(p.Texto, w) {
 			t.Errorf("OCR não leu %q: %q", w, p.Texto)
 		}
+	}
+}
+
+// PDFs com uma caixa por letra não podem virar "G O V E R N O" (espaço só
+// onde há distância real entre as letras).
+func TestTextoLetraALetra(t *testing.T) {
+	b := pdfsint.Gerar([]pdfsint.Pagina{{LetraALetra: true, Linhas: []string{
+		"GOVERNO DO ESTADO DE RONDONIA",
+		"Memorando Disciplinar com texto suficiente para leitura direta da camada de texto",
+	}}})
+	a, err := Extracao{PDF: extrator(), OCR: &ocrFalso{conf: 90}}.Extrair(context.Background(), b, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := a.Paginas[0]
+	if !strings.Contains(p.Texto, "GOVERNO DO ESTADO DE RONDONIA") || !strings.Contains(p.Texto, "Memorando Disciplinar com texto") {
+		t.Fatalf("texto montado: %q", p.Texto)
+	}
+	if p.Situacao != Lida {
+		t.Fatalf("situação: %s", p.Situacao)
 	}
 }

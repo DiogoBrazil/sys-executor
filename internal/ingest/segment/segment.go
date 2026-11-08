@@ -41,6 +41,8 @@ const (
 	Relatorio            Funcao = "RELATORIO"
 	TermoRemessa         Funcao = "TERMO_REMESSA"
 	Manifestacao         Funcao = "MANIFESTACAO" // ambígua: resolvida pela cronologia
+	Capa                 Funcao = "CAPA"
+	Ciencia              Funcao = "CIENCIA" // comprovante de ciência de notificação/despacho
 	Anexo                Funcao = "ANEXO"
 	Indeterminada        Funcao = "INDETERMINADA"
 )
@@ -73,27 +75,43 @@ var (
 )
 
 // regras de título, na ordem de prioridade (texto já sem acentos e minúsculo).
+// A ordem importa: "Anexo - Ciência da defesa - Alegações finais" é ciência e
+// "Notificação 64 - Alegações finais de defesa" é notificação (nomes reais da
+// árvore do SEI/RO).
 var regrasTitulo = []struct {
 	re *regexp.Regexp
 	f  Funcao
 }{
 	{regexp.MustCompile(`memorando\s+disciplinar`), MemorandoDisciplinar},
 	{regexp.MustCompile(`portaria.{0,80}sindicancia|instaura.{0,40}sindicancia`), PortariaSR},
+	{regexp.MustCompile(`^(pads\s+|sr\s+)?capa\b`), Capa}, // "Anexo … - CAPA" não é a capa do processo
+	{regexp.MustCompile(`\bciencia\b`), Ciencia},
+	{regexp.MustCompile(`notificacao|citacao|mandado|intimacao`), Notificacao},
 	{regexp.MustCompile(`defesa\s+previa`), DefesaPrevia},
 	{regexp.MustCompile(`alegacoes\s+finais|razoes\s+finais`), AlegacoesFinais},
 	{regexp.MustCompile(`termo\s+de\s+(inquiricao|oitiva|depoimento)`), TermoInquiricao},
 	{regexp.MustCompile(`termo\s+de\s+declarac`), TermoDeclaracoes},
 	{regexp.MustCompile(`interrogatorio|termo\s+de\s+qualificacao`), Interrogatorio},
 	{regexp.MustCompile(`\bata\b.{0,40}videoconferencia`), AtaVideoconferencia},
-	{regexp.MustCompile(`^\s*ata\b`), Ata},
-	{regexp.MustCompile(`notificacao|citacao|mandado|intimacao`), Notificacao},
+	{regexp.MustCompile(`(^|\s)ata\b`), Ata},
 	{regexp.MustCompile(`termo\s+de\s+remessa`), TermoRemessa},
-	{regexp.MustCompile(`^\s*portaria`), Portaria},
-	{regexp.MustCompile(`^\s*despacho`), Despacho},
-	{regexp.MustCompile(`^\s*oficio`), Oficio},
-	{regexp.MustCompile(`^\s*certidao`), Certidao},
-	{regexp.MustCompile(`^\s*relatorio`), Relatorio},
+	{regexp.MustCompile(`(^|\s)portaria`), Portaria},
+	{regexp.MustCompile(`(^|\s)despacho`), Despacho},
+	{regexp.MustCompile(`(^|\s)oficio`), Oficio},
+	{regexp.MustCompile(`(^|\s)certidao`), Certidao},
+	{regexp.MustCompile(`(^|\s)relatorio`), Relatorio},
 	{regexp.MustCompile(`manifestacao|peticao|requerimento`), Manifestacao},
+}
+
+// classificar aplica as regras a um nome (da árvore do SEI ou título).
+func classificar(nome string) (Funcao, bool) {
+	lc := texto.SemAcentos(nome)
+	for _, r := range regrasTitulo {
+		if r.re.MatchString(lc) {
+			return r.f, true
+		}
+	}
+	return "", false
 }
 
 // pistaPagina é o que se extrai de uma página para segmentar.
@@ -120,16 +138,13 @@ func pistas(p autos.Pagina) pistaPagina {
 		}
 	}
 	for _, l := range cab {
-		lc := texto.SemAcentos(l)
-		for _, r := range regrasTitulo {
-			if r.re.MatchString(lc) {
-				pp.titulo, pp.funcao = limitar(l, 120), r.f
-				// "PORTARIA Nº x" com "instaura sindicância" na linha seguinte.
-				if r.f == Portaria && reSR.MatchString(texto.SemAcentos(strings.Join(cab, " "))) {
-					pp.funcao = PortariaSR
-				}
-				return pp
+		if f, ok := classificar(l); ok {
+			pp.titulo, pp.funcao = limitar(l, 120), f
+			// "PORTARIA Nº x" com "instaura sindicância" na linha seguinte.
+			if f == Portaria && reSR.MatchString(texto.SemAcentos(strings.Join(cab, " "))) {
+				pp.funcao = PortariaSR
 			}
+			return pp
 		}
 	}
 	return pp
@@ -145,8 +160,102 @@ func limitar(s string, n int) string {
 	return s
 }
 
-// Segmentar divide as páginas em peças e decide a função de cada uma.
+// carimboDaPagina escolhe o carimbo deste processo (o dominante nos autos),
+// preferindo o que tem "pg." igual ao número da página.
+func carimboDaPagina(p autos.Pagina, processo string) (autos.Carimbo, bool) {
+	var achado *autos.Carimbo
+	for i := range p.Carimbos {
+		c := p.Carimbos[i]
+		if c.Processo != processo {
+			continue
+		}
+		if c.PaginaPG == p.Numero {
+			return c, true
+		}
+		achado = &p.Carimbos[i]
+	}
+	if achado != nil {
+		return *achado, true
+	}
+	return autos.Carimbo{}, false
+}
+
+func processoDominante(a *autos.Autos) string {
+	cont := map[string]int{}
+	for _, p := range a.Paginas {
+		for _, c := range p.Carimbos {
+			cont[c.Processo]++
+		}
+	}
+	melhor, n := "", 0
+	for proc, k := range cont {
+		if k > n || (k == n && proc < melhor) {
+			melhor, n = proc, k
+		}
+	}
+	return melhor
+}
+
+// Segmentar divide as páginas em peças e decide a função de cada uma. Com os
+// carimbos do SEI (formato real), cada número SEI é uma peça e o nome da
+// árvore define a função; sem carimbos, usa os sinais de reserva.
 func Segmentar(a *autos.Autos) []Peca {
+	if proc := processoDominante(a); proc != "" {
+		return segmentarPorCarimbo(a, proc)
+	}
+	return segmentarPorSinais(a)
+}
+
+func segmentarPorCarimbo(a *autos.Autos, processo string) []Peca {
+	var pecas []Peca
+	var atual *Peca
+	for _, p := range a.Paginas {
+		c, ok := carimboDaPagina(p, processo)
+		if !ok || (atual != nil && c.SEI == atual.SEI) {
+			if atual != nil {
+				atual.PaginaFinal = p.Numero // sem carimbo (ex.: página em branco) ou mesma peça
+				continue
+			}
+			if !ok {
+				c = autos.Carimbo{}
+			}
+		}
+		titulo := c.Nome
+		f, achou := classificar(c.Nome)
+		if !achou {
+			// Nome da árvore genérico ("Anexo …"): tenta o título no corpo.
+			if pp := pistas(p); pp.funcao != "" {
+				titulo, f, achou = pp.titulo, pp.funcao, true
+			}
+		}
+		pecas = append(pecas, Peca{
+			ID: fmt.Sprintf("PEC-%02d", len(pecas)+1), PaginaInicial: p.Numero, PaginaFinal: p.Numero,
+			SEI: c.SEI, Titulo: limitar(titulo, 120), Funcao: f,
+		})
+		atual = &pecas[len(pecas)-1]
+		if !achou {
+			atual.Funcao = ""
+		}
+	}
+	finalizar(pecas)
+	return pecas
+}
+
+func finalizar(pecas []Peca) {
+	for i := range pecas {
+		switch {
+		case pecas[i].Funcao == "" && (pecas[i].Externo || strings.HasPrefix(texto.SemAcentos(pecas[i].Titulo), "anexo")):
+			pecas[i].Funcao, pecas[i].Base = Anexo, BaseNenhuma
+		case pecas[i].Funcao == "":
+			pecas[i].Funcao, pecas[i].Base = Indeterminada, BaseNenhuma
+		default:
+			pecas[i].Base = BaseTitulo
+		}
+	}
+	resolverCronologia(pecas)
+}
+
+func segmentarPorSinais(a *autos.Autos) []Peca {
 	var pecas []Peca
 	var atual *Peca
 	for _, p := range a.Paginas {
@@ -179,28 +288,20 @@ func Segmentar(a *autos.Autos) []Peca {
 			atual.Titulo, atual.Funcao = pp.titulo, pp.funcao
 		}
 	}
-	for i := range pecas {
-		switch {
-		case pecas[i].Funcao == "" && pecas[i].Externo:
-			pecas[i].Funcao, pecas[i].Base = Anexo, BaseNenhuma
-		case pecas[i].Funcao == "":
-			pecas[i].Funcao, pecas[i].Base = Indeterminada, BaseNenhuma
-		default:
-			pecas[i].Base = BaseTitulo
-		}
-	}
-	resolverCronologia(pecas)
+	finalizar(pecas)
 	return pecas
 }
 
-// resolverCronologia decide "Manifestação" pela posição (D-09.5; A01/A02):
-// antes do primeiro termo de inquirição → defesa prévia provável; depois do
+// resolverCronologia decide "Manifestação" pela posição (D-09.5; A01/A02).
+// Atos de instrução: termos de inquirição/declarações, interrogatório e atas
+// de audiência por videoconferência (forma usada no SEI/RO). Antes do primeiro
+// ato de instrução → defesa prévia provável; depois do
 // último → alegações finais prováveis; entre termos → indeterminada (a IA ou
 // o usuário decide).
 func resolverCronologia(pecas []Peca) {
 	primeiro, ultimo := -1, -1
 	for i, p := range pecas {
-		if p.Funcao == TermoInquiricao || p.Funcao == TermoDeclaracoes || p.Funcao == Interrogatorio {
+		if p.Funcao == TermoInquiricao || p.Funcao == TermoDeclaracoes || p.Funcao == Interrogatorio || p.Funcao == AtaVideoconferencia {
 			if primeiro < 0 {
 				primeiro = i
 			}

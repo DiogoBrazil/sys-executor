@@ -5,8 +5,8 @@
 package autos
 
 import (
-	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/pdf"
 )
@@ -53,6 +53,7 @@ type Pagina struct {
 	Largura    float64 // pontos
 	Altura     float64
 	Fragmentos []Fragmento
+	Carimbos   []Carimbo // marcas do SEI na camada de texto (mesmo em página escaneada)
 }
 
 // Caixas devolve as caixas que cobrem o intervalo [inicio, fim) do texto.
@@ -82,50 +83,56 @@ func (a *Autos) Contagem() map[Situacao]int {
 
 // ---- montagem do texto nativo ----
 
-// montarTextoNativo ordena os trechos do pdfium em linhas (por posição
-// vertical) e devolve o texto com os fragmentos posicionados.
+// montarTextoNativo monta o texto na ordem de leitura do pdfium e agrupa as
+// caixas das letras por palavra (fragmentos para o realce).
 func montarTextoNativo(p pdf.Pagina) (string, []Fragmento) {
-	tr := append([]pdf.Trecho(nil), p.Trechos...)
-	if len(tr) == 0 {
-		return "", nil
-	}
-	sort.SliceStable(tr, func(i, j int) bool {
-		a, b := tr[i].Caixa, tr[j].Caixa
-		if mesmaLinha(a, b) {
-			return a.X0 < b.X0
-		}
-		return a.Y0 < b.Y0
-	})
 	var sb strings.Builder
 	var frs []Fragmento
 	pos := 0
-	var anterior *pdf.Caixa
-	for i := range tr {
-		t := strings.TrimRight(tr[i].Texto, "\r\n")
-		if strings.TrimSpace(t) == "" {
+	var atual *Fragmento
+	fechar := func() {
+		if atual != nil {
+			frs = append(frs, *atual)
+			atual = nil
+		}
+	}
+	for _, c := range p.Caracteres {
+		r := c.Runa
+		switch {
+		case r == '\r':
+			continue
+		case r == '\n':
+			fechar()
+			if !strings.HasSuffix(sb.String(), "\n") && sb.Len() > 0 {
+				sb.WriteByte('\n')
+				pos++
+			}
+			continue
+		case unicode.IsSpace(r) || r == 0xA0:
+			fechar()
+			if s := sb.String(); s != "" && !strings.HasSuffix(s, " ") && !strings.HasSuffix(s, "\n") {
+				sb.WriteByte(' ')
+				pos++
+			}
+			continue
+		case r == 0xAD: // hífen suave da hifenização: invisível
 			continue
 		}
-		c := tr[i].Caixa
-		if anterior != nil {
-			sep := " "
-			if !mesmaLinha(*anterior, c) {
-				sep = "\n"
+		sb.WriteRune(r)
+		if !c.SemCaixa {
+			if atual == nil {
+				atual = &Fragmento{Inicio: pos, Fim: pos + 1, Caixa: c.Caixa}
+			} else {
+				atual.Fim = pos + 1
+				atual.Caixa = uniao(atual.Caixa, c.Caixa)
 			}
-			sb.WriteString(sep)
-			pos++
 		}
-		n := len([]rune(t))
-		sb.WriteString(t)
-		frs = append(frs, Fragmento{Inicio: pos, Fim: pos + n, Caixa: c})
-		pos += n
-		anterior = &tr[i].Caixa
+		pos++
 	}
-	return sb.String(), frs
+	fechar()
+	return strings.TrimRight(sb.String(), " \n"), frs
 }
 
-// mesmaLinha: as caixas se sobrepõem em mais da metade da menor altura.
-func mesmaLinha(a, b pdf.Caixa) bool {
-	sob := min(a.Y1, b.Y1) - max(a.Y0, b.Y0)
-	menor := min(a.Y1-a.Y0, b.Y1-b.Y0)
-	return menor > 0 && sob > menor/2
+func uniao(a, b pdf.Caixa) pdf.Caixa {
+	return pdf.Caixa{X0: min(a.X0, b.X0), Y0: min(a.Y0, b.Y0), X1: max(a.X1, b.X1), Y1: max(a.Y1, b.Y1)}
 }

@@ -58,32 +58,37 @@ func TestCoordenadasNoTopoEsquerdo(t *testing.T) {
 	if p.Largura < 590 || p.Largura > 600 || p.Altura < 838 || p.Altura > 845 {
 		t.Fatalf("A4 esperado, veio %.1fx%.1f", p.Largura, p.Altura)
 	}
-	var topo, base *Trecho
-	for i := range p.Trechos {
-		tr := &p.Trechos[i]
-		if strings.Contains(tr.Texto, "TOPO") {
-			topo = tr
-		}
-		if strings.Contains(tr.Texto, "BASE") {
-			base = tr
-		}
-		if tr.Caixa.X0 >= tr.Caixa.X1 || tr.Caixa.Y0 >= tr.Caixa.Y1 {
-			t.Errorf("caixa degenerada: %+v", tr)
+	var texto strings.Builder
+	var caixas []Caixa
+	for _, c := range p.Caracteres {
+		texto.WriteRune(c.Runa)
+		caixas = append(caixas, c.Caixa)
+		if !c.SemCaixa && (c.Caixa.X0 > c.Caixa.X1 || c.Caixa.Y0 > c.Caixa.Y1) {
+			t.Errorf("caixa degenerada: %+v", c)
 		}
 	}
+	rs := []rune(texto.String())
+	achar := func(s string) *Caixa {
+		k := strings.Index(string(rs), s)
+		if k < 0 {
+			return nil
+		}
+		return &caixas[len([]rune(string(rs)[:k]))]
+	}
+	topo, base := achar("TOPO"), achar("BASE")
 	if topo == nil || base == nil {
-		t.Fatalf("trechos não encontrados: %+v", p.Trechos)
+		t.Fatalf("texto: %q", string(rs))
 	}
 	// Margem de 2 cm ≈ 56,7 pt.
-	if topo.Caixa.Y0 > 80 || topo.Caixa.X0 > 70 {
-		t.Errorf("TOPO deveria estar no alto à esquerda: %+v", topo.Caixa)
+	if topo.Y0 > 80 || topo.X0 > 70 {
+		t.Errorf("TOPO deveria estar no alto à esquerda: %+v", *topo)
 	}
-	if base.Caixa.Y1 < p.Altura-80 || base.Caixa.X1 < p.Largura-80 {
-		t.Errorf("BASE deveria estar embaixo à direita: %+v", base.Caixa)
+	if base.Y1 < p.Altura-80 || base.X1 < p.Largura-200 {
+		t.Errorf("BASE deveria estar embaixo à direita: %+v", *base)
 	}
 	vazia, err := d.Pagina(context.Background(), 1)
-	if err != nil || len(vazia.Trechos) != 0 {
-		t.Fatalf("página 2 deveria ser vazia: %+v %v", vazia.Trechos, err)
+	if err != nil || len(vazia.Caracteres) != 0 {
+		t.Fatalf("página 2 deveria ser vazia: %+v %v", vazia.Caracteres, err)
 	}
 	img, err := d.Renderizar(context.Background(), 0, 72)
 	if err != nil || img.Bounds().Dx() < 590 || img.Bounds().Dx() > 600 {

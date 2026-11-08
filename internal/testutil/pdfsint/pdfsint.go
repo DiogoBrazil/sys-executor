@@ -16,6 +16,9 @@ type Pagina struct {
 	Linhas  []string // texto do topo para baixo
 	Rodape  string   // linha no pé da página (ex.: "SEI nº 0090000001")
 	Desenho bool     // só traços, sem texto (exige OCR)
+	// LetraALetra posiciona cada caractere num objeto de texto próprio (como
+	// alguns PDFs do SEI): o pdfium devolve uma caixa por letra.
+	LetraALetra bool
 }
 
 // Gerar monta o PDF (A4).
@@ -35,11 +38,12 @@ func Gerar(paginas []Pagina) []byte {
 	posPages := len(offs)
 	offs = append(offs, 0)
 	fonte := obj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>")
+	mono := obj("<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>")
 	var kids []string
 	for _, p := range paginas {
 		conteudo := fluxo(p)
 		c := obj(fmt.Sprintf("<< /Length %d >>\nstream\n%s\nendstream", len(conteudo), conteudo))
-		pg := obj(fmt.Sprintf("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 %d 0 R >> >> /Contents %d 0 R >>", fonte, c))
+		pg := obj(fmt.Sprintf("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 %d 0 R /F2 %d 0 R >> >> /Contents %d 0 R >>", fonte, mono, c))
 		kids = append(kids, fmt.Sprintf("%d 0 R", pg))
 	}
 	// Objeto 2 escrito por último, com o offset correto.
@@ -65,7 +69,17 @@ func fluxo(p Pagina) string {
 	}
 	y := 780
 	for _, l := range p.Linhas {
-		fmt.Fprintf(&s, "BT /F1 12 Tf 70 %d Td (%s) Tj ET\n", y, literal(l))
+		if p.LetraALetra {
+			x := 70.0
+			for _, r := range l {
+				if r != ' ' {
+					fmt.Fprintf(&s, "BT /F2 12 Tf %.1f %d Td (%s) Tj ET\n", x, y, literal(string(r)))
+				}
+				x += 7.2 // Courier 12: avanço exato de 7,2 pt
+			}
+		} else {
+			fmt.Fprintf(&s, "BT /F1 12 Tf 70 %d Td (%s) Tj ET\n", y, literal(l))
+		}
 		y -= 18
 	}
 	if p.Rodape != "" {

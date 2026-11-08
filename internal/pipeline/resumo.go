@@ -24,6 +24,8 @@ var rotulos = map[segment.Funcao]string{
 	segment.Relatorio:            "Relatório",
 	segment.TermoRemessa:         "Termo de remessa",
 	segment.Anexo:                "Anexo",
+	segment.Capa:                 "Capa do processo",
+	segment.Ciencia:              "Ciência",
 	segment.Indeterminada:        "Função não identificada",
 }
 

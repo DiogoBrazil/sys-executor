@@ -64,8 +64,9 @@ func (e Extracao) Extrair(ctx context.Context, dados []byte, progresso func(atua
 			return nil, err
 		}
 		texto, frs := montarTextoNativo(p)
-		pg := Pagina{Numero: i + 1, Largura: p.Largura, Altura: p.Altura}
-		if TextoUtil(texto) {
+		pg := Pagina{Numero: i + 1, Largura: p.Largura, Altura: p.Altura, Carimbos: LerCarimbos(texto)}
+		// O carimbo do SEI é texto mesmo numa página escaneada: não conta como conteúdo.
+		if TextoUtil(SemCarimbos(texto)) {
 			pg.Texto, pg.Fragmentos, pg.Origem, pg.Situacao = texto, frs, OrigemNativo, Lida
 			a.Paginas[i] = pg
 			concluir()
@@ -227,14 +228,16 @@ func TextoUtil(texto string) bool {
 	return float64(comuns)/float64(len(palavras)) >= 0.04
 }
 
-// emBranco: menos de 0,2% de pixels escuros.
+// emBranco: menos de 0,2% de pixels escuros, ignorando a faixa inferior de
+// 12% da página, onde o SEI imprime o carimbo (que existe até em página vazia).
 func emBranco(img image.Image) bool {
 	b := img.Bounds()
-	escuros, total := 0, b.Dx()*b.Dy()
-	if total == 0 {
+	limite := b.Min.Y + b.Dy()*88/100
+	escuros, total := 0, b.Dx()*(limite-b.Min.Y)
+	if total <= 0 {
 		return true
 	}
-	for y := b.Min.Y; y < b.Max.Y; y++ {
+	for y := b.Min.Y; y < limite; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
 			if color.GrayModel.Convert(img.At(x, y)).(color.Gray).Y < 160 {
 				escuros++

@@ -95,11 +95,16 @@ func linhasNaoVazias(t string) []string {
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Println(`Uso: autos-mapa.exe "C:\caminho\do\processo.pdf"`)
+	args := os.Args[1:]
+	verEsqueleto := false
+	if len(args) > 0 && args[0] == "-esqueleto" {
+		verEsqueleto, args = true, args[1:]
+	}
+	if len(args) != 1 {
+		fmt.Println(`Uso: autos-mapa.exe [-esqueleto] "C:\caminho\do\processo.pdf"`)
 		os.Exit(2)
 	}
-	dados, err := os.ReadFile(os.Args[1])
+	dados, err := os.ReadFile(args[0])
 	if err != nil {
 		fmt.Println("Não foi possível ler o arquivo.")
 		os.Exit(1)
@@ -140,6 +145,26 @@ func main() {
 		fmt.Printf("%3d | %-10s | %s\n", p.Numero, sit, strings.Join(ms, " "))
 	}
 	fmt.Printf("\nnúmeros SEI distintos encontrados: %d\n", len(seis))
+	comCarimbo := 0
+	for _, p := range a.Paginas {
+		if len(p.Carimbos) > 0 {
+			comCarimbo++
+		}
+	}
+	nproc := map[string]bool{}
+	for _, p := range a.Paginas {
+		for _, c := range p.Carimbos {
+			nproc[c.Processo] = true
+		}
+	}
+	fmt.Printf("páginas com carimbo do SEI: %d de %d; processos diferentes nos carimbos: %d\n", comCarimbo, len(a.Paginas), len(nproc))
+	if verEsqueleto {
+		imprimirEsqueleto(a)
+	}
+	imprimirPecas(a)
+}
+
+func imprimirEsqueleto(a *autos.Autos) {
 
 	// Esqueleto do início e do fim de cada página (cabeçalhos, títulos, rodapés).
 	repet := map[string]int{}
@@ -176,13 +201,16 @@ func main() {
 		}
 	}
 	fmt.Println()
-	fmt.Println("Peças (segmentação atual):")
+}
+
+func imprimirPecas(a *autos.Autos) {
+	fmt.Println("\nPeças (segmentação atual):")
 	for _, pc := range segment.Segmentar(a) {
 		sei := "sem SEI"
 		if pc.SEI != "" {
 			sei = "SEI " + mascarar(pc.SEI)
 		}
-		fmt.Printf("  %s pp. %d-%d  %-26s %s externo=%v provável=%v\n", pc.ID, pc.PaginaInicial, pc.PaginaFinal, pc.Funcao, sei, pc.Externo, pc.Provavel)
+		fmt.Printf("  %s pp. %d-%d  %-24s %s provável=%v  [%s]\n", pc.ID, pc.PaginaInicial, pc.PaginaFinal, pc.Funcao, sei, pc.Provavel, esqueleto(pc.Titulo))
 	}
 	fmt.Println("\n== fim. Revise e cole este resultado na conversa. ==")
 }
