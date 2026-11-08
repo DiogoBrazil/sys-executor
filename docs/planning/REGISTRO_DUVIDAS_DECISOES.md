@@ -95,7 +95,7 @@
 | P-06 | Certificado Authenticode para assinar instaladores | V4 §34 | Instituição providencia; sem ele, o SmartScreen avisa | Média (F8) |
 | P-07 | Taxa OSMF do WiX Toolset v6/v7 para gerar `.msi` | Pesquisa de 08/11/2026 | Verificar se se aplica a uso institucional; contingência `msitools/wixl` | Média (F8) |
 | P-08 | Licença do Qwen2.5-3B-Instruct (provável "Qwen Research", diferente de Apache-2.0) | V4 §37 | **RESOLVIDA na F0:** Qwen Research License (não comercial) → **fora do catálogo**. Qwen3.5-2B/4B, Qwen3-4B-Instruct-2507 e Qwen3-Embedding-0.6B são Apache-2.0 (RELATORIO_FASE0 §4.5) | — |
-| P-09 | PDF consolidado real do SEI e mapeamento das telas | V4 §2.1 | PoC F0-08 rodada **pelo próprio usuário**, sem copiar dados sigilosos para o repositório. **Mapeamento das telas concluído em 08/11/2026** (RELATORIO_FASE0 §3). Falta: valor de `acao_ajax` e padrão de segmentação de um PDF consolidado real (observado localmente) | Alta (F2) |
+| P-09 | PDF consolidado real do SEI e mapeamento das telas | V4 §2.1 | Telas mapeadas (F0-08). Na F2: botão `btnGerar` informado pelo usuário; **faltam** o valor de `acao_ajax` e a saída do `autos-mapa` sobre um PDF real (calibra a segmentação) | Alta (fecha a F2) |
 | P-10 | Desempenho do pdfium-wasm em autos longos; Tesseract via stdin; flag `--no-webui`; exclusão do WER; fallback de fonte | Técnico | **RESOLVIDA:** pdfium-wasm OK (806 págs em 0,67 s); Tesseract stdin OK; `--no-webui` OK; fallback de fonte exige empacotar Liberation Serif (F0). **Exclusão do WER validada na F1** (`WerAddExcludedApplication` por usuário, conferida no registro e reversível) | — |
 | P-11 | Duplicidade real RDPM-RO.pdf × RDPM dentro da Coletânea (2015, versão anterior ao Dec. 24.965/2020) | V4 §40.6 | Tela de decisão manter/substituir no bootstrap; o usuário escolhe | Média (F5) |
 
@@ -119,7 +119,12 @@ Se o usuário discordar de alguma interpretação I-xx, ela será corrigida nest
 | PT-F1-02 | Serviços expostos à interface **nunca devolvem `error`**; devolvem `Resposta{visao, erro}` com o erro do catálogo | O Wails envia `err.Error()` ao JavaScript, o que exporia a causa técnica (V4 §33) | F1 |
 | PT-F1-03 | Pasta de dados do WebView2 própria, restrita ao usuário, esvaziada na abertura e, no encerramento, por uma cópia do executável em modo "faxina" que espera o app terminar | Os processos do WebView2 só soltam os arquivos depois que o app encerra (SEG-LOG-01) | F1 |
 | PT-F1-04 | Escolher "Acessar o SEI/RO" mostra o aviso TAR-004 e mantém a tarefa na escolha de entrada até a Fase 2 | Não simular funcionalidade inexistente (V4 §33) | F1 |
-| PT-F1-05 | Etapa de processamento sem implementação encerra a tarefa com TAR-004 e descarta os temporários | Nunca simular sucesso | F1 |
+| PT-F1-05 | Etapa de processamento sem implementação encerra a tarefa com TAR-004 e descarta os temporários | Nunca simular sucesso | F1 (substituída por PT-F2-04) |
+| PT-F2-01 | Índice de busca dos autos só em memória (SQLite `:memory:`) | Um arquivo SQLite guardaria o texto dos autos em claro, contornando a cifra da sessão | F2 |
+| PT-F2-02 | A guarda do SEI aplica a lista de ações a qualquer tipo de recurso nos controladores | Uma imagem apontando para `controlador.php?acao=…` também executaria a ação | F2 |
+| PT-F2-03 | Falha no SEI devolve à escolha da entrada com aviso, mantendo o tipo | T03 e V4 §30.3: oferecer o envio do PDF sem reiniciar | F2 |
+| PT-F2-04 | Etapa de fase futura pára a tarefa com o aviso TAR-004, sem destruí-la | Permite consultar autos, cobertura e fontes; nada é simulado | F2 |
+| PT-F2-05 | Edge sem janela (`--headless=new`), sem disfarçar o agente do navegador | Credenciais digitadas no app (V4 §33); janela visível só para diagnóstico | F2 |
 
 ## 4. Histórico
 - 08/11/2026: criado o registro e respondidas D-01…D-07 durante o planejamento. Plano aprovado como planejamento, sem autorização de código.
@@ -127,3 +132,4 @@ Se o usuário discordar de alguma interpretação I-xx, ela será corrigida nest
 - 08/11/2026 (após a Fase 0): D-08 (não repetir o teste Vulkan) e D-09 (11 ajustes aprovados) registradas; plano e ADRs atualizados. F0-08 (SEI) segue com o usuário.
 - 08/11/2026 (~14:45): F0-08 executada pelo usuário (login, 2FA, sigiloso, gerar PDF). Reautenticação de sigiloso segue a V4 §§13/33: pedir a senha de novo, sem reter. Fase 0 encerrada.
 - 08/11/2026: Fase 1 (Fundação) executada com autorização do usuário. P-10 resolvida (WER). Decisões técnicas PT-F1-01…05 registradas. Resultados em `RELATORIO_FASE1.md`.
+- 08/11/2026: Fase 2 implementada e testada com Edge, Tesseract e pdfium reais (`RELATORIO_FASE2.md`). PT-F2-01…05 registradas. Fechamento aguarda `acao_ajax`, `autos-mapa` sobre PDF real e teste com o SEI real.

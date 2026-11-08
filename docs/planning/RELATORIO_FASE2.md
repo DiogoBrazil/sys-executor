@@ -1,0 +1,60 @@
+# RELATÓRIO DA FASE 2 — INGESTÃO DOS AUTOS (sys-executor)
+
+- **Data:** 08/11/2026
+- **Autorização:** expressa do usuário ("Pode seguir com a fase 2"), incluindo o push da branch `development`.
+- **Escopo:** F2-01 a F2-07 (plano §16): envio do PDF, extração (pdfium), OCR, segmentação e função documental, evidências/busca/cobertura, visualizador com realce e cliente SEI com guarda.
+- **Situação:** implementação concluída e testada com componentes reais (Edge, Tesseract, pdfium). **Faltam três validações do usuário** com dados reais (§4).
+
+## 1. Critérios de saída (PLANO_TESTES_ACEITACAO §12)
+
+| Critério | Verificação | Resultado |
+|---|---|---|
+| **A01/D1, A02/D2** — "Manifestação" antes/depois da instrução | `segment`: cronologia decidida pelo Go (D-09.5): antes do 1º termo → defesa prévia **provável**; depois do último → alegações finais **prováveis**; entre termos → indeterminada (pergunta na F4). Fixture SEI sintética de ponta a ponta no pipeline | **OK** |
+| **A03** — datas divergentes em peças diferentes | `autos.Datas()`: todas as menções preservadas com página e posição (numéricas, por nome do mês, por extenso); as de OCR ficam "não confirmadas" (D-09.3). Resolver/perguntar é da Fase 4 | **OK (base determinística)** |
+| **A04** — peça essencial ilegível | Mapa de cobertura marca ILEGÍVEL/OCR_BAIXO por página e por peça; peça central ilegível gera pergunta (T06). Pergunta para outras peças essenciais: Fase 4 | **Parcial (F4 completa)** |
+| **A05/A06** — oitiva com/sem SEI | Peça guarda o número SEI ou é marcada como documento externo; a interface abre a página. A redação da citação é da Fase 6 | **OK (parte de ingestão)** |
+| **A08** — mídia citada e não incorporada | `segment.DetectarMidias` (vídeo, gravação, câmera, áudio, mídia, videoconferência, link externo…) com página e posição; painel "Mídias mencionadas". A pergunta por descrição/transcrição é da Fase 4 | **OK (detecção)** |
+| **T02** — upload sem credencial | Nenhum estado SEI no histórico; nenhum campo de senha no fluxo | **OK** |
+| **T03** — SEI sem internet | Edge real contra porta fechada → REDE-001; a tarefa volta à escolha da entrada com o aviso e o tipo preservado; o envio do PDF segue | **OK** |
+| **T04** — PADS escolhido, PDF de SR (e o inverso) | Pergunta "Os autos parecem ser de…", sem trocar o tipo; opções: enviar outro PDF, continuar, cancelar | **OK** |
+| **T05** — PADS com portaria de SR anexa | Memorando encontrado → compatível, mesmo com a portaria depois | **OK** |
+| **T06** — peça instauradora ilegível | Pergunta pedindo versão legível | **OK** |
+| **T17 / ING-COB-01** — autos longos, cobertura exata | PDF sintético de **800 páginas** (3 em branco, 5 só com desenho) processado em **0,4 s**: 792 lidas, 3 vazias, 5 ilegíveis, nenhuma página fora de peça; progresso real em páginas | **OK** |
+| **UI-SRC-01** — clique abre a página com realce | PDF servido por token da tarefa e sem cache; `Destaque` devolve as caixas do trecho (pdfium/OCR) e o PDF.js desenha o realce; sem posição, abre só a página | **OK** (realce testado no backend; visualizador validado por build e tipos) |
+| **SEG13-01 / 02** — OTP e reautenticação | Edge real + simulador: código pedido ao usuário; processo sigiloso pede **só a senha, de novo**; segredos nunca aparecem nas visões enviadas à interface (teste com senha sentinela) | **OK** |
+| **SEG13-07** — ação de escrita no SEI | Guarda CDP deny-by-default; o simulador tenta link, `<img>` e `fetch` para ações de escrita e alteração de 2FA: **nenhuma chegou ao servidor** | **OK** |
+
+Ambiente: suíte Go completa nativa no Windows 11 do usuário (13 pacotes), com **Edge** (sem janela) e **Tesseract 5.4** reais — OCR da página escaneada da fixture com confiança 96,3%. CI no GitHub (Linux e Windows).
+
+## 2. O que foi construído
+
+| Tarefa | Entrega |
+|---|---|
+| F2-01 Upload | Diálogo nativo; PDF lido para a memória e gravado cifrado na sessão; PDF vazio/inválido mantém a tarefa aguardando; protegido (PDF-004) ou corrompido (PDF-003) volta ao envio com alerta, sem perder o tipo |
+| F2-02 pdfium | `internal/ingest/pdf`: go-pdfium em WebAssembly (sem CGO), texto com caixas em pontos (origem no topo) e renderização |
+| F2-03 OCR | `internal/ingest/ocr`: Tesseract por stdin/stdout (sem temporários), TSV com caixas e confiança; `internal/ingest/autos`: OCR só onde não há texto útil, página em branco detectada sem OCR, OCR em paralelo |
+| F2-04 Segmentação | `internal/ingest/segment`: limites por número SEI, título e mudança nativo/escaneado; 18 funções documentais; cronologia pelo Go; compatibilidade T04–T06; mídias |
+| F2-05 Evidências | Texto por página com fragmentos posicionados; datas mencionadas; índice FTS5 **em memória** (nada dos autos em disco em claro); resumo para a interface sem texto dos autos |
+| F2-06 Visualizador | PDF.js 6.4.299 (carregado sob demanda), realce, navegação e busca; painel de peças, cobertura e mídias |
+| F2-07 SEI | `internal/sei`: chromedp sobre o Edge instalado, sem janela; perfil e download na pasta da sessão; guarda deny-by-default; login, 2FA, pesquisa, reautenticação, geração e download; erros mapeados (SEI-001…008, REDE-001); simulador fictício `internal/testutil/seisim` |
+| Tarefa | Perguntas pontuais; pedidos de dados ao usuário (credenciais, código, senha); erro recuperável; parada explícita (TAR-004) nas etapas de fases futuras, preservando a consulta aos autos; sessão apagada só depois que a etapa em execução para |
+
+## 3. Decisões técnicas (registradas no REGISTRO como PT-F2-xx)
+
+1. **PT-F2-01** Índice de busca dos autos só em memória (SQLite `:memory:`), não um arquivo temporário: o arquivo guardaria o texto em claro e contornaria a cifra da sessão.
+2. **PT-F2-02** A guarda do SEI aplica a lista de ações a **qualquer tipo de recurso** nos controladores (`controlador.php`, `controlador_ajax.php`): uma `<img src="controlador.php?acao=…">` também executaria a ação.
+3. **PT-F2-03** Toda falha do SEI devolve a tarefa à escolha da entrada, com o aviso e o tipo preservados, para o usuário enviar o PDF.
+4. **PT-F2-04** Etapa de fase futura **pára** a tarefa com aviso (não a destrói): o usuário consulta os autos e cancela quando quiser. Substitui o comportamento da F1 (falha imediata).
+5. **PT-F2-05** Edge **sem janela** (`--headless=new`), sem disfarçar o agente do navegador; `SYSEXEC_SEI_VISIVEL=1` mostra a janela para diagnóstico.
+
+## 4. Pendências que dependem do usuário
+
+1. **`acao_ajax`**: valor da chamada `controlador_ajax.php` disparada ao clicar no ícone PDF (DevTools → Rede). Até lá a guarda bloqueia qualquer `acao_ajax`; se a chamada for necessária, a geração falha com "Tela do SEI não reconhecida" e o app oferece o envio do PDF.
+2. **P-09 — estrutura de um PDF real**: rodar `autos-mapa.exe` sobre um PDF consolidado real e colar o resultado (só estrutura, sem texto, dígitos mascarados) para calibrar a segmentação, hoje baseada numa suposição de rodapé "Referência: Processo nº … SEI nº …".
+3. **Teste com o SEI real** no app (pacote de teste em `Documentos\sys-executor-teste`).
+
+## 5. Limitações conhecidas
+
+- A senha digitada chega ao Go como `string` (Wails) antes de virar `[]byte`; essa cópia não pode ser zerada (V4 §33 reconhece o limite da limpeza de memória gerenciada).
+- O componente do visualizador (PDF.js) não tem teste E2E automatizado: o realce é validado no backend; a interface, por build e tipos.
+- Tesseract empacotado no teste é o da F0 (com DLLs GPL/LGPL); a recompilação sem elas (D-09.7) é da Fase 8.
