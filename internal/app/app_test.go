@@ -73,10 +73,11 @@ func TestFluxoUploadPeloServico(t *testing.T) {
 	}
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
-		if v := s.Atual().Visao; v != nil && v.Terminal {
+		if v := s.Atual().Visao; v != nil && v.Parada {
 			if v.Erro == nil || v.Erro.Codigo != "TAR-004" {
 				t.Fatalf("%+v", v)
 			}
+			s.Cancelar()
 			if r := s.Descartar(); r.Erro != nil || s.Atual().Visao != nil {
 				t.Fatal("descartar deveria voltar ao início")
 			}

@@ -81,7 +81,7 @@ var transicoes = map[Estado][]Estado{
 	// Upload: o usuário pode voltar e escolher o SEI enquanto não enviou o PDF.
 	RecebendoUpload: {TipoEscolhido, Verificando},
 
-	Verificando:       {Extraindo},
+	Verificando:       {Extraindo, RecebendoUpload}, // PDF corrompido/protegido: pedir outro
 	Extraindo:         {Classificando},
 	Classificando:     {Compatibilidade},
 	Compatibilidade:   {Delimitando},

@@ -1,0 +1,132 @@
+package pdf
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"strings"
+	"sync"
+	"testing"
+
+	"github.com/DiogoBrazil/sys-executor/internal/erros"
+)
+
+var (
+	extOnce sync.Once
+	ext     Extrator
+)
+
+// extrator compartilhado: o runtime WebAssembly leva ~2 s para iniciar.
+func extrator(t *testing.T) Extrator {
+	t.Helper()
+	extOnce.Do(func() { ext = NovoExtrator() })
+	return ext
+}
+
+func TestMain(m *testing.M) {
+	c := m.Run()
+	if ext != nil {
+		_ = ext.Fechar()
+	}
+	os.Exit(c)
+}
+
+func abrirFixture(t *testing.T, nome string) Documento {
+	t.Helper()
+	b, err := os.ReadFile("../../../testdata/autos/" + nome)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := extrator(t).Abrir(context.Background(), b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(d.Fechar)
+	return d
+}
+
+func TestCoordenadasNoTopoEsquerdo(t *testing.T) {
+	d := abrirFixture(t, "coordenadas.pdf")
+	if d.Paginas() != 2 {
+		t.Fatalf("páginas: %d", d.Paginas())
+	}
+	p, err := d.Pagina(context.Background(), 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Largura < 590 || p.Largura > 600 || p.Altura < 838 || p.Altura > 845 {
+		t.Fatalf("A4 esperado, veio %.1fx%.1f", p.Largura, p.Altura)
+	}
+	var topo, base *Trecho
+	for i := range p.Trechos {
+		tr := &p.Trechos[i]
+		if strings.Contains(tr.Texto, "TOPO") {
+			topo = tr
+		}
+		if strings.Contains(tr.Texto, "BASE") {
+			base = tr
+		}
+		if tr.Caixa.X0 >= tr.Caixa.X1 || tr.Caixa.Y0 >= tr.Caixa.Y1 {
+			t.Errorf("caixa degenerada: %+v", tr)
+		}
+	}
+	if topo == nil || base == nil {
+		t.Fatalf("trechos não encontrados: %+v", p.Trechos)
+	}
+	// Margem de 2 cm ≈ 56,7 pt.
+	if topo.Caixa.Y0 > 80 || topo.Caixa.X0 > 70 {
+		t.Errorf("TOPO deveria estar no alto à esquerda: %+v", topo.Caixa)
+	}
+	if base.Caixa.Y1 < p.Altura-80 || base.Caixa.X1 < p.Largura-80 {
+		t.Errorf("BASE deveria estar embaixo à direita: %+v", base.Caixa)
+	}
+	vazia, err := d.Pagina(context.Background(), 1)
+	if err != nil || len(vazia.Trechos) != 0 {
+		t.Fatalf("página 2 deveria ser vazia: %+v %v", vazia.Trechos, err)
+	}
+	img, err := d.Renderizar(context.Background(), 0, 72)
+	if err != nil || img.Bounds().Dx() < 590 || img.Bounds().Dx() > 600 {
+		t.Fatalf("render: %v %v", img.Bounds(), err)
+	}
+}
+
+func TestErrosDeAbertura(t *testing.T) {
+	_, err := extrator(t).Abrir(context.Background(), []byte("%PDF-1.7\nlixo sem estrutura"))
+	if !errors.Is(err, erros.Novo(erros.PDFCorrompido)) {
+		t.Fatalf("esperado PDF-003, veio %v", err)
+	}
+	if _, err := extrator(t).Abrir(context.Background(), pdfComSenha()); !errors.Is(err, erros.Novo(erros.PDFProtegido)) {
+		t.Fatalf("esperado PDF-004, veio %v", err)
+	}
+}
+
+// pdfComSenha monta um PDF mínimo com /Encrypt (RC4 40 bits) cujo valor /U não
+// confere com a senha vazia: o leitor precisa pedir senha.
+func pdfComSenha() []byte {
+	var b strings.Builder
+	offs := []int{}
+	obj := func(s string) { offs = append(offs, b.Len()); b.WriteString(s) }
+	b.WriteString("%PDF-1.4\n")
+	obj("1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n")
+	obj("2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n")
+	obj("3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\n")
+	h := strings.Repeat("A1", 32)
+	obj("4 0 obj<</Filter/Standard/V 1/R 2/O<" + h + ">/U<" + h + ">/P -4>>endobj\n")
+	xref := b.Len()
+	fmt.Fprintf(&b, "xref\n0 %d\n0000000000 65535 f \n", len(offs)+1)
+	for _, o := range offs {
+		fmt.Fprintf(&b, "%010d 00000 n \n", o)
+	}
+	fmt.Fprintf(&b, "trailer<</Size %d/Root 1 0 R/Encrypt 4 0 R/ID[<00112233445566778899AABBCCDDEEFF><00112233445566778899AABBCCDDEEFF>]>>\nstartxref\n%d\n%%%%EOF\n", len(offs)+1, xref)
+	return []byte(b.String())
+}
+
+func TestContextoCancelado(t *testing.T) {
+	d := abrirFixture(t, "coordenadas.pdf")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := d.Pagina(ctx, 0); !errors.Is(err, context.Canceled) {
+		t.Fatalf("esperado cancelamento, veio %v", err)
+	}
+}

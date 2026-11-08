@@ -6,16 +6,19 @@ import "github.com/DiogoBrazil/sys-executor/internal/erros"
 // pela IA nem conteúdo dos autos: só estado, etapas, progresso mensurável e
 // erro do catálogo (V4 §31.1; T07).
 type Visao struct {
-	ID        string     `json:"id"`
-	Tipo      Tipo       `json:"tipo"`
-	Entrada   Entrada    `json:"entrada"`
-	Estado    Estado     `json:"estado"`
-	Descricao string     `json:"descricao"`
-	Terminal  bool       `json:"terminal"`
-	Etapas    []Marco    `json:"etapas"`
-	Progresso *Progresso `json:"progresso"` // nil quando não há métrica real
-	Erro      *ErroVisao `json:"erro"`
-	Aviso     *ErroVisao `json:"aviso"` // ex.: limpeza incompleta (SES-003)
+	ID        string         `json:"id"`
+	Tipo      Tipo           `json:"tipo"`
+	Entrada   Entrada        `json:"entrada"`
+	Estado    Estado         `json:"estado"`
+	Descricao string         `json:"descricao"`
+	Terminal  bool           `json:"terminal"`
+	Etapas    []Marco        `json:"etapas"`
+	Progresso *Progresso     `json:"progresso"` // nil quando não há métrica real
+	Erro      *ErroVisao     `json:"erro"`      // terminal: motivo; ativa: alerta da última etapa
+	Aviso     *ErroVisao     `json:"aviso"`     // ex.: limpeza incompleta (SES-003)
+	Pergunta  *PerguntaVisao `json:"pergunta"`
+	Autos     *ResumoAutos   `json:"autos"`
+	Parada    bool           `json:"parada"` // processamento parado aguardando versão futura (TAR-004)
 }
 
 // Situacao de uma etapa da linha do tempo.

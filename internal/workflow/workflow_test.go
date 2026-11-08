@@ -224,18 +224,21 @@ func TestT02UploadNaoPassaPeloSEI(t *testing.T) {
 	if _, err := g.ReceberUpload(pdfMinimo); err != nil {
 		t.Fatal(err)
 	}
-	v := esperar(t, g, func(v *Visao) bool { return v != nil && v.Terminal })
+	v := esperar(t, g, func(v *Visao) bool { return v != nil && v.Parada })
 	for _, e := range g.Historico() {
 		if strings.HasPrefix(string(e), "SEI_") {
 			t.Fatalf("T02: upload passou por %s", e)
 		}
 	}
-	// Sem etapa de extração registrada nesta fase: falha explícita, sem simular sucesso.
-	if v.Estado != Falha || v.Erro == nil || v.Erro.Codigo != string(erros.TarefaEtapaIndisponiv) {
-		t.Fatalf("esperado FALHA/TAR-004, veio %+v", v)
+	// Sem etapa registrada: pára com alerta explícito, sem simular sucesso nem destruir a tarefa.
+	if v.Estado != Verificando || v.Terminal || v.Erro == nil || v.Erro.Codigo != string(erros.TarefaEtapaIndisponiv) {
+		t.Fatalf("esperado parada com TAR-004, veio %+v", v)
 	}
-	if n := pastasDeSessao(t, raiz); n != 0 {
-		t.Fatalf("falha deve apagar a sessão; restam %d", n)
+	if n := pastasDeSessao(t, raiz); n != 1 {
+		t.Fatalf("a sessão deve continuar disponível para consulta; há %d", n)
+	}
+	if _, err := g.Cancelar(); err != nil || pastasDeSessao(t, raiz) != 0 {
+		t.Fatal("cancelar deve apagar a sessão")
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -364,5 +367,107 @@ func TestEncerrarAppComTarefaAtiva(t *testing.T) {
 	}
 	if n := pastasDeSessao(t, raiz); n != 0 {
 		t.Fatalf("restam %d sessões", n)
+	}
+}
+
+// ---------- perguntas e erros recuperáveis ----------
+
+type dadosTeste struct{ liberado *bool }
+
+func (d dadosTeste) Liberar() { *d.liberado = true }
+
+func TestPerguntaRespostaEDestinos(t *testing.T) {
+	liberado := false
+	var execucoes int
+	etapas := map[Estado]Etapa{
+		Verificando: func(ctx context.Context, c *Contexto) (Estado, error) {
+			c.Dados = dadosTeste{liberado: &liberado}
+			return Extraindo, nil
+		},
+		Extraindo:     func(ctx context.Context, c *Contexto) (Estado, error) { return Classificando, nil },
+		Classificando: func(ctx context.Context, c *Contexto) (Estado, error) { return Compatibilidade, nil },
+		Compatibilidade: func(ctx context.Context, c *Contexto) (Estado, error) {
+			execucoes++
+			if r, ok := c.Resposta("compat"); ok && r == "continuar" {
+				return Delimitando, nil
+			}
+			c.Perguntar(Pergunta{ID: "compat", Titulo: "Os autos parecem ser de SR", Opcoes: []Opcao{
+				{ID: "continuar", Rotulo: "Continuar como PADS"},
+				{ID: "outro", Rotulo: "Enviar outro PDF", Destino: RecebendoUpload},
+				{ID: "cancelar", Rotulo: "Cancelar", Destino: Cancelada},
+			}})
+			return AguardandoEsclarecimento, nil
+		},
+	}
+	g, _, raiz := novo(t, etapas)
+	_, _ = g.Iniciar()
+	_, _ = g.EscolherTipo(TipoPADS)
+	_, _ = g.EscolherEntrada(EntradaUpload)
+	_, _ = g.ReceberUpload(pdfMinimo)
+	v := esperar(t, g, func(v *Visao) bool { return v.Estado == AguardandoEsclarecimento })
+	if v.Pergunta == nil || v.Pergunta.ID != "compat" || len(v.Pergunta.Opcoes) != 3 || v.Tipo != TipoPADS {
+		t.Fatalf("pergunta: %+v", v.Pergunta)
+	}
+	if _, err := g.Responder("compat", "inexistente"); codigo(err) != erros.TarefaOrdemInvalida {
+		t.Fatal("opção inválida deve ser rejeitada")
+	}
+	if _, err := g.Responder("outra", "continuar"); codigo(err) != erros.TarefaOrdemInvalida {
+		t.Fatal("pergunta errada deve ser rejeitada")
+	}
+	// "Enviar outro PDF": volta ao upload, mantendo o tipo; dados liberados ao receber o novo PDF.
+	if v, _ = g.Responder("compat", "outro"); v.Estado != RecebendoUpload || v.Tipo != TipoPADS || v.Pergunta != nil {
+		t.Fatalf("%+v", v)
+	}
+	_, _ = g.ReceberUpload(pdfMinimo)
+	if !liberado {
+		t.Fatal("dados da análise anterior deveriam ser liberados")
+	}
+	esperar(t, g, func(v *Visao) bool { return v.Estado == AguardandoEsclarecimento })
+	// "Continuar": a etapa que perguntou roda de novo e lê a resposta.
+	_, _ = g.Responder("compat", "continuar")
+	v = esperar(t, g, func(v *Visao) bool { return v.Parada })
+	if v.Estado != Delimitando || execucoes != 3 {
+		t.Fatalf("%+v execucoes=%d", v, execucoes)
+	}
+	if pastasDeSessao(t, raiz) != 1 {
+		t.Fatal("sessão deve existir enquanto a tarefa está parada")
+	}
+}
+
+func TestPerguntaCancelar(t *testing.T) {
+	etapas := map[Estado]Etapa{
+		Verificando: func(ctx context.Context, c *Contexto) (Estado, error) { return Extraindo, nil },
+		Extraindo:   func(ctx context.Context, c *Contexto) (Estado, error) { return Classificando, nil },
+		Classificando: func(ctx context.Context, c *Contexto) (Estado, error) {
+			c.Perguntar(Pergunta{ID: "p", Opcoes: []Opcao{{ID: "c", Destino: Cancelada}}})
+			return AguardandoEsclarecimento, nil
+		},
+	}
+	g, _, raiz := novo(t, etapas)
+	_, _ = g.Iniciar()
+	_, _ = g.EscolherTipo(TipoSR)
+	_, _ = g.EscolherEntrada(EntradaUpload)
+	_, _ = g.ReceberUpload(pdfMinimo)
+	esperar(t, g, func(v *Visao) bool { return v.Estado == AguardandoEsclarecimento })
+	if v, _ := g.Responder("p", "c"); v.Estado != Cancelada || pastasDeSessao(t, raiz) != 0 {
+		t.Fatalf("%+v", v)
+	}
+}
+
+// PDF protegido/corrompido: volta ao upload com alerta, sem perder o tipo.
+func TestErroRecuperavelVoltaAoUpload(t *testing.T) {
+	etapas := map[Estado]Etapa{
+		Verificando: func(ctx context.Context, c *Contexto) (Estado, error) {
+			return RecebendoUpload, erros.Novo(erros.PDFProtegido)
+		},
+	}
+	g, _, _ := novo(t, etapas)
+	_, _ = g.Iniciar()
+	_, _ = g.EscolherTipo(TipoSR)
+	_, _ = g.EscolherEntrada(EntradaUpload)
+	_, _ = g.ReceberUpload(pdfMinimo)
+	v := esperar(t, g, func(v *Visao) bool { return v.Estado == RecebendoUpload })
+	if v.Terminal || v.Tipo != TipoSR || v.Erro == nil || v.Erro.Codigo != "PDF-004" {
+		t.Fatalf("%+v", v)
 	}
 }
