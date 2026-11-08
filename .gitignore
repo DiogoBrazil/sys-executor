@@ -1,0 +1,6 @@
+# Dependências e artefatos de build das PoCs
+node_modules/
+poc/wails/frontend/dist/
+poc/wails/bin/
+*.exe
+*.db
