@@ -508,8 +508,27 @@ func (s *sessaoNavegador) avaliarBool(js string) error {
 	return nil
 }
 
+// preencher digita o valor no campo como um teclado (keydown/char/keyup):
+// o campo de senha do SEI/RO ignora valores definidos por script ("Informe a
+// Senha", visto no 1º teste real). Se a digitação não chegar ao campo, cai no
+// preenchimento por script. Listas de seleção são sempre por script.
 func (s *sessaoNavegador) preencher(nome, valor string) error {
 	s.ultimoDialogo()
+	if nome != "selOrgao" {
+		n, _ := json.Marshal(nome)
+		if s.avaliarBool(fmt.Sprintf(jsFocar, n)) == nil {
+			if _, err := chromedp.Run(s.ctx, chromedp.KeyEvent(valor)); err == nil {
+				tam, err := chromedp.Run(s.ctx, chromedp.Evaluate[int](fmt.Sprintf(jsTamanho, n)))
+				if err == nil && tam == len([]rune(valor)) {
+					return nil
+				}
+			}
+		}
+	}
+	return s.preencherPorScript(nome, valor)
+}
+
+func (s *sessaoNavegador) preencherPorScript(nome, valor string) error {
 	n, _ := json.Marshal(nome)
 	v, _ := json.Marshal(valor)
 	return s.avaliarBool(fmt.Sprintf(jsPreencher, n, v))

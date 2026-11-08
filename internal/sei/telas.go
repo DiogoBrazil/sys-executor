@@ -73,6 +73,22 @@ var jsPreencher = script(`((nome, valor) => {
   return true;
 })(%s, %s)`)
 
+// jsFocar põe o foco no campo (pelo name) e o esvazia, para a digitação real.
+var jsFocar = script(`((nome) => {
+  const c = __campo(nome);
+  if (!c) return false;
+  c.focus();
+  c.value = '';
+  c.dispatchEvent(new Event('input', { bubbles: true }));
+  return c.ownerDocument.activeElement === c;
+})(%s)`)
+
+// jsTamanho devolve só o tamanho do valor do campo (a senha nunca é lida de volta).
+var jsTamanho = script(`((nome) => {
+  const c = __campo(nome);
+  return c ? c.value.length : -1;
+})(%s)`)
+
 // jsClicar aciona o elemento cujo rótulo (texto, value, title ou alt) é o dado.
 // Uma imagem dentro de link aciona o link.
 var jsClicar = script(`((alvo) => {

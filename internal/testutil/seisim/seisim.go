@@ -202,13 +202,28 @@ func formValidar(usuario string) string {
 func (s *Simulador) login(w http.ResponseWriter, r *http.Request) {
 	formLogin := func(msg string) {
 		pagina(w, "SEI / RO", msg+`
-<form method="post" action="/sip/login.php?sigla_orgao_sistema=RO&sigla_sistema=SEI">
-  <input type="text" name="txtUsuario"> <input type="password" name="pwdSenha"> <input type="text" name="pwdSenha" style="display:none">
+<form id="frmLogin" method="post" action="/sip/login.php?sigla_orgao_sistema=RO&sigla_sistema=SEI">
+  <input type="text" name="txtUsuario"> <input type="password" id="pwdSenha" name="pwdSenha"> <input type="text" id="pwdSenhaVis" name="pwdSenha" style="display:none">
   <select name="selOrgao"><option value="0">Selecione</option><option value="10">PM</option><option value="11">SESDEC</option></select>
   <input type="hidden" name="hdnAcao" value="2">
   <button type="submit" name="sbmLogin">ACESSAR</button>
   <a href="#">Entrar com gov.br</a> <a href="#">Autenticação em dois fatores</a>
-</form>`)
+</form>
+<script>
+// Como no SEI/RO real (1º teste do usuário): a senha só conta se for digitada.
+let digitada = '';
+const pw = document.getElementById('pwdSenha');
+pw.addEventListener('keydown', e => {
+  if (e.key && e.key.length === 1) digitada += e.key;
+  else if (e.key === 'Backspace') digitada = digitada.slice(0, -1);
+});
+pw.addEventListener('focus', () => { digitada = ''; });
+document.getElementById('frmLogin').addEventListener('submit', e => {
+  if (!digitada) { e.preventDefault(); alert('Informe a Senha.'); return; }
+  pw.value = digitada;
+  document.getElementById('pwdSenhaVis').value = digitada;
+});
+</script>`)
 	}
 	formOTP := func(msg string) {
 		pagina(w, "SEI / RO", msg+`
