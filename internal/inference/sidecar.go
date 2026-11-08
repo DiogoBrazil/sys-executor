@@ -303,10 +303,19 @@ func (s *Servidor) post(ctx context.Context, caminho string, corpo any, destino 
 		if !s.Vivo() {
 			return s.erroMorte("terminou durante o pedido")
 		}
+		if errors.Is(ctx.Err(), context.Canceled) {
+			return ctx.Err() // cancelamento pela tarefa
+		}
+		// A conexão pode cair antes de o Wait registrar a morte do processo.
+		select {
+		case <-s.morto:
+			return s.erroMorte("terminou durante o pedido")
+		case <-time.After(2 * time.Second):
+		}
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return erros.Com(erros.ModeloTravado, errors.New("tempo do pedido esgotado"))
 		}
-		return err
+		return erros.Com(erros.ModeloTravado, err)
 	}
 	defer r.Body.Close()
 	corpoResp, err := io.ReadAll(io.LimitReader(r.Body, 32<<20))
