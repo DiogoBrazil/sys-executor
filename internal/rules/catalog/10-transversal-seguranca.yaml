@@ -1,0 +1,83 @@
+# 10. Transversal — segurança
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: TRV-SEG-001
+  origem: "§§2.1, 33"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA]
+  enunciado: "Credenciais solicitadas a cada tarefa, só em memória, nunca persistidas; limpeza como melhor esforço"
+  modulo: "session.Credenciais"
+  testes: ["T13", "SEG-CRED-01"]
+  versao: 1
+
+- id: TRV-SEG-002
+  origem: "§§2.1, 13"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA, UI]
+  enunciado: "OTP/2FA e reautenticação legítimos; sem contorno"
+  modulo: "sei"
+  testes: ["SEG13-01", "SEG13-02"]
+  versao: 1
+
+- id: TRV-SEG-003
+  origem: "§§1.2, 33"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA]
+  enunciado: "Sem módulo de logs persistentes; diagnóstico em memória sem dados processuais"
+  modulo: "app logger; sidecars sem log"
+  testes: ["SEG-LOG-01"]
+  versao: 1
+
+- id: TRV-SEG-004
+  origem: "§33"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [UI]
+  enunciado: "Erros abrangentes, claros e amigáveis; sem segredos; sem simular sucesso"
+  modulo: "catálogo de erros"
+  testes: ["ERR-01", "ERR-02", "ERR-03", "ERR-04", "ERR-05", "ERR-06", "ERR-07", "ERR-08", "ERR-09", "ERR-10", "ERR-11", "ERR-12", "ERR-13", "ERR-14", "ERR-15"]
+  versao: 1
+
+- id: TRV-SEG-005
+  origem: "§§2.2, 33, 41"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA]
+  enunciado: "Nada sigiloso em buscas públicas"
+  modulo: "legal/web.Sanitizador"
+  testes: ["T20", "SEG-WEB-01"]
+  versao: 1
+
+- id: TRV-SEG-006
+  origem: "§36.2"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA]
+  enunciado: "Sem envio de autos a provedores externos de IA"
+  modulo: "inference (somente loopback)"
+  testes: ["SEG-NET-01"]
+  versao: 1
+
+- id: TRV-SEG-007
+  origem: "PT"
+  fluxo: TRV
+  rotulo: [PROPOSTA]
+  tipo: [SEGURANCA]
+  enunciado: "Sidecar em loopback, porta aleatória, API key, Job Object"
+  modulo: "inference.Sidecar"
+  testes: ["SEG-SID-01"]
+  versao: 1
+
+- id: TRV-SEG-008
+  origem: "PT"
+  fluxo: TRV
+  rotulo: [PROPOSTA, A_VALIDAR]
+  tipo: [SEGURANCA]
+  enunciado: "Cache do WebView2/Edge e dumps mitigados"
+  modulo: "platform/win"
+  testes: ["SEG-CACHE-01", "SEG-WER-01"]
+  versao: 1

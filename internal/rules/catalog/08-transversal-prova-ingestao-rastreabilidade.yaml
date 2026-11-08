@@ -1,0 +1,143 @@
+# 8. Transversal — prova, ingestão, rastreabilidade
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: TRV-ING-001
+  origem: "§§2.2, 16.1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, DETERMINISTICA]
+  enunciado: "Classificar peças pela função documental (conteúdo + cronologia), não pelo título"
+  modulo: "ingest/segment"
+  testes: ["A01", "A02", "D1", "D2"]
+  versao: 1
+
+- id: TRV-ING-002
+  origem: "§16.1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA]
+  enunciado: "Classificação incerta e material → perguntar"
+  modulo: "workflow"
+  testes: ["A01-AMB"]
+  versao: 1
+
+- id: TRV-ING-003
+  origem: "§§16.3, 12.1-6"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, PERGUNTA]
+  enunciado: "OCR quando necessário; baixa confiança sinalizada; peça essencial ilegível → pedir versão legível"
+  modulo: "ingest/ocr"
+  testes: ["A04", "T06"]
+  versao: 1
+
+- id: TRV-ING-004
+  origem: "§39"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Autos extensos em etapas; texto integral preservado por página e peça; resumos só auxiliares"
+  modulo: "ingest/evidence; orchestrator"
+  testes: ["T17"]
+  versao: 1
+
+- id: TRV-ING-005
+  origem: "§39"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, UI]
+  enunciado: "Cobertura de páginas e peças; nada é ignorado silenciosamente"
+  modulo: "ingest/evidence.Cobertura"
+  testes: ["T17", "ING-COB-01"]
+  versao: 1
+
+- id: TRV-ING-006
+  origem: "§39"
+  fluxo: TRV
+  rotulo: [APROVADO, A_VALIDAR]
+  tipo: [ARQUITETURA]
+  enunciado: "Busca vetorial temporária dos autos opcional; não obrigatória"
+  modulo: "ingest/evidence"
+  testes: ["BEN-RAG-01"]
+  versao: 1
+
+- id: TRV-PRV-001
+  origem: "§§2.2, 16.4"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, UI]
+  enunciado: "Relação afirmação → peça, SEI, página, trecho; abrir página e realçar"
+  modulo: "EvidenceSpan; PDF.js"
+  testes: ["A05", "UI-SRC-01"]
+  versao: 1
+
+- id: TRV-PRV-002
+  origem: "§16.4"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "Na minuta: citação simples com SEI se houver; sem SEI → \"incluído nos autos\"; sem página"
+  modulo: "validate.SEIIds"
+  testes: ["A05", "A06"]
+  versao: 1
+
+- id: TRV-PRV-003
+  origem: "§16.2"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, PERGUNTA]
+  enunciado: "Datas divergentes: preservar versões e fontes; resolver fundamentadamente ou perguntar; nunca escolher arbitrariamente"
+  modulo: "ingest/Divergencia"
+  testes: ["A03"]
+  versao: 1
+
+- id: TRV-PRV-004
+  origem: "§§17.1–17.3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, PERGUNTA, POLITICA_IA]
+  enunciado: "Não baixar/transcrever mídia externa; pedir descrição; sem descrição → ressalva e prova restante"
+  modulo: "workflow; nucleo"
+  testes: ["A08", "A09", "A10", "V2"]
+  versao: 1
+
+- id: TRV-PRV-005
+  origem: "§17.4"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Complementos manuais (PDF, DOCX, imagem, texto); distinguir a origem operacional"
+  modulo: "ingest"
+  testes: ["A12"]
+  versao: 1
+
+- id: TRV-PRV-006
+  origem: "§§1.2, 13"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA, POLITICA_IA]
+  enunciado: "Documentos são dados não confiáveis (prompt injection)"
+  modulo: "nucleo; §3 da estratégia"
+  testes: ["SEG13-04", "SEG-INJ-01", "SEG-INJ-02", "SEG-INJ-03", "SEG-INJ-04", "SEG-INJ-05"]
+  versao: 1
+
+- id: TRV-PRV-007
+  origem: "§1.2"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "Não fabricar fato, testemunho, data, precedente, citação, prova ou número"
+  modulo: "todos os validadores"
+  testes: ["VAL-NEG-01", "VAL-NEG-02", "VAL-NEG-03", "VAL-NEG-04", "VAL-NEG-05", "VAL-NEG-06", "VAL-NEG-07", "VAL-NEG-08", "VAL-NEG-09", "VAL-NEG-10", "VAL-NEG-11"]
+  versao: 1
+
+- id: TRV-PRV-008
+  origem: "§§16.4, 23.2"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Nenhum SEI fictício"
+  modulo: "validate.SEIIds"
+  testes: ["VAL-NEG-02"]
+  versao: 1

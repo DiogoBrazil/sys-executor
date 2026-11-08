@@ -1,0 +1,43 @@
+# 14. Governança das regras
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: TRV-GOV-001
+  origem: "§§28.4, 46"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Não perder regra por compressão; cobertura V4 total"
+  modulo: "cmd/rulescov"
+  testes: ["GOV-COV-01"]
+  versao: 1
+
+- id: TRV-GOV-002
+  origem: "§§44, 14.3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [PROCESSO]
+  enunciado: "Conflito normativo demonstrado → usuário decide; aprovação funcional ≠ comprovação de vigência"
+  modulo: "REGISTRO_DUVIDAS"
+  testes: ["GOV-CONF-01"]
+  versao: 1
+
+- id: TRV-GOV-003
+  origem: "PT"
+  fluxo: TRV
+  rotulo: [PROPOSTA]
+  tipo: [DETERMINISTICA]
+  enunciado: "V4 com hash fixado; mudança exige revisão registrada"
+  modulo: "policies/V4.lock"
+  testes: ["GOV-LOCK-01"]
+  versao: 1
+
+- id: TRV-GOV-004
+  origem: "PT"
+  fluxo: TRV
+  rotulo: [PROPOSTA]
+  tipo: [DETERMINISTICA]
+  enunciado: "Prompts compilados com golden files; completude por etapa"
+  modulo: "policies"
+  testes: ["POL-COMP-01"]
+  versao: 1

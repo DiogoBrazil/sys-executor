@@ -1,12 +1,13 @@
 // Comando rulescov: governança da V4 (plano §3; GOV-LOCK-01, GOV-COV-01).
 //
-// Esqueleto da Fase 1:
 //  1. Confere o SHA-256 da V4 contra policies/V4.lock. Divergência = falha:
 //     a V4 mudou sem revisão registrada em policies/CHANGELOG.md.
 //  2. Extrai os IDs de teste da V4 (A01, SR01, T01, R1, E1, EX1, PADS-E01, D1,
 //     P1, V1, S1…) e confere se cada um aparece na matriz de requisitos.
-//     Na Fase 3 a conferência passa a ser contra o catálogo de regras
-//     (internal/rules/catalog) e contra os testes.
+//  3. Fase 3: confere o catálogo (internal/rules/catalog) contra a matriz e
+//     a V4, os símbolos de enforced_by contra o código e exige teste anotado
+//     ("// Regra: ID" ou "// Cobre: caso") para cada regra garantida em Go.
+//  4. Exige "// Cobre:" para todos os casos da seção 1 do plano de testes.
 //
 // Uso: go run ./cmd/rulescov [-raiz .] [-estrito] [-atualizar-lock]
 package main
@@ -89,8 +90,27 @@ func main() {
 			faltam = append(faltam, id)
 		}
 	}
+	total, faltamMotor, err := verificarMotor(*raiz)
+	if err != nil {
+		falhar("cobertura do motor: %v", err)
+	}
+	fmt.Printf("GOV-COV-01 (motor determinístico): %d casos da seção 1 do plano de testes; %d sem teste anotado (// Cobre:).\n", total, len(faltamMotor))
+	if len(faltamMotor) > 0 {
+		fmt.Println("Sem teste:", strings.Join(faltamMotor, " "))
+		if *estrito {
+			os.Exit(1)
+		}
+	}
+	rel, err := verificarCatalogo(*raiz, ids, string(matriz))
+	if err != nil {
+		falhar("catálogo: %v", err)
+	}
+	imprimirCatalogo(rel)
+	if rel.falhas() > 0 && *estrito {
+		os.Exit(1)
+	}
 	lista := ordenar(ids)
-	fmt.Printf("GOV-COV-01 (esqueleto): %d IDs de teste na V4; %d mapeados na matriz; %d sem mapeamento.\n",
+	fmt.Printf("GOV-COV-01 (matriz): %d IDs de teste na V4; %d mapeados na matriz; %d sem mapeamento.\n",
 		len(lista), len(lista)-len(faltam), len(faltam))
 	if len(faltam) > 0 {
 		sort.Strings(faltam)

@@ -1,0 +1,340 @@
+# 7. Sindicância Regular
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: SR-EST-001
+  origem: "§23.1"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [TEXTO_FIXO, VALIDADOR]
+  enunciado: "Estrutura fixa I–IV e alíneas a–f, em ordem, sempre presentes"
+  modulo: "compose.SR; validate.ScopeSR"
+  testes: ["SR02", "SR03", "EXP-SR-01"]
+  versao: 1
+
+- id: SR-EST-002
+  origem: "§23.2"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, VALIDADOR]
+  enunciado: "Preencher só com certeza; incerto ou divergente → rótulo vazio + aviso na UI"
+  modulo: "compose.SR"
+  testes: ["SR02", "SR03"]
+  versao: 1
+
+- id: SR-EST-003
+  origem: "§§23.2, 23.3"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "SEI apenas quando comprovado; nunca fictício"
+  modulo: "validate.SEIIds"
+  testes: ["SR04"]
+  versao: 1
+
+- id: SR-EST-004
+  origem: "§23.3-a"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "Portaria: número, identificação, data; não confundir com sindicância apensada"
+  modulo: "sr/dados"
+  testes: ["SR01"]
+  versao: 1
+
+- id: SR-EST-005
+  origem: "§23.3-b"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Sindicados: formais + autorizados; vários"
+  modulo: "domain/sr"
+  enforced_by: [sr.ObjetoSR]
+  testes: ["SR01"]
+  versao: 1
+
+- id: SR-EST-006
+  origem: "§23.3-c"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "Ofendido(s) identificados com segurança; não atribuir a todo narrador"
+  modulo: "sr/dados"
+  testes: ["SR02", "SR06"]
+  versao: 1
+
+- id: SR-EST-007
+  origem: "§23.3-d"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "Testemunhas efetivamente ouvidas como testemunhas (Termo de Inquirição)"
+  modulo: "sr/dados"
+  testes: ["SR04", "SR05"]
+  versao: 1
+
+- id: SR-EST-008
+  origem: "§23.3-e"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "Perícias realizadas, com nº e SEI se houver; teor discutido em III"
+  modulo: "sr/dados"
+  testes: ["SR03"]
+  versao: 1
+
+- id: SR-EST-009
+  origem: "§23.3-f"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "Outras informações: seleção relevante e sucinta, sem inventário nem repetição"
+  modulo: "sr/dados"
+  testes: ["SR05", "SR07"]
+  versao: 1
+
+- id: SR-EST-010
+  origem: "§§23.2, 27.2-9"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Papel da pessoa por ato e contexto; sem duplicação"
+  modulo: "domain/common.PapeisPorAto"
+  testes: ["SR06"]
+  versao: 1
+
+- id: SR-RED-001
+  origem: "§23.5"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "II – Síntese a partir da portaria/notícia; linguagem preliminar; sem antecipar indício/culpa; fatos novos reservados à III"
+  modulo: "sr/sintese"
+  testes: ["SR08"]
+  versao: 1
+
+- id: SR-PRV-001
+  origem: "§24.1"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "III organizada por fato e, dentro dele, por pessoa; individualizar condutas; resultados distintos possíveis"
+  modulo: "sr/analise"
+  testes: ["SR09", "SR12"]
+  versao: 1
+
+- id: SR-PRV-002
+  origem: "§24.2"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "Depoimentos: síntese fiel, transcrição pontual, atribuição precisa, omissão não é ocultação"
+  modulo: "sr/analise; SupportCheck"
+  testes: ["SR32"]
+  versao: 1
+
+- id: SR-PRV-003
+  origem: "§24.2"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "Contradições: avaliar relevância; secundária não vira indício"
+  modulo: "sr/analise"
+  testes: ["SR14"]
+  versao: 1
+
+- id: SR-PRV-004
+  origem: "§24.2"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "Perícia: laudo negativo não prova inexistência; reproduzir limitações"
+  modulo: "sr/analise"
+  testes: ["SR15"]
+  versao: 1
+
+- id: SR-PRV-005
+  origem: "§24.2"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "Documentos de outros procedimentos incorporados: avaliar pertinência; não importar conclusões"
+  modulo: "sr/analise"
+  testes: ["SR16"]
+  versao: 1
+
+- id: SR-PRV-006
+  origem: "§24.2"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA, POLITICA_IA]
+  enunciado: "Mídia ausente: pedir descrição/transcrição; não presumir"
+  modulo: "workflow"
+  testes: ["SR17"]
+  versao: 1
+
+- id: SR-ESC-001
+  origem: "§24.3"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA, DETERMINISTICA, VALIDADOR]
+  enunciado: "Fato novo fora da portaria: identificar, mostrar elementos, perguntar; incluir em III/IV só se autorizado"
+  modulo: "domain/sr.Autorizacao; validate.ScopeSR"
+  enforced_by: [sr.ObjetoSR]
+  testes: ["SR19", "SR35", "S5"]
+  versao: 1
+
+- id: SR-ESC-002
+  origem: "§24.3"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA, DETERMINISTICA, VALIDADOR]
+  enunciado: "Novo militar (inclusive de outra OPM): perguntar antes de incluir como sindicado; sem alterar portaria"
+  modulo: "domain/sr.Autorizacao"
+  enforced_by: [sr.ObjetoSR]
+  testes: ["SR20", "SR35"]
+  versao: 1
+
+- id: SR-ESC-003
+  origem: "§24.4"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, VALIDADOR]
+  enunciado: "Civis analisados em III; nunca sujeitos da IV nem enquadrados no RDPM"
+  modulo: "schema enum sujeitos; validate.ScopeSR"
+  enforced_by: [sr.ObjetoSR, sr.ConclusaoSR]
+  testes: ["SR21"]
+  versao: 1
+
+- id: SR-ESC-004
+  origem: "§24.5"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, PERGUNTA, POLITICA_IA]
+  enunciado: "Situação funcional de cada militar na data de cada fato; perguntar só o essencial"
+  modulo: "domain/common.SituacaoFuncional"
+  testes: ["SR22", "SR23"]
+  versao: 1
+
+- id: SR-RED-002
+  origem: "§24.6"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "Proporcionalidade; nunca omitir prova relevante para encurtar; sem extensão artificial"
+  modulo: "sr/analise"
+  testes: ["SR30", "SR31"]
+  versao: 1
+
+- id: SR-SOL-001
+  origem: "§25.1"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "IV objetiva e fundamentada; sem repetir a prova; sem sanção"
+  modulo: "sr/solucao"
+  testes: ["SR27", "SR28"]
+  versao: 1
+
+- id: SR-SOL-002
+  origem: "§25.1"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Conclusão conjunta só se cada conduta foi analisada e o resultado é igual"
+  modulo: "validate.ScopeSR"
+  testes: ["SR10", "SR11", "SR36", "S1"]
+  versao: 1
+
+- id: SR-SOL-003
+  origem: "§25.1"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Conclusão por fato × sindicado"
+  modulo: "domain/sr.ConclusaoSR"
+  enforced_by: [sr.ConclusaoSR, sr.ObjetoSR]
+  testes: ["SR12", "S2", "S3"]
+  versao: 1
+
+- id: SR-SOL-004
+  origem: "§25.2"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, DETERMINISTICA]
+  enunciado: "Indícios suficientes / ausência / inconclusivo; distinguir ocorrência de autoria"
+  modulo: "sr/solucao"
+  enforced_by: [sr.ConclusaoSR]
+  testes: ["SR13", "SR18", "S3", "S4"]
+  versao: 1
+
+- id: SR-SOL-005
+  origem: "§25.3"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "Enquadramento específico (crime comum, crime militar, transgressão), com diploma e artigo confirmados por fonte"
+  modulo: "validate.LegalRefs"
+  enforced_by: [sr.Enquadramento]
+  testes: ["SR25", "SR26"]
+  versao: 1
+
+- id: SR-SOL-006
+  origem: "§25.3"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA]
+  enunciado: "Dúvida entre normas → alternativas ao usuário antes de concluir"
+  modulo: "workflow"
+  testes: ["SR26"]
+  versao: 1
+
+- id: SR-SOL-007
+  origem: "§25.3"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "Não preso à capitulação da portaria para os mesmos fatos"
+  modulo: "sr/solucao"
+  testes: ["SR24"]
+  versao: 1
+
+- id: SR-SOL-008
+  origem: "§25.4"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "Providências só com necessidade específica; nunca \"instaurar PADS\" ou \"arquivar\" automáticos"
+  modulo: "validate (lista de fórmulas automáticas)"
+  testes: ["SR27", "SR28", "SR29"]
+  versao: 1
+
+- id: SR-SOL-009
+  origem: "§25.5"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Exemplos S1–S5 são ilustrativos; nunca preencher marcadores fictícios"
+  modulo: "validate.NoPlaceholderLeak"
+  testes: ["S1", "S2", "S3", "S4", "S5"]
+  versao: 1
+
+- id: SR-LAC-001
+  origem: "§26.1"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA, POLITICA_IA]
+  enunciado: "Lacuna impeditiva → alertar + diligências concretas; o usuário decide prosseguir; conclusão inconclusiva qualificada"
+  modulo: "workflow"
+  testes: ["SR13", "SR33"]
+  versao: 1
+
+- id: SR-NAT-001
+  origem: "§21.1"
+  fluxo: SR
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "SR sem punição, dosimetria, reincidência, comportamento ou pontos"
+  modulo: "validate.ScopeSR"
+  testes: ["SR-NAT-01"]
+  versao: 1

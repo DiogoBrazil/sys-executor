@@ -1,0 +1,235 @@
+# 6. PADS — pontuação, comportamento, equivalências, regressão
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: PADS-CMP-001
+  origem: "§8.1; RDPM 70"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Faixas: EXC > 40; ÓT 30–40; BOM 10–29; INS < 10"
+  modulo: "engine.Comportamento"
+  enforced_by: [engine.ClassificarSaldo]
+  testes: ["CMP-FX-01", "CMP-FX-02", "CMP-FX-03", "CMP-FX-04", "CMP-FX-05", "CMP-FX-06", "CMP-FX-07", "CMP-FX-08"]
+  versao: 1
+
+- id: PADS-CMP-002
+  origem: "§8.1"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA]
+  enunciado: "Pontos e classificação atuais perguntados/confirmados; divergência → alertar e pedir esclarecimento"
+  modulo: "workflow"
+  enforced_by: [engine.Pontuacao]
+  testes: ["CMP-DIV-01"]
+  versao: 1
+
+- id: PADS-CMP-003
+  origem: "§§8.1, 11, 13"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [TEXTO_FIXO, VALIDADOR]
+  enunciado: "Dados ausentes → `[A PREENCHER]` e indicação de cálculo não concluído; nunca inventar"
+  modulo: "compose; validate"
+  enforced_by: [engine.Pontuacao, engine.MontarMemoria]
+  testes: ["SEG13-05", "CMP-AUS-01"]
+  versao: 1
+
+- id: PADS-CMP-004
+  origem: "§8.2; RDPM 71"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Desconto ordinário: repreensão −1, detenção −2, prisão −4; não presumir acréscimos (+2/ano)"
+  modulo: "engine.Pontuacao"
+  enforced_by: [engine.Pontuacao]
+  testes: ["C13-PTS-01"]
+  versao: 1
+
+- id: PADS-CMP-005
+  origem: "§§8.2, 15.4"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Sem regressão: somar os descontos de todas as sanções aplicadas, sem duplicação (conexas: só a principal)"
+  modulo: "engine.Pontuacao"
+  enforced_by: [engine.Pontuacao]
+  testes: ["MP-05", "MP-06"]
+  versao: 1
+
+- id: PADS-CMP-006
+  origem: "§§8.3, 8.8, 15.4"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, VALIDADOR]
+  enunciado: "Regressão no conjunto do mesmo PADS → valor fixo 9/20/30, sem nenhum desconto ordinário do PADS"
+  modulo: "engine.Pontuacao; validate.CalcConsistency"
+  enforced_by: [engine.Pontuacao, pads.Julgamento]
+  testes: ["MP-01", "MP-02", "MP-03", "MP-04", "A18", "A19", "A20", "C13-REG-01"]
+  versao: 1
+
+- id: PADS-CMP-007
+  origem: "§8.3; RDPM 70 §2º"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "INSUFICIENTE: desconto ordinário, sem reposição a 9"
+  modulo: "engine.Pontuacao"
+  enforced_by: [engine.Pontuacao]
+  testes: ["C13-INS-01"]
+  versao: 1
+
+- id: PADS-EQV-001
+  origem: "§§8.4, 15.1"
+  fluxo: PADS
+  rotulo: [APROVADO, INTERPRETACAO]
+  interpretacao: I-01
+  tipo: [DETERMINISTICA]
+  enunciado: "2L = 1M; 2M = 1G; 4L = 1G; mistas permitidas; resto não arredondado (cálculo em unidades)"
+  modulo: "engine.Equivalencia"
+  enforced_by: [engine.Equivaler]
+  testes: ["C13-EQV-01", "E2", "E3", "EQV-01", "EQV-02", "EQV-03", "EQV-04", "EQV-05", "EQV-06", "EQV-07", "EQV-08"]
+  versao: 1
+
+- id: PADS-EQV-002
+  origem: "§15.1"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "A mesma infração nunca entra duas vezes em equivalência"
+  modulo: "engine.Equivalencia"
+  enforced_by: [engine.Equivaler]
+  testes: ["EQV-DUP-01"]
+  versao: 1
+
+- id: PADS-EQV-003
+  origem: "§§8.5, 8.7, 15.1"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, PERGUNTA]
+  enunciado: "Considerar só o histórico reconhecido em decisão disciplinar + atuais procedentes; nunca acusações pendentes"
+  modulo: "engine; workflow"
+  enforced_by: [engine.Equivaler]
+  testes: ["EQV-PEND-01"]
+  versao: 1
+
+- id: PADS-CMP-008
+  origem: "§§8.5, 15.1, 15.2"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "BOM/ÓTIMO: 2 graves equivalentes com datas de cometimento em janela estritamente inferior a 1 ano (aniversário exclusivo)"
+  modulo: "engine.GatilhoBomOtimo; civil.MenosDeUmAno"
+  enforced_by: [engine.GatilhoBomOtimo, civil.MenosDeUmAno]
+  testes: ["E1", "E2", "C13-4M-01", "DT-01", "DT-02", "DT-03", "DT-04", "DT-05", "A27", "A28"]
+  versao: 1
+
+- id: PADS-CMP-009
+  origem: "D-06"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, PERGUNTA]
+  enunciado: "A janela precisa conter ≥1 transgressão procedente do PADS atual; histórico sozinho fechando gatilho → alerta + pergunta"
+  modulo: "engine.GatilhoBomOtimo"
+  enforced_by: [engine.GatilhoBomOtimo]
+  testes: ["CMP-D06-01", "CMP-D06-02", "CMP-D06-03"]
+  versao: 1
+
+- id: PADS-CMP-010
+  origem: "§15.2"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, UI]
+  enunciado: "Demonstrar o subconjunto e a janela usados; não somar fatos dispersos"
+  modulo: "engine.MemoriaCalculo"
+  enforced_by: [engine.GatilhoBomOtimo, engine.MontarMemoria]
+  testes: ["DT-05"]
+  versao: 1
+
+- id: PADS-CMP-011
+  origem: "§§12.2-8, 15.2"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, PERGUNTA]
+  enunciado: "29/02 em ano não bissexto: não impor critério; perguntar quando material"
+  modulo: "civil.ErrCasoLimite29Fev"
+  enforced_by: [civil.ErrCasoLimite29Fev, civil.Aniversario]
+  testes: ["DT-06"]
+  versao: 1
+
+- id: PADS-CMP-012
+  origem: "§§8.6, 15.3"
+  fluxo: PADS
+  rotulo: [APROVADO, INTERPRETACAO]
+  interpretacao: I-02
+  tipo: [DETERMINISTICA]
+  enunciado: "EXCEPCIONAL: 3ª grave equivalente no período atual, sem janela; propor ÓTIMO/30 já na minuta"
+  modulo: "engine.GatilhoExcepcional"
+  enforced_by: [engine.GatilhoExcepcional]
+  testes: ["EX1", "A30", "C13-EXC-01"]
+  versao: 1
+
+- id: PADS-CMP-013
+  origem: "§§8.6, 15.3"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, PERGUNTA]
+  enunciado: "Não reutilizar infrações consumidas em regressão excepcional→ótimo anterior; data de ingresso não obrigatória; o usuário confirma o pertencimento ao período"
+  modulo: "engine; workflow"
+  enforced_by: [engine.GatilhoExcepcional]
+  testes: ["EX2", "A29", "C13-EXC-02"]
+  versao: 1
+
+- id: PADS-CMP-014
+  origem: "§§8.6, 15.3"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [TEXTO_FIXO, VALIDADOR]
+  enunciado: "Não declarar mudança administrativa efetivada; não alterar ficha/SEI"
+  modulo: "compose; validate.NoFakeActs"
+  enforced_by: [engine.MontarMemoria]
+  testes: ["A30"]
+  versao: 1
+
+- id: PADS-CMP-015
+  origem: "§8.8"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [UI, DETERMINISTICA]
+  enunciado: "Memória de cálculo com os 7 itens, visível antes da aprovação"
+  modulo: "engine.MemoriaCalculo; frontend"
+  enforced_by: [engine.MontarMemoria]
+  testes: ["UI-CALC-01", "UI-CALC-02"]
+  versao: 1
+
+- id: PADS-CMP-016
+  origem: "§15.4 limite"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, PERGUNTA]
+  enunciado: "Regra de valor fixo restrita ao mesmo PADS; processos distintos não são unificados"
+  modulo: "engine"
+  enforced_by: [engine.Pontuacao]
+  testes: ["CMP-LIM-01"]
+  versao: 1
+
+- id: PADS-CMP-017
+  origem: "P-04"
+  fluxo: PADS
+  rotulo: [INTERPRETACAO]
+  tipo: [DETERMINISTICA, PERGUNTA]
+  enunciado: "Saldo negativo: calcular, sinalizar e perguntar se material"
+  modulo: "engine"
+  enforced_by: [engine.Pontuacao]
+  testes: ["CMP-NEG-01"]
+  versao: 1
+
+- id: PADS-PRG-001
+  origem: "§9"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA]
+  enunciado: "Ordem de perguntas: imputações → procedência/conexão → natureza → comportamento/pontos → serviços → reincidência → regressão bom/ótimo → excepcional → cálculo → minuta"
+  modulo: "workflow.OrdemPerguntas"
+  testes: ["PRG-ORD-01"]
+  versao: 1

@@ -1,0 +1,113 @@
+# 3. PADS — estrutura e redação
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: PADS-EST-001
+  origem: "§3"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [TEXTO_FIXO]
+  enunciado: "Estrutura RELATÓRIO / FUNDAMENTAÇÃO / DECISÃO (numeração compatível com modelos, D-04)"
+  modulo: "compose.PADS"
+  testes: ["EXP-PADS-01"]
+  versao: 1
+
+- id: PADS-RED-001
+  origem: "§3.1"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "Relatório: procedimento, acusado, imputações, acusação, defesa prévia, provas, alegações finais, cronologia, sem antecipar culpa"
+  modulo: "pads/relatorio"
+  testes: ["INT-PADS-01"]
+  versao: 1
+
+- id: PADS-RED-002
+  origem: "§3.2"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "Fundamentação por imputação: elementos, autoria, materialidade, provas favoráveis/desfavoráveis, defesa"
+  modulo: "pads/fundamentacao; validate.ScopePADS"
+  testes: ["INT-PADS-02"]
+  versao: 1
+
+- id: PADS-RED-003
+  origem: "§§3.2, 12.1-4, 16.5"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "Prova insuficiente/contraditória → fundamentar; *in dubio pro reo* quando cabível"
+  modulo: "pads/fundamentacao"
+  testes: ["A07", "P1"]
+  versao: 1
+
+- id: PADS-RED-004
+  origem: "§3.3"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [TEXTO_FIXO, POLITICA_IA]
+  enunciado: "Decisão por imputação; sanção com natureza, dias se cabíveis e fundamentos"
+  modulo: "compose.PADS.Decisao"
+  testes: ["INT-PADS-03"]
+  versao: 1
+
+- id: PADS-RED-005
+  origem: "§3.4"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [TEXTO_FIXO]
+  enunciado: "Providências: improcedência (ciência, publicação BI, arquivamento); procedência (ciência, publicação, recursos, nota de punição só após irrecorribilidade, arquivamento)"
+  modulo: "compose.Providencias"
+  testes: ["C13-PROV-01", "C13-PROV-02"]
+  versao: 1
+
+- id: PADS-RED-006
+  origem: "§3.4 ponto pendente"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [TEXTO_FIXO, VALIDADOR]
+  enunciado: "Proposta de regressão sem afirmar mudança administrativa já efetivada"
+  modulo: "compose; validate.NoFakeActs"
+  testes: ["EX1", "A30"]
+  versao: 1
+
+- id: PADS-RED-007
+  origem: "§10"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [TEXTO_FIXO, VALIDADOR]
+  enunciado: "Cláusula residencial exata, parametrizada (posto/graduação, matrícula, nome; flexões), somente com detenção/prisão; faltante → `[A PREENCHER]` + pergunta"
+  modulo: "compose.ClausulaResidencial; validate.CalcConsistency"
+  testes: ["C13-CLA-01", "C13-CLA-02", "C13-CLA-03"]
+  versao: 1
+
+- id: PADS-RED-008
+  origem: "§15.4"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [TEXTO_FIXO]
+  enunciado: "Justificativa redacional da regressão pelo conjunto, adaptada (BOM/20, INS/9, ÓT/30), só com gatilho satisfeito"
+  modulo: "compose.JustRegressao"
+  testes: ["MP-01", "MP-02", "MP-03", "MP-04"]
+  versao: 1
+
+- id: PADS-RED-009
+  origem: "§§3.2, 17.2"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "Não afirmar ter visto/ouvido mídia; descrições do usuário usadas naturalmente, sem etiqueta obrigatória"
+  modulo: "nucleo; validate.SupportCheck"
+  testes: ["A11", "V1"]
+  versao: 1
+
+- id: PADS-RED-010
+  origem: "D-01"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "Não citar o art. 41 § 3º do RDPM como vigente; sem alerta na UI"
+  modulo: "legal.NotaVigencia; validate.LegalRefs"
+  testes: ["LIB-D01-01", "LIB-D01-02"]
+  versao: 1

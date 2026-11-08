@@ -1,0 +1,153 @@
+# 9. Transversal — fluxo, interface, sessão
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: TRV-UI-001
+  origem: "§30.1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [UI]
+  enunciado: "1º escolher PADS/SR; 2º SEI/upload; pipeline compartilhado"
+  modulo: "frontend Inicio/Entrada"
+  testes: ["T01"]
+  versao: 1
+
+- id: TRV-UI-002
+  origem: "§30.1-4"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [UI, SEGURANCA]
+  enunciado: "Upload não pede credencial nem abre SEI"
+  modulo: "workflow"
+  testes: ["T02"]
+  versao: 1
+
+- id: TRV-UI-003
+  origem: "§§30.3, 35"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [UI]
+  enunciado: "SEI sem internet → aviso + upload, preservando a escolha"
+  modulo: "workflow"
+  testes: ["T03"]
+  versao: 1
+
+- id: TRV-UI-004
+  origem: "§30.2"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, PERGUNTA]
+  enunciado: "Compatibilidade: Memorando (PADS) / Portaria (SR) pelo conteúdo; portaria anexa não muda o PADS; nunca trocar silenciosamente"
+  modulo: "workflow.Compatibilidade"
+  testes: ["T04", "T05", "T06"]
+  versao: 1
+
+- id: TRV-UI-005
+  origem: "§31.1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [UI]
+  enunciado: "Sem chatbot principal; status claros; sem streaming de tokens; percentual só se mensurável"
+  modulo: "frontend Processamento"
+  testes: ["T07"]
+  versao: 1
+
+- id: TRV-UI-006
+  origem: "§§31.2, 26.2, 9"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA]
+  enunciado: "Perguntas pontuais, só o essencial, sem repetir; retomar a mesma tarefa"
+  modulo: "workflow DAG"
+  testes: ["T08", "PRG-01"]
+  versao: 1
+
+- id: TRV-UI-007
+  origem: "§31.3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [UI]
+  enunciado: "Prévia completa (fiel ao PDF); DOCX+PDF; \"Aprovar e finalizar\" / \"Solicitar ajustes\""
+  modulo: "frontend Revisao"
+  testes: ["T09"]
+  versao: 1
+
+- id: TRV-UI-008
+  origem: "§31.3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, POLITICA_IA]
+  enunciado: "Ajuste preserva partes válidas e decisões confirmadas; revalida; sem histórico permanente de chat"
+  modulo: "workflow.Ajuste"
+  testes: ["T10"]
+  versao: 1
+
+- id: TRV-UI-009
+  origem: "§§1.1-8, 19-A31"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "\"Aguardando revisão\" até comando inequívoco; downloads permitidos antes"
+  modulo: "workflow FSM"
+  testes: ["A31", "SEG13-06"]
+  versao: 1
+
+- id: TRV-SES-001
+  origem: "§29.1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Tarefa efêmera, sem histórico nem retomada"
+  modulo: "session; workflow"
+  testes: ["T12"]
+  versao: 1
+
+- id: TRV-SES-002
+  origem: "§29.1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Finalizar → apagar todos os artefatos controlados; preservar exportações, biblioteca, modelos e preferências"
+  modulo: "session.Finalizar"
+  testes: ["T11"]
+  versao: 1
+
+- id: TRV-SES-003
+  origem: "§29.2"
+  fluxo: TRV
+  rotulo: [APROVADO, PROPOSTA]
+  tipo: [SEGURANCA]
+  enunciado: "Temporários mínimos, com ACL do usuário Windows e proteção adicional (cifra AES-256-GCM com chave só em memória, PT-F1-01)"
+  modulo: "session; platform/win"
+  testes: ["SEG-DIR-01"]
+  versao: 1
+
+- id: TRV-SES-004
+  origem: "§29.2"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA]
+  enunciado: "Na inicialização, remover resíduos de crash sem restaurar"
+  modulo: "session.VarrerResiduos"
+  testes: ["T12", "SEG-CRASH-01"]
+  versao: 1
+
+- id: TRV-SES-005
+  origem: "§§29.2, 1.1-9"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [UI]
+  enunciado: "Não prometer apagamento forense"
+  modulo: "textos"
+  testes: ["DOC-01"]
+  versao: 1
+
+- id: TRV-SES-006
+  origem: "§§12.2-4, 43"
+  fluxo: TRV
+  rotulo: [PROPOSTA]
+  tipo: [DETERMINISTICA]
+  enunciado: "Concorrência: uma tarefa ativa por instância"
+  modulo: "workflow"
+  testes: ["SES-CONC-01"]
+  versao: 1

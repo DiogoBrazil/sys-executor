@@ -1,0 +1,223 @@
+# 13. Transversal — validação, documentos, instalação, offline
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: TRV-VAL-001
+  origem: "§42.1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Validação automática obrigatória antes da revisão e após cada ajuste"
+  modulo: "validate; workflow"
+  testes: ["T09", "T10"]
+  versao: 1
+
+- id: TRV-VAL-002
+  origem: "§42.1-1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Fidelidade de fatos, datas, depoimentos e fontes"
+  modulo: "SupportCheck, DatesPersons"
+  testes: ["VAL-NEG-03"]
+  versao: 1
+
+- id: TRV-VAL-003
+  origem: "§42.1-2"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Referências jurídicas verificáveis; nenhuma inventada"
+  modulo: "LegalRefs"
+  testes: ["T24", "VAL-NEG-04"]
+  versao: 1
+
+- id: TRV-VAL-004
+  origem: "§42.1-3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Regras PADS/SR específicas"
+  modulo: "ScopePADS/ScopeSR"
+  testes: ["VAL-NEG-01", "VAL-NEG-05", "VAL-NEG-06"]
+  versao: 1
+
+- id: TRV-VAL-005
+  origem: "§42.1-4"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR, POLITICA_IA]
+  enunciado: "Coerência prova × fundamento × conclusão"
+  modulo: "SupportCheck"
+  testes: ["VAL-NEG-07"]
+  versao: 1
+
+- id: TRV-VAL-006
+  origem: "§42.1-5"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Cálculos conferidos"
+  modulo: "CalcConsistency"
+  testes: ["VAL-NEG-08"]
+  versao: 1
+
+- id: TRV-VAL-007
+  origem: "§42.1-6"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Seções, campos e avisos obrigatórios"
+  modulo: "RequiredParts"
+  testes: ["VAL-NEG-09"]
+  versao: 1
+
+- id: TRV-VAL-008
+  origem: "§42.1-7"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Coerência com o resultado confirmado pelo usuário"
+  modulo: "UserDecisions"
+  testes: ["VAL-NEG-10"]
+  versao: 1
+
+- id: TRV-VAL-009
+  origem: "§42.2"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Correção automática por releitura; depois pendência ao usuário; limitação não impeditiva declarada; nunca \"validado\" genérico"
+  modulo: "workflow.LacoCorrecao"
+  testes: ["T24"]
+  versao: 1
+
+- id: TRV-VAL-010
+  origem: "§42.2-2"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Não alterar decisão confirmada em silêncio"
+  modulo: "UserDecisions"
+  testes: ["T10"]
+  versao: 1
+
+- id: TRV-VAL-014
+  origem: "D-01"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Bloquear citação do art. 41 § 3º como vigente"
+  modulo: "LegalRefs"
+  testes: ["LIB-D01-02"]
+  versao: 1
+
+- id: TRV-EXP-001
+  origem: "§32.1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [TEXTO_FIXO]
+  enunciado: "Padrão único; Times New Roman 12; `logo-pmro.png`; cabeçalho e título específicos"
+  modulo: "export"
+  testes: ["T25"]
+  versao: 1
+
+- id: TRV-EXP-002
+  origem: "§32.2"
+  fluxo: TRV
+  rotulo: [PROPOSTA]
+  tipo: [TEXTO_FIXO]
+  enunciado: "Parâmetros de margem/recuo como proposta, ajustáveis pelos modelos"
+  modulo: "export template"
+  testes: ["EXP-LAY-01"]
+  versao: 1
+
+- id: TRV-EXP-003
+  origem: "§§11, 32.1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR]
+  enunciado: "Nenhuma assinatura, publicação, homologação ou validação SEI fictícia"
+  modulo: "NoFakeActs"
+  testes: ["VAL-NEG-11"]
+  versao: 1
+
+- id: TRV-EXP-004
+  origem: "§32.2"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Nome de arquivo seguro, com tipo + número do processo e sem dados pessoais"
+  modulo: "export.NomeArquivo"
+  testes: ["EXP-NOME-01"]
+  versao: 1
+
+- id: TRV-EXP-005
+  origem: "D-03"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "DOCX (OOXML) e PDF (Typst) a partir do mesmo DocModel"
+  modulo: "export"
+  testes: ["EXP-EQ-01"]
+  versao: 1
+
+- id: TRV-INS-001
+  origem: "§34"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [ARQUITETURA]
+  enunciado: "Instaladores `.exe` e `.msi`; x64 (D-02)"
+  modulo: "build/windows"
+  testes: ["INS-01", "INS-02", "INS-03", "INS-04", "INS-05", "INS-06"]
+  versao: 1
+
+- id: TRV-INS-002
+  origem: "§34"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [ARQUITETURA]
+  enunciado: "Dependências instaladas automaticamente; intervenção manual só se indispensável"
+  modulo: "instalador + primeiro uso"
+  testes: ["INS-02"]
+  versao: 1
+
+- id: TRV-INS-003
+  origem: "§34"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [ARQUITETURA]
+  enunciado: "Instalador leve, sem GGUF"
+  modulo: "build"
+  testes: ["INS-03"]
+  versao: 1
+
+- id: TRV-INS-004
+  origem: "§34"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [ARQUITETURA]
+  enunciado: "Atualização só por novo instalador"
+  modulo: "—"
+  testes: ["T26"]
+  versao: 1
+
+- id: TRV-OFF-001
+  origem: "§35"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Upload + modelos + biblioteca instalados → tudo offline"
+  modulo: "todos"
+  testes: ["T18"]
+  versao: 1
+
+- id: TRV-OFF-002
+  origem: "§35"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA]
+  enunciado: "Sem consulta externa silenciosa se offline ou com web desligada"
+  modulo: "legal/web; inference"
+  testes: ["T19", "SEG-NET-01"]
+  versao: 1

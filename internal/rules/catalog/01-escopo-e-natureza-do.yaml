@@ -1,0 +1,54 @@
+# 1. Escopo e natureza do produto
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: TRV-ESC-001
+  origem: "§§1, 21.2, 28.3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "Produzir apenas minutas de apoio; nunca decidir, assinar, publicar, homologar, punir, alterar ficha"
+  modulo: "nucleo; validate.NoFakeActs"
+  testes: ["SEG13-07", "T09"]
+  versao: 1
+
+- id: TRV-ESC-002
+  origem: "§§1.2, 2.1, 13"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA]
+  enunciado: "Nenhuma operação destrutiva/de escrita no SEI (bloqueio arquitetural)"
+  modulo: "sei (sem métodos de escrita + allowlist `acao`)"
+  testes: ["SEG13-07", "SEG-SEI-01"]
+  versao: 1
+
+- id: TRV-ESC-003
+  origem: "§§12.1-1/2, 16.6"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "Não calcular prescrição nem auditar nulidades; relatar argumentos da defesa presentes nos autos"
+  modulo: "nucleo; pads/fundamentacao"
+  testes: ["A16", "A17"]
+  versao: 1
+
+- id: TRV-ESC-004
+  origem: "§§21.1, 27.4"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, VALIDADOR]
+  enunciado: "Não confundir PADS com SR (acusado×sindicado; julgamento×relatório); sem homologação/avocação"
+  modulo: "domain/pads × domain/sr; validate.ScopeSR"
+  enforced_by: [sr.ConclusaoSR, pads.Julgamento]
+  testes: ["SR34", "T25"]
+  versao: 1
+
+- id: TRV-ESC-005
+  origem: "§§26.3, 21.2"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [UI, TEXTO_FIXO]
+  enunciado: "Aviso de revisão humana integral ao disponibilizar a minuta; não bloqueia download; não equivale a finalizar"
+  modulo: "frontend Revisao; compose.Aviso"
+  testes: ["SR34", "T09", "A31"]
+  versao: 1

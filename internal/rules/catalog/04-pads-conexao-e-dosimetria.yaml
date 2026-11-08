@@ -1,0 +1,135 @@
+# 4. PADS — conexão e dosimetria
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: PADS-CNX-001
+  origem: "§§5.1, 8.7; RDPM 58 VI §1º"
+  fluxo: PADS
+  rotulo: [APROVADO, INTERPRETACAO]
+  interpretacao: I-04
+  tipo: [DETERMINISTICA, PERGUNTA]
+  enunciado: "Conexas: escolher a principal (maior gravidade demonstrada, confirmada); secundárias como agravante; sem punição autônoma nem dupla contagem"
+  modulo: "engine.ConexaoPrincipal"
+  enforced_by: [engine.SugerirPrincipal, engine.AplicarConexao]
+  testes: ["C13-CNX-01"]
+  versao: 1
+
+- id: PADS-CNX-002
+  origem: "§5.2"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Não conexas: punição individual por transgressão procedente, com análise própria"
+  modulo: "engine.Sancoes"
+  enforced_by: [engine.AplicarConexao, pads.Julgamento]
+  testes: ["C13-IND-01", "MP-01", "MP-02", "MP-03", "MP-04", "MP-05", "MP-06"]
+  versao: 1
+
+- id: PADS-CNX-003
+  origem: "§5.3"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA]
+  enunciado: "Explicar conexão com base nos autos; perguntar se necessário; não repetir perguntas"
+  modulo: "workflow"
+  testes: ["PRG-01"]
+  versao: 1
+
+- id: PADS-DOS-001
+  origem: "§6.1; RDPM 36"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [VALIDADOR, POLITICA_IA]
+  enunciado: "Havendo punição, examinar os sete fatores I–VII individualmente, indicando ausência de elementos quando for o caso"
+  modulo: "validate.RequiredParts"
+  enforced_by: [engine.VerificarArt36]
+  testes: ["DOS-36-01"]
+  versao: 1
+
+- id: PADS-DOS-002
+  origem: "§6.2; RDPM 37"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA]
+  enunciado: "Causas de justificação examinadas com fundamentação"
+  modulo: "pads/circunstancias"
+  enforced_by: [engine.Dosimetria]
+  testes: ["DOS-37-01"]
+  versao: 1
+
+- id: PADS-DOS-003
+  origem: "§6.2; RDPM 38, 39"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [POLITICA_IA, PERGUNTA]
+  enunciado: "Atenuantes e agravantes com fundamentação específica, sem presunção"
+  modulo: "pads/circunstancias"
+  enforced_by: [engine.Dosimetria]
+  testes: ["DOS-38-01"]
+  versao: 1
+
+- id: PADS-DOS-004
+  origem: "§§6.2, 9, 15.6"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Comportamento anterior: ÓT/EXC → atenuante 38 I; INS → agravante 39 I; BOM → nenhuma"
+  modulo: "engine.CircunstanciaComportamento"
+  enforced_by: [engine.Dosimetria]
+  testes: ["DOS-CMP-01", "DOS-CMP-02", "DOS-CMP-03"]
+  versao: 1
+
+- id: PADS-DOS-005
+  origem: "§§6.2, 9-5"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA]
+  enunciado: "Perguntar sobre relevantes serviços (sim/não + justificativa factual); não inventar"
+  modulo: "workflow"
+  enforced_by: [engine.Dosimetria]
+  testes: ["DOS-38II-01"]
+  versao: 1
+
+- id: PADS-DOS-006
+  origem: "§6.3"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Dias: nenhuma circunstância ou quantidades iguais = 2; mais agravantes = 3; mais atenuantes = 1; sem multiplicar a diferença; repreensão sem dias"
+  modulo: "engine.Dosimetria"
+  enforced_by: [engine.Dosimetria]
+  testes: ["C13-DIA-01", "C13-DIA-02", "C13-DIA-03", "R9"]
+  versao: 1
+
+- id: PADS-DOS-007
+  origem: "D-05"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Cada alínea reconhecida do art. 39 VII conta como uma agravante; incisos II e III no máximo uma vez cada"
+  modulo: "engine.Dosimetria"
+  enforced_by: [engine.Dosimetria]
+  testes: ["DOS-D05-01", "DOS-D05-02", "DOS-D05-03", "DOS-D05-04"]
+  versao: 1
+
+- id: PADS-DOS-008
+  origem: "§6.3; RDPM 58 II b"
+  fluxo: PADS
+  rotulo: [APROVADO, INTERPRETACAO]
+  interpretacao: I-03
+  tipo: [VALIDADOR]
+  enunciado: "Validar compatibilidade com art. 58 III e com o limite de detenção ≤ 10 dias"
+  modulo: "validate.CalcConsistency"
+  enforced_by: [engine.ValidarDias, engine.LimiteDiasDetencao]
+  testes: ["DOS-LIM-01"]
+  versao: 1
+
+- id: PADS-DOS-009
+  origem: "§6.3"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [UI]
+  enunciado: "Memória da dosimetria visível e revisável pelo usuário"
+  modulo: "frontend MemoriaCalculo"
+  testes: ["UI-CALC-01"]
+  versao: 1

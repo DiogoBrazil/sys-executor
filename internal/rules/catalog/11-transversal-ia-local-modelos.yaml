@@ -1,0 +1,104 @@
+# 11. Transversal — IA local, modelos, hardware
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: TRV-IA-001
+  origem: "§36"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [ARQUITETURA]
+  enunciado: "IA local prioritária; GGUF; llama.cpp/llama-server como candidatos; sem acoplar regras ao modelo"
+  modulo: "inference (porta InferenceEngine)"
+  testes: ["F0-02"]
+  versao: 1
+
+- id: TRV-IA-002
+  origem: "§36.5"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Motor determinístico em Go para regras formalizáveis"
+  modulo: "rules/engine"
+  enforced_by: [engine.Reincidencia, engine.Equivaler, engine.GatilhoBomOtimo, engine.GatilhoExcepcional, engine.Pontuacao, engine.Dosimetria]
+  testes: ["GOV-COV-01"]
+  versao: 1
+
+- id: TRV-IA-003
+  origem: "§37"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Vários modelos instalados; um gerador por tarefa; embeddings separados"
+  modulo: "inference.Gerenciador"
+  testes: ["MOD-01"]
+  versao: 1
+
+- id: TRV-IA-004
+  origem: "§37"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, UI]
+  enunciado: "Detecção de hardware e seleção automática entre modelos testados; seleção manual avançada"
+  modulo: "inference.Hardware"
+  testes: ["T14", "MOD-02"]
+  versao: 1
+
+- id: TRV-IA-005
+  origem: "§37"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, UI]
+  enunciado: "Primeiro uso: download orientado + importação de GGUF; integridade; listar/remover"
+  modulo: "inference.Gerenciador"
+  testes: ["T27", "MOD-03", "MOD-04"]
+  versao: 1
+
+- id: TRV-IA-006
+  origem: "§38.1"
+  fluxo: TRV
+  rotulo: [APROVADO, A_VALIDAR]
+  tipo: [DETERMINISTICA]
+  enunciado: "GPU priorizada; GPU incompatível → CPU se viável"
+  modulo: "inference"
+  testes: ["T14"]
+  versao: 1
+
+- id: TRV-IA-007
+  origem: "§38.2"
+  fluxo: TRV
+  rotulo: [APROVADO, A_VALIDAR]
+  tipo: [ARQUITETURA]
+  enunciado: "Q4_K_M como referência; nenhum modelo definitivo antes de teste"
+  modulo: "catálogo de modelos"
+  testes: ["BEN-01"]
+  versao: 1
+
+- id: TRV-IA-008
+  origem: "§38.3"
+  fluxo: TRV
+  rotulo: [APROVADO, A_VALIDAR]
+  tipo: [DETERMINISTICA]
+  enunciado: "Contexto adaptativo pela memória disponível"
+  modulo: "inference.Orcamento"
+  testes: ["T16", "BEN-02"]
+  versao: 1
+
+- id: TRV-IA-009
+  origem: "§38.4"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [UI]
+  enunciado: "Máquina insuficiente → mensagem amigável, alternativa ou impossibilidade; nunca degradar em silêncio"
+  modulo: "inference"
+  testes: ["T15"]
+  versao: 1
+
+- id: TRV-IA-010
+  origem: "§§37, 31.1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [UI]
+  enunciado: "Sem streaming na UI"
+  modulo: "frontend"
+  testes: ["T07"]
+  versao: 1

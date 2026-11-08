@@ -1,0 +1,124 @@
+# 5. PADS — reincidência
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: PADS-REI-001
+  origem: "§§7.1, 15.5-1"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Somente mesma natureza (L/L, M/M, G/G); a equivalência de comportamento não muda a natureza"
+  modulo: "engine.Reincidencia"
+  enforced_by: [engine.Reincidencia]
+  testes: ["R4", "A21", "C13-REI-01"]
+  versao: 1
+
+- id: PADS-REI-002
+  origem: "§§7.1, 15.5-2"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Usar a data de término do cumprimento da punição anterior × data do fato atual"
+  modulo: "engine.Reincidencia"
+  enforced_by: [engine.Reincidencia]
+  testes: ["R1", "C13-REI-02"]
+  versao: 1
+
+- id: PADS-REI-003
+  origem: "§15.5-3"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Término estritamente anterior ao fato; posterior impede"
+  modulo: "engine.Reincidencia"
+  enforced_by: [engine.Reincidencia]
+  testes: ["R2", "A22"]
+  versao: 1
+
+- id: PADS-REI-004
+  origem: "§§7.1, 15.5-4; RDPM 39 p.ú."
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Prazo de 1/2/4 anos; desconsidera somente se decorrido tempo superior"
+  modulo: "engine.DentroPrazoReincidencia"
+  enforced_by: [civil.DentroPrazoReincidencia, engine.Reincidencia]
+  testes: ["R1", "REI-PRZ-01", "REI-PRZ-02", "REI-PRZ-03"]
+  versao: 1
+
+- id: PADS-REI-005
+  origem: "D-07"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Exatamente 1/2/4 anos ainda conta; a partir do dia seguinte ao aniversário, não"
+  modulo: "engine.DentroPrazoReincidencia"
+  enforced_by: [civil.DentroPrazoReincidencia, engine.Reincidencia]
+  testes: ["REI-D07-01", "REI-D07-02", "REI-D07-03", "REI-D07-04"]
+  versao: 1
+
+- id: PADS-REI-006
+  origem: "§15.5-5"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, PERGUNTA]
+  enunciado: "Mesma data: reconhecer só com horários provando anterioridade; iguais ou ausentes → não reconhecer"
+  modulo: "rules/civil.Comparar"
+  enforced_by: [civil.Comparar, engine.Reincidencia]
+  testes: ["R5", "R6", "R7", "R8", "A23", "A24"]
+  versao: 1
+
+- id: PADS-REI-007
+  origem: "§15.5"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA, DETERMINISTICA]
+  enunciado: "Data de término desconhecida → perguntar só se necessário; não fornecida → não reconhecer, com registro explicativo"
+  modulo: "workflow; engine"
+  enforced_by: [engine.Reincidencia, engine.ProximaPerguntaReincidencia]
+  testes: ["R3", "A26"]
+  versao: 1
+
+- id: PADS-REI-008
+  origem: "§§7.2, 15.5"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Várias punições anteriores válidas → uma agravante"
+  modulo: "engine.Reincidencia"
+  enforced_by: [engine.Reincidencia]
+  testes: ["R9", "A25"]
+  versao: 1
+
+- id: PADS-REI-009
+  origem: "§7.2"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA]
+  enunciado: "Perguntas condicionais: só após fixar a natureza atual; \"possui punição anterior de natureza X?\" → se sim, data de término DD/MM/AAAA; aproveitar documentos"
+  modulo: "workflow.PerguntasReincidencia"
+  enforced_by: [engine.ProximaPerguntaReincidencia]
+  testes: ["PRG-REI-01", "PRG-REI-02"]
+  versao: 1
+
+- id: PADS-REI-010
+  origem: "§7.2"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, PERGUNTA]
+  enunciado: "Conexas: natureza da principal; não conexas: individual, reaproveitando dados sem repetir perguntas"
+  modulo: "engine; workflow"
+  enforced_by: [engine.AplicarConexao, engine.Reincidencia]
+  testes: ["REI-CNX-01"]
+  versao: 1
+
+- id: PADS-REI-011
+  origem: "§15.6"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Não confundir o prazo da reincidência com o \"inferior a um ano\" da regressão"
+  modulo: "funções distintas"
+  enforced_by: [civil.MenosDeUmAno, civil.DentroPrazoReincidencia]
+  testes: ["REI-D07-04", "DT-02"]
+  versao: 1

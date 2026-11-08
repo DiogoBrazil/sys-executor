@@ -1,0 +1,123 @@
+# 12. Transversal — biblioteca jurídica e pesquisa web
+# Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
+# O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
+
+- id: TRV-LIB-001
+  origem: "§§29.3, 40.1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Biblioteca permanente, separada dos autos temporários"
+  modulo: "legal × session"
+  testes: ["LIB-SEP-01"]
+  versao: 1
+
+- id: TRV-LIB-002
+  origem: "§40.2"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Importar `docs/law_library` no preparo inicial; ampliação manual"
+  modulo: "legal.Bootstrap"
+  testes: ["T28"]
+  versao: 1
+
+- id: TRV-LIB-003
+  origem: "§40.3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Guardar originais + metadados; preservar artigo, §, inciso, alínea e localização"
+  modulo: "legal.ParserNormas"
+  testes: ["LIB-PARSE-01", "LIB-PARSE-02", "LIB-PARSE-03", "LIB-PARSE-04", "LIB-PARSE-05"]
+  versao: 1
+
+- id: TRV-LIB-004
+  origem: "§§18.1, 40.3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, VALIDADOR]
+  enunciado: "Busca exata + semântica; RAG não prova vigência; conferir a fonte antes de citar"
+  modulo: "legal.Busca; validate.LegalRefs"
+  testes: ["A13", "LIB-HYB-01"]
+  versao: 1
+
+- id: TRV-LIB-005
+  origem: "§40.4"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Embeddings locais separados; trocar gerador não reindexa; trocar embeddings pode reindexar sem perder originais"
+  modulo: "legal.Indice"
+  testes: ["T21", "LIB-REIDX-01"]
+  versao: 1
+
+- id: TRV-LIB-006
+  origem: "§40.5"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, UI]
+  enunciado: "5 categorias automáticas com correção manual; busca atravessa categorias"
+  modulo: "legal"
+  testes: ["LIB-CAT-01"]
+  versao: 1
+
+- id: TRV-LIB-007
+  origem: "§40.6"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, UI]
+  enunciado: "Duplicidade/versão → manter ambas ou substituir; nunca em silêncio; índices atualizados; versão identificada na citação"
+  modulo: "legal.Versoes"
+  testes: ["T22", "LIB-DUP-RDPM-01"]
+  versao: 1
+
+- id: TRV-LIB-008
+  origem: "§40.7"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, UI]
+  enunciado: "Exclusão com confirmação; remove texto e vetores; bloqueia se usado na tarefa ativa; preserva modelos"
+  modulo: "legal.Excluir"
+  testes: ["T23"]
+  versao: 1
+
+- id: TRV-LIB-009
+  origem: "§§18.3, 40.6"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Atualização do corpus só a pedido expresso; nada automático ao iniciar"
+  modulo: "legal"
+  testes: ["A14", "A15"]
+  versao: 1
+
+- id: TRV-LIB-010
+  origem: "§41"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, UI]
+  enunciado: "Pesquisa web desligada por padrão; preferência persistente"
+  modulo: "config; legal/web"
+  testes: ["T19"]
+  versao: 1
+
+- id: TRV-LIB-011
+  origem: "§41"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA, DETERMINISTICA]
+  enunciado: "Ligada: automática e condicional, fontes oficiais, sem dados sigilosos, sem incorporar ao corpus, conferir antes de citar"
+  modulo: "legal/web"
+  testes: ["T20", "A13"]
+  versao: 1
+
+- id: TRV-LIB-012
+  origem: "D-01"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Nota de vigência curada para o art. 41 § 3º do RDPM; filtrar da redação; sem alerta"
+  modulo: "legal.NotaVigencia"
+  testes: ["LIB-D01-01", "LIB-D01-02"]
+  versao: 1
