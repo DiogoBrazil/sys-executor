@@ -179,7 +179,11 @@ const resumo = {
     { id: "PEC-01", titulo: "MEMORANDO DISCIPLINAR", funcao: "MEMORANDO_DISCIPLINAR", rotulo: "Memorando Disciplinar", paginaInicial: 1, paginaFinal: 1, sei: "0090000001", provavel: false, externo: false, situacao: "LIDA" },
     { id: "PEC-02", titulo: "MANIFESTAÇÃO", funcao: "DEFESA_PREVIA", rotulo: "Defesa prévia", paginaInicial: 2, paginaFinal: 3, sei: "", provavel: true, externo: true, situacao: "OCR_BAIXO" },
   ],
-  midias: [{ pagina: 2, peca: "PEC-02", termo: "gravação", inicio: 10, fim: 18 }],
+  midias: [
+    { pagina: 2, peca: "PEC-02", termo: "gravação", inicio: 10, fim: 18 },
+    { pagina: 3, peca: "PEC-02", termo: "Vídeo", inicio: 1, fim: 6 },
+    { pagina: 3, peca: "PEC-02", termo: "vídeo", inicio: 20, fim: 25 },
+  ],
 };
 
 describe("Fase 2 — autos, perguntas e parada", () => {
@@ -212,7 +216,10 @@ describe("Fase 2 — autos, perguntas e parada", () => {
     expect(pecas).toContain("documento externo");
     expect(w.find('[data-teste="cobertura"]').text()).toContain("1 OCR de baixa qualidade");
     expect(w.find('[data-teste="paginas-problema"]').text()).toContain("2");
-    expect(w.find('[data-teste="midias"]').text()).toContain("gravação");
+    const midias = w.find('[data-teste="midias"]');
+    expect(midias.findAll("li")).toHaveLength(1); // agrupadas por peça
+    expect(midias.text()).toContain("Defesa prévia");
+    expect(midias.text()).toContain("gravação, vídeo · 3 menções");
     expect(w.find('[data-teste="cancelar"]').exists()).toBe(true);
   });
 

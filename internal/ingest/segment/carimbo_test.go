@@ -114,7 +114,8 @@ func TestTiposDaArvore(t *testing.T) {
 		"Informação 20":    Informacao,
 		"Anexo - Ciência na Informação nº 20":       Ciencia,
 		"Anexo Feito Preliminar nº 1 - 2025 - CAPA": "",
-		"Anexo Email":                              "",
+		"Anexo Email":                              Email,
+		"Anexo E-mail da unidade":                  Email,
 		"Despacho do comandante do batalhão":       Despacho,
 		"Portaria nº 10 de 17 de dezembro de 2025": Portaria,
 	}

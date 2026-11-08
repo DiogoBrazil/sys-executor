@@ -46,6 +46,7 @@ const (
 	Representacao        Funcao = "REPRESENTACAO"
 	Procuracao           Funcao = "PROCURACAO"
 	Informacao           Funcao = "INFORMACAO"
+	Email                Funcao = "EMAIL"
 	Ciencia              Funcao = "CIENCIA" // comprovante de ciência de notificação/despacho
 	Anexo                Funcao = "ANEXO"
 	Indeterminada        Funcao = "INDETERMINADA"
@@ -103,6 +104,7 @@ var regrasTitulo = []struct {
 	{regexp.MustCompile(`(^|\s)representacao`), Representacao},
 	{regexp.MustCompile(`(^|\s)procuracao`), Procuracao},
 	{regexp.MustCompile(`(^|\s)informacao`), Informacao},
+	{regexp.MustCompile(`\be-?mail\b|correio eletronico`), Email},
 	{regexp.MustCompile(`(^|\s)portaria`), Portaria},
 	{regexp.MustCompile(`(^|\s)despacho`), Despacho},
 	{regexp.MustCompile(`(^|\s)oficio`), Oficio},

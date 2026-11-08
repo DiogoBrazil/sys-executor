@@ -25,6 +25,34 @@ const problemas = computed(() =>
   (props.autos.paginas ?? []).filter((p) => p.situacao === "ILEGIVEL" || p.situacao === "OCR_BAIXO"),
 );
 
+// Menções agrupadas por peça: termos distintos, contagem e a 1ª ocorrência.
+const gruposMidia = computed(() => {
+  const grupos: { peca: string; rotulo: string; paginas: string; termos: string[]; total: number; pagina: number; inicio: number; fim: number }[] = [];
+  const porPeca = new Map<string, (typeof grupos)[number]>();
+  for (const m of props.autos.midias ?? []) {
+    let g = porPeca.get(m.peca);
+    if (!g) {
+      const p = (props.autos.pecas ?? []).find((x) => x.id === m.peca);
+      g = {
+        peca: m.peca,
+        rotulo: p?.rotulo ?? "Peça",
+        paginas: p ? paginas(p.paginaInicial, p.paginaFinal) : `p. ${m.pagina}`,
+        termos: [],
+        total: 0,
+        pagina: m.pagina,
+        inicio: m.inicio,
+        fim: m.fim,
+      };
+      porPeca.set(m.peca, g);
+      grupos.push(g);
+    }
+    g.total++;
+    const t = m.termo.toLowerCase();
+    if (!g.termos.includes(t)) g.termos.push(t);
+  }
+  return grupos;
+});
+
 function paginas(a: number, b: number) {
   return a === b ? `p. ${a}` : `pp. ${a}–${b}`;
 }
@@ -70,10 +98,10 @@ function paginas(a: number, b: number) {
         transcrição antes de usar essas provas.
       </p>
       <ul class="midias" data-teste="midias">
-        <li v-for="(m, i) in autos.midias" :key="i">
-          <button class="item" @click="emit('abrir', m.pagina, m.inicio, m.fim)">
-            <span class="rotulo">"{{ m.termo }}"</span>
-            <span class="meta">p. {{ m.pagina }}</span>
+        <li v-for="g in gruposMidia" :key="g.peca">
+          <button class="item" @click="emit('abrir', g.pagina, g.inicio, g.fim)">
+            <span class="rotulo">{{ g.rotulo }}</span>
+            <span class="meta">{{ g.paginas }} — {{ g.termos.slice(0, 4).join(", ") }}<template v-if="g.termos.length > 4">…</template> · {{ g.total }} {{ g.total === 1 ? "menção" : "menções" }}</span>
           </button>
         </li>
       </ul>
