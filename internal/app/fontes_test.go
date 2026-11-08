@@ -33,12 +33,16 @@ func TestFontesPDFEDestaque(t *testing.T) {
 	_, _ = g.EscolherTipo(workflow.TipoPADS)
 	_, _ = g.EscolherEntrada(workflow.EntradaUpload)
 	_, _ = g.ReceberUpload(b)
-	fim := time.Now().Add(30 * time.Second)
-	for time.Now().Before(fim) {
-		if v := g.Visao(); v.Autos != nil && v.Autos.TotalPaginas > 0 && (v.Parada || v.Estado == workflow.AguardandoEsclarecimento) {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
+	// Com -race no CI, o pdfium em WebAssembly fica bem mais lento.
+	fim := time.Now().Add(4 * time.Minute)
+	pronto := false
+	for !pronto && time.Now().Before(fim) {
+		v := g.Visao()
+		pronto = v.Autos != nil && v.Autos.TotalPaginas > 0 && (v.Parada || v.Estado == workflow.AguardandoEsclarecimento)
+		time.Sleep(20 * time.Millisecond)
+	}
+	if !pronto {
+		t.Fatalf("autos não ficaram prontos: %+v", g.Visao())
 	}
 	end := f.EnderecoPDF()
 	if end.Erro != nil || len(end.Endereco) < 30 {

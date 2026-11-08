@@ -45,7 +45,7 @@ jobs:
       - name: go vet (Windows, tudo)
         run: GOOS=windows go vet ./...
       - name: Testes
-        run: go test -race ./internal/... ./cmd/rulescov/... ./cmd/licencas/...
+        run: go test -race -timeout 25m ./internal/... ./cmd/rulescov/... ./cmd/licencas/...
 
   go-windows:
     name: Go no Windows (ACL, WER, processos, T12)
@@ -56,7 +56,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Testes
-        run: go test ./internal/... ./cmd/rulescov/... ./cmd/licencas/...
+        run: go test -timeout 25m ./internal/... ./cmd/rulescov/... ./cmd/licencas/...
 
   frontend:
     name: Frontend (tipos, testes, build, auditoria)

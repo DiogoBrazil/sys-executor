@@ -54,7 +54,7 @@ func montar(t *testing.T, conf float64) (*workflow.Gerenciador, string) {
 
 func esperar(t *testing.T, g *workflow.Gerenciador, cond func(*workflow.Visao) bool) *workflow.Visao {
 	t.Helper()
-	fim := time.Now().Add(60 * time.Second)
+	fim := time.Now().Add(4 * time.Minute) // -race no CI deixa o pdfium (wasm) lento
 	for time.Now().Before(fim) {
 		if v := g.Visao(); v != nil && cond(v) {
 			return v
