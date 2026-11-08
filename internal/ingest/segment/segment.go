@@ -42,6 +42,10 @@ const (
 	TermoRemessa         Funcao = "TERMO_REMESSA"
 	Manifestacao         Funcao = "MANIFESTACAO" // ambígua: resolvida pela cronologia
 	Capa                 Funcao = "CAPA"
+	TermoJuntada         Funcao = "TERMO_JUNTADA"
+	Representacao        Funcao = "REPRESENTACAO"
+	Procuracao           Funcao = "PROCURACAO"
+	Informacao           Funcao = "INFORMACAO"
 	Ciencia              Funcao = "CIENCIA" // comprovante de ciência de notificação/despacho
 	Anexo                Funcao = "ANEXO"
 	Indeterminada        Funcao = "INDETERMINADA"
@@ -95,6 +99,10 @@ var regrasTitulo = []struct {
 	{regexp.MustCompile(`\bata\b.{0,40}videoconferencia`), AtaVideoconferencia},
 	{regexp.MustCompile(`(^|\s)ata\b`), Ata},
 	{regexp.MustCompile(`termo\s+de\s+remessa`), TermoRemessa},
+	{regexp.MustCompile(`termo\s+de\s+juntada`), TermoJuntada},
+	{regexp.MustCompile(`(^|\s)representacao`), Representacao},
+	{regexp.MustCompile(`(^|\s)procuracao`), Procuracao},
+	{regexp.MustCompile(`(^|\s)informacao`), Informacao},
 	{regexp.MustCompile(`(^|\s)portaria`), Portaria},
 	{regexp.MustCompile(`(^|\s)despacho`), Despacho},
 	{regexp.MustCompile(`(^|\s)oficio`), Oficio},

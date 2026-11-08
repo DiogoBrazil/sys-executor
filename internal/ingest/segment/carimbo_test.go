@@ -21,7 +21,7 @@ func autosComCarimbos() *autos.Autos {
 	docs := []doc{
 		{"PADS CAPA", "1000000001", 2, true, false, "capa"},
 		{"PADS Memorando Disciplinar 12", "1000000002", 2, false, false, "texto"},
-		{"Termo de Abertura", "1000000003", 1, false, false, "texto"},
+		{"Termo de Juntada", "1000000003", 1, false, false, "texto"},
 		{"Anexo Despacho nº 123 - 2026 - CAPA", "1000000004", 1, false, false, "texto"},
 		{"Anexo Documento", "1000000005", 3, false, false, "texto"},
 		{"Despacho corregedoria - encaminhamento", "1000000006", 1, false, false, "texto"},
@@ -64,7 +64,7 @@ func TestSegmentarPorCarimbo(t *testing.T) {
 		ini, fim int
 		f        Funcao
 	}{
-		{1, 2, Capa}, {3, 4, MemorandoDisciplinar}, {5, 5, Indeterminada}, {6, 6, Despacho}, {7, 9, Anexo}, // "Anexo Despacho…" é despacho anexado
+		{1, 2, Capa}, {3, 4, MemorandoDisciplinar}, {5, 5, TermoJuntada}, {6, 6, Despacho}, {7, 9, Anexo}, // "Anexo Despacho…" é despacho anexado
 		{10, 10, Despacho}, {11, 12, Anexo}, {13, 15, DefesaPrevia}, {16, 16, Notificacao}, {17, 17, Ciencia},
 		{18, 19, AtaVideoconferencia}, {20, 20, Notificacao}, {21, 21, Ciencia}, {22, 24, AlegacoesFinais}, {25, 25, TermoRemessa},
 	}
@@ -102,5 +102,26 @@ func TestCronologiaComAtaDeVideoconferencia(t *testing.T) {
 	ps := Segmentar(&a)
 	if ps[1].Funcao != DefesaPrevia || !ps[1].Provavel || ps[3].Funcao != AlegacoesFinais || !ps[3].Provavel {
 		t.Fatalf("%+v", ps)
+	}
+}
+
+// Tipos vistos na árvore real do SEI/RO (nomes fictícios).
+func TestTiposDaArvore(t *testing.T) {
+	casos := map[string]Funcao{
+		"Termo de Juntada": TermoJuntada,
+		"Representação":    Representacao,
+		"Procuração":       Procuracao,
+		"Informação 20":    Informacao,
+		"Anexo - Ciência na Informação nº 20":       Ciencia,
+		"Anexo Feito Preliminar nº 1 - 2025 - CAPA": "",
+		"Anexo Email":                              "",
+		"Despacho do comandante do batalhão":       Despacho,
+		"Portaria nº 10 de 17 de dezembro de 2025": Portaria,
+	}
+	for nome, esperado := range casos {
+		f, _ := classificar(nome)
+		if f != esperado {
+			t.Errorf("%q: %q, esperado %q", nome, f, esperado)
+		}
 	}
 }
