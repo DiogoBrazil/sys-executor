@@ -136,7 +136,7 @@ flowchart LR
   WF --> CMP[compose: DocModel PADS/SR]
   CMP --> VAL[validate: determinístico + 2ª passada IA]
   VAL --> EXP[export: DOCX + Typst PDF]
-  WF --> SES[session: dir efêmero, ACL, DPAPI, limpeza, credenciais]
+  WF --> SES[session: dir efêmero, ACL, cifra com chave em memória, limpeza, credenciais]
 ```
 
 **Árvore proposta:**
@@ -145,7 +145,7 @@ cmd/sys-executor/  cmd/rulescov/  cmd/bench/  cmd/fixturegen/
 internal/
   app/            serviços expostos ao frontend (bindings Wails)
   workflow/       Task FSM, DAG de etapas, perguntas, invalidação seletiva
-  session/        diretório efêmero, ACL, DPAPI, credenciais []byte, limpeza, varredura de resíduos
+  session/        diretório efêmero, ACL, cifra AES-GCM com chave só em memória (PT-F1-01), credenciais []byte, limpeza, varredura de resíduos
   sei/            cliente chromedp (login, OTP, reautenticação, processo, gerar PDF, download), guarda de URL
   ingest/{pdf,ocr,segment,evidence}
   domain/{common,pads,sr}      tipos e invariantes puros
@@ -156,7 +156,7 @@ internal/
   compose/        DocModel, slots narrativos, textos fixos parametrizados
   validate/       validadores, relatório de validação, laço de correção
   export/         docx (OOXML), typst, nomes de arquivo
-  platform/win/   Job Objects, ACL, DPAPI, WER, detecção de hardware
+  platform/win/   Job Objects, ACL, WER, processos vivos, detecção de hardware
 policies/         núcleo/, pads/, sr/, trv/, schemas/*.json, V4.lock, CHANGELOG.md
 frontend/src/{views,components,stores,bindings}
 assets/institucional/ (D-04)   build/windows/{nsis,wix}   testdata/ (sintético)
@@ -286,7 +286,7 @@ assets/institucional/ (D-04)   build/windows/{nsis,wix}   testdata/ (sintético)
 - Verificação do arquivo: assinatura PDF, abertura no pdfium, contagem de páginas > 0, número do processo presente no texto e, quando visível, o número de documentos listados no SEI comparado com as peças detectadas (alerta, não bloqueio).
 - **Timeouts** por etapa e cancelamento sempre disponível.
 
-**Upload:** diálogo nativo. O PDF é lido para a memória e gravado cifrado (DPAPI) no diretório efêmero. Não pede credenciais (T02).
+**Upload:** diálogo nativo. O PDF é lido para a memória e gravado cifrado (AES-256-GCM com chave só em memória, PT-F1-01) no diretório efêmero. Não pede credenciais (T02).
 
 **Extração:** go-pdfium em modo **WebAssembly/wazero** (MIT + PDFium Apache-2.0; sem CGO; **confirmado na F0:** 806 páginas em 0,67 s com 4 workers; contingência CGO desnecessária). Fornece texto estruturado com posições (destaque na UI) e renderização para imagem (OCR). Alternativa: go-pdfium CGO multi-processo. MuPDF foi descartado (AGPL).
 
@@ -445,12 +445,12 @@ Q4_K_M é a referência inicial. **Resultado da F0:** Qwen3.5-4B como perfil pad
 **Modelo de ameaças:**
 | Ameaça | Mitigação |
 |---|---|
-| Vazamento de autos em disco | Diretório `%LOCALAPPDATA%\sys-executor\work\<aleatório>` com DACL protegida só para o SID do usuário; arquivos cifrados com DPAPI (escopo usuário) quando o consumidor aceita bytes em memória; nomes opacos; temporários de Tesseract/Typst criados e apagados imediatamente |
+| Vazamento de autos em disco | Diretório `%LOCALAPPDATA%\sys-executor\work\<aleatório>` com DACL protegida só para o SID do usuário; arquivos cifrados com AES-256-GCM e **chave aleatória só em memória** (PT-F1-01: após uma queda, os resíduos ficam ilegíveis) quando o consumidor aceita bytes em memória; nomes opacos; temporários de Tesseract/Typst criados e apagados imediatamente |
 | Resíduos após crash | Marcador com PID; na inicialização, remove sessões de PIDs mortos (sobrescrita + remoção, como melhor esforço; ressalva de SSD/backup na documentação) **sem restaurar nada** (T12) |
 | Credenciais | Só modalidade SEI, por tarefa, `[]byte` zerado, nunca em preferências/logs/eventos; sem "lembrar senha" (T13) |
 | Logs | Logger do Wails → buffer em memória sem conteúdo de caso; sidecars sem arquivo de log; diagnóstico em memória "copiável" contendo só versões, hardware e códigos de erro |
 | Caches do WebView2/Edge | `Cache-Control: no-store` no asset handler da sessão (PDF dos autos e prévia) com token por sessão; pasta de dados do WebView2 da app limpa de cache ao finalizar e ao iniciar; perfil do Edge do SEI descartável |
-| Dumps | Exclusão da app no WER do usuário (`WerAddExcludedApplication`) [A VALIDAR]; risco residual documentado |
+| Dumps | Exclusão da app no WER do usuário (`WerAddExcludedApplication`), **validada na F1** (registro `HKCU\…\ExcludedApplications`); relatório de falhas do WebView2 desligado (`--disable-crash-reporter`); risco residual documentado |
 | Porta local do sidecar | Loopback, porta aleatória, API key aleatória, processo filho em Job Object |
 | Prompt injection | §5.6 |
 | SEI destrutivo | Ausência de métodos de escrita + allowlist de `acao` + validação de host; teste que tenta navegar para ações de escrita → bloqueio |
@@ -517,14 +517,14 @@ Cada tarefa vai receber, em `PLANO_IMPLEMENTACAO`, a lista de arquivos, os teste
 
 **Fase 1 — Fundação:**
 - F1-01 Estrutura de pastas/módulos.
-- F1-02 Sessão efêmera (ACL, DPAPI, limpeza, varredura de resíduos).
+- F1-02 Sessão efêmera (ACL, cifra com chave em memória — PT-F1-01, limpeza, varredura de resíduos).
 - F1-03 FSM da tarefa + eventos de status.
 - F1-04 Telas Início/Entrada/Processamento (vazio/erro).
 - F1-05 Preferências persistentes mínimas.
 - F1-06 Catálogo de erros.
 - F1-07 CI (Go test, lint, rulescov esqueleto, licenças).
 
-*Saída:* T01, T02, T07, T12 verdes.
+*Saída:* T01, T02, T07, T12 verdes. **Concluída em 08/11/2026** (`RELATORIO_FASE1.md`), com SEG-DIR-01 e SEG-LOG-01.
 
 **Fase 3 — Motor determinístico** (pode rodar **em paralelo** com a Fase 2, porque não depende de IA):
 - F3-01 `civil`.
@@ -616,7 +616,7 @@ Cada tarefa vai receber, em `PLANO_IMPLEMENTACAO`, a lista de arquivos, os teste
 | P-07 | OSMF do WiX | DEPENDÊNCIA/licença | MSI | Verificar; contingência wixl |
 | P-08 | Licença Qwen2.5-3B | RESOLVIDA (F0): Qwen Research, fora do catálogo | Catálogo de modelos | — |
 | P-09 | PDF real do SEI para mapear segmentação/telas | DEPENDÊNCIA | F2 | PoC local do usuário, sem copiar dados |
-| P-10 | Desempenho pdfium-wasm, Tesseract stdin, `--no-webui`, WER | PARCIAL (F0): tudo OK exceto WER | Técnico | WER na F1-02 |
+| P-10 | Desempenho pdfium-wasm, Tesseract stdin, `--no-webui`, WER | RESOLVIDA (F0 + WER na F1) | Técnico | — |
 | P-11 | Duplicidade RDPM-RO.pdf × RDPM dentro da Coletânea (2015) | Biblioteca | Versão citada | Tela manter/substituir no bootstrap (F5) |
 
 ---

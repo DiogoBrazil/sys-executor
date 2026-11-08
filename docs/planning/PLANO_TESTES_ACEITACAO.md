@@ -263,7 +263,7 @@ Minuta adulterada → o validador **deve bloquear** e o laço de correção deve
 | SEG-NET-01 / T18 | Firewall bloqueando tudo; upload | Tarefa completa; zero tentativas de conexão externa (web desligada) |
 | SEG-WEB-01 | Web ligada | Consultas sem nomes, SEI, matrículas, datas do caso |
 | SEG-SID-01 | Sidecar | Só loopback; sem API key → 401; morre com o app |
-| SEG-CACHE-01 / SEG-WER-01 | Caches do WebView2/Edge; WER | Limpos/no-store; exclusão do WER [A VALIDAR] |
+| SEG-CACHE-01 / SEG-WER-01 | Caches do WebView2/Edge; WER | Pasta do WebView2 restrita ao usuário e esvaziada no encerramento e na abertura; no-store nos assets da sessão (F2); exclusão do WER validada na F1 |
 | ERR-01…15 | Cada código do catálogo de erros | Mensagem amigável, sem segredo, sem sucesso simulado |
 | DOC-01 | Textos de UI/manual | Não prometem apagamento forense |
 | SES-CONC-01 | Segunda tarefa simultânea | Bloqueada com mensagem |

@@ -175,7 +175,7 @@
 | TRV-UI-009 | §§1.1-8, 19-A31 | "Aguardando revisão" até comando inequívoco; downloads permitidos antes | AP | DET | workflow FSM | A31, SEG13-06 |
 | TRV-SES-001 | §29.1 | Tarefa efêmera, sem histórico nem retomada | AP | DET | session; workflow | T12 |
 | TRV-SES-002 | §29.1 | Finalizar → apagar todos os artefatos controlados; preservar exportações, biblioteca, modelos e preferências | AP | DET | session.Finalizar | T11 |
-| TRV-SES-003 | §29.2 | Temporários mínimos, com ACL do usuário Windows e proteção adicional (DPAPI) | AP/PT | SEG | session; platform/win | SEG-DIR-01 |
+| TRV-SES-003 | §29.2 | Temporários mínimos, com ACL do usuário Windows e proteção adicional (cifra AES-256-GCM com chave só em memória, PT-F1-01) | AP/PT | SEG | session; platform/win | SEG-DIR-01 |
 | TRV-SES-004 | §29.2 | Na inicialização, remover resíduos de crash sem restaurar | AP | SEG | session.VarrerResiduos | T12, SEG-CRASH-01 |
 | TRV-SES-005 | §§29.2, 1.1-9 | Não prometer apagamento forense | AP | UI | textos | DOC-01 |
 | TRV-SES-006 | §§12.2-4, 43 | Concorrência: uma tarefa ativa por instância | PT | DET | workflow | SES-CONC-01 |

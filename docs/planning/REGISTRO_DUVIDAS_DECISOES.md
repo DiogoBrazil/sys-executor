@@ -96,7 +96,7 @@
 | P-07 | Taxa OSMF do WiX Toolset v6/v7 para gerar `.msi` | Pesquisa de 08/11/2026 | Verificar se se aplica a uso institucional; contingência `msitools/wixl` | Média (F8) |
 | P-08 | Licença do Qwen2.5-3B-Instruct (provável "Qwen Research", diferente de Apache-2.0) | V4 §37 | **RESOLVIDA na F0:** Qwen Research License (não comercial) → **fora do catálogo**. Qwen3.5-2B/4B, Qwen3-4B-Instruct-2507 e Qwen3-Embedding-0.6B são Apache-2.0 (RELATORIO_FASE0 §4.5) | — |
 | P-09 | PDF consolidado real do SEI e mapeamento das telas | V4 §2.1 | PoC F0-08 rodada **pelo próprio usuário**, sem copiar dados sigilosos para o repositório. **Mapeamento das telas concluído em 08/11/2026** (RELATORIO_FASE0 §3). Falta: valor de `acao_ajax` e padrão de segmentação de um PDF consolidado real (observado localmente) | Alta (F2) |
-| P-10 | Desempenho do pdfium-wasm em autos longos; Tesseract via stdin; flag `--no-webui`; exclusão do WER; fallback de fonte | Técnico | **PARCIAL na F0:** pdfium-wasm OK (806 págs em 0,67 s); Tesseract stdin OK; `--no-webui` OK; fallback de fonte exige empacotar Liberation Serif. **Exclusão do WER não testada** (altera o registro do Windows do usuário) → validar na F1-02 (`platform/win`) | Média (F1) |
+| P-10 | Desempenho do pdfium-wasm em autos longos; Tesseract via stdin; flag `--no-webui`; exclusão do WER; fallback de fonte | Técnico | **RESOLVIDA:** pdfium-wasm OK (806 págs em 0,67 s); Tesseract stdin OK; `--no-webui` OK; fallback de fonte exige empacotar Liberation Serif (F0). **Exclusão do WER validada na F1** (`WerAddExcludedApplication` por usuário, conferida no registro e reversível) | — |
 | P-11 | Duplicidade real RDPM-RO.pdf × RDPM dentro da Coletânea (2015, versão anterior ao Dec. 24.965/2020) | V4 §40.6 | Tela de decisão manter/substituir no bootstrap; o usuário escolhe | Média (F5) |
 
 ## 3. Interpretações funcionais registradas pelo planejamento (sem pergunta, por decorrerem diretamente da V4)
@@ -111,8 +111,19 @@
 
 Se o usuário discordar de alguma interpretação I-xx, ela será corrigida neste registro e no catálogo antes da Fase 3.
 
+## 3-A. Decisões técnicas da implementação (propostas técnicas, sem efeito jurídico)
+
+| ID | Decisão | Motivo | Fase |
+|---|---|---|---|
+| PT-F1-01 | Os arquivos da sessão são cifrados com **AES-256-GCM e chave aleatória que só existe na memória** do processo, em vez de DPAPI | Com DPAPI, resíduos de uma queda continuariam legíveis pela conta do usuário; com a chave só em memória, eles ficam ilegíveis para sempre, e a varredura da próxima abertura os apaga (T12). A ACL restrita ao usuário continua valendo | F1 |
+| PT-F1-02 | Serviços expostos à interface **nunca devolvem `error`**; devolvem `Resposta{visao, erro}` com o erro do catálogo | O Wails envia `err.Error()` ao JavaScript, o que exporia a causa técnica (V4 §33) | F1 |
+| PT-F1-03 | Pasta de dados do WebView2 própria, restrita ao usuário, esvaziada na abertura e, no encerramento, por uma cópia do executável em modo "faxina" que espera o app terminar | Os processos do WebView2 só soltam os arquivos depois que o app encerra (SEG-LOG-01) | F1 |
+| PT-F1-04 | Escolher "Acessar o SEI/RO" mostra o aviso TAR-004 e mantém a tarefa na escolha de entrada até a Fase 2 | Não simular funcionalidade inexistente (V4 §33) | F1 |
+| PT-F1-05 | Etapa de processamento sem implementação encerra a tarefa com TAR-004 e descarta os temporários | Nunca simular sucesso | F1 |
+
 ## 4. Histórico
 - 08/11/2026: criado o registro e respondidas D-01…D-07 durante o planejamento. Plano aprovado como planejamento, sem autorização de código.
 - 08/11/2026: Fase 0 executada (autorizada pelo usuário). Resultados em `RELATORIO_FASE0.md`. P-08 resolvida; P-10 parcial (WER → F1-02). Ajustes do §5 do relatório e pendências do §7 **aguardam decisão do usuário**. Duas quedas da máquina no dia: a 1ª durante o teste Vulkan (GPU), a 2ª por falta de energia, sem perda de artefatos.
 - 08/11/2026 (após a Fase 0): D-08 (não repetir o teste Vulkan) e D-09 (11 ajustes aprovados) registradas; plano e ADRs atualizados. F0-08 (SEI) segue com o usuário.
 - 08/11/2026 (~14:45): F0-08 executada pelo usuário (login, 2FA, sigiloso, gerar PDF). Reautenticação de sigiloso segue a V4 §§13/33: pedir a senha de novo, sem reter. Fase 0 encerrada.
+- 08/11/2026: Fase 1 (Fundação) executada com autorização do usuário. P-10 resolvida (WER). Decisões técnicas PT-F1-01…05 registradas. Resultados em `RELATORIO_FASE1.md`.

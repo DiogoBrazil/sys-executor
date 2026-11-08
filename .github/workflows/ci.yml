@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.27.x"
+  NODE_VERSION: "24"
+
+jobs:
+  governanca:
+    name: Governança (V4.lock, cobertura, licenças)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Placeholder do frontend (o go:embed exige ao menos um arquivo em dist)
+        run: mkdir -p frontend/dist && touch frontend/dist/.gitkeep
+      - name: GOV-LOCK-01 e GOV-COV-01 (rulescov)
+        run: go run ./cmd/rulescov -estrito
+      - name: Licenças (Go do executável Windows + npm de produção)
+        run: go run ./cmd/licencas
+
+  go-linux:
+    name: Go (lint e testes)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Placeholder do frontend (o go:embed exige ao menos um arquivo em dist)
+        run: mkdir -p frontend/dist && touch frontend/dist/.gitkeep
+      - name: gofmt
+        run: test -z "$(gofmt -l cmd internal frontend/embed.go)"
+      - name: go vet (Linux, sem o executável que exige Windows)
+        run: go vet ./internal/... ./cmd/rulescov/... ./cmd/licencas/...
+      - name: go vet (Windows, tudo)
+        run: GOOS=windows go vet ./...
+      - name: Testes
+        run: go test -race ./internal/... ./cmd/rulescov/... ./cmd/licencas/...
+
+  go-windows:
+    name: Go no Windows (ACL, WER, processos, T12)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Testes
+        run: go test ./internal/... ./cmd/rulescov/... ./cmd/licencas/...
+
+  frontend:
+    name: Frontend (tipos, testes, build, auditoria)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Auditoria das dependências de produção
+        run: npm audit --omit=dev
+
+  build-windows:
+    name: Executável Windows x64
+    needs: [go-linux, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - run: npm ci && npm run build
+        working-directory: frontend
+      - name: Compilar (sem console, sem CGO)
+        run: GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o sys-executor.exe ./cmd/sys-executor
