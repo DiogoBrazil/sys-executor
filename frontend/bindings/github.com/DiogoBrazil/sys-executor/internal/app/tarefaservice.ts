@@ -60,6 +60,27 @@ export function EscolherTipo(tipo: string): $CancellablePromise<$models.Resposta
 }
 
 /**
+ * InformarCredenciais entrega usuário, senha, órgão e número do processo ao
+ * login do SEI. A senha vira []byte e é zerada depois do uso (melhor esforço:
+ * a cópia em string recebida da interface não pode ser apagada pelo Go).
+ */
+export function InformarCredenciais(pedidoID: string, usuario: string, senha: string, orgao: string, processo: string): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(2135052552, pedidoID, usuario, senha, orgao, processo).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * InformarSegredo entrega o código de dois fatores ou a senha de
+ * reautenticação pedidos pelo SEI.
+ */
+export function InformarSegredo(pedidoID: string, valor: string): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(3905847071, pedidoID, valor).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
  * Iniciar começa uma nova tarefa.
  */
 export function Iniciar(): $CancellablePromise<$models.Resposta> {

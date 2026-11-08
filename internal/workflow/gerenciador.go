@@ -80,23 +80,27 @@ type Etapa func(ctx context.Context, c *Contexto) (Estado, error)
 type Notificador func(*Visao)
 
 type tarefa struct {
-	id        string
-	tipo      Tipo
-	entrada   Entrada
-	estado    Estado
-	ref       Estado // último estado de trabalho (linha do tempo em pausa/falha)
-	retorno   Estado // origem de AGUARDANDO_ESCLARECIMENTO
-	historico []Estado
-	progresso *Progresso
-	erro      *erros.Erro
-	aviso     *erros.Erro
-	pergunta  *Pergunta
-	respostas map[string]string
-	autos     *ResumoAutos
-	parada    bool
-	sessao    *session.Sessao
-	contexto  *Contexto
-	cancelar  context.CancelFunc
+	id             string
+	tipo           Tipo
+	entrada        Entrada
+	estado         Estado
+	ref            Estado // último estado de trabalho (linha do tempo em pausa/falha)
+	retorno        Estado // origem de AGUARDANDO_ESCLARECIMENTO
+	historico      []Estado
+	progresso      *Progresso
+	erro           *erros.Erro
+	aviso          *erros.Erro
+	pergunta       *Pergunta
+	respostas      map[string]string
+	pedido         *Pedido
+	respostaPedido chan RespostaPedido
+	rodando        bool // há uma goroutine de etapas em execução
+	apagarAoParar  bool // sessão a apagar quando a goroutine terminar
+	autos          *ResumoAutos
+	parada         bool
+	sessao         *session.Sessao
+	contexto       *Contexto
+	cancelar       context.CancelFunc
 }
 
 // Gerenciador mantém a única tarefa da instância.
@@ -159,6 +163,9 @@ func (g *Gerenciador) visaoLocked() *Visao {
 	}
 	if t.estado == AguardandoEsclarecimento {
 		v.Pergunta = t.pergunta.visao()
+	}
+	if t.pedido != nil {
+		v.Pedido = &PedidoVisao{ID: t.pedido.ID, Tipo: t.pedido.Tipo, Alerta: visaoErro(t.pedido.Alerta)}
 	}
 	if t.progresso != nil {
 		p := *t.progresso
@@ -444,10 +451,19 @@ func (g *Gerenciador) iniciarProcessamentoLocked() {
 	t.contexto.Tipo = t.tipo
 	t.parada = false
 	c := t.contexto
+	t.rodando = true
 	g.trabalho.Add(1)
 	go func() {
 		defer g.trabalho.Done()
 		g.executar(ctx, t, c)
+		g.mu.Lock()
+		t.rodando = false
+		if t.apagarAoParar {
+			t.apagarAoParar = false
+			g.apagarSessaoLocked(t)
+			g.emitirLocked()
+		}
+		g.mu.Unlock()
 	}()
 }
 
@@ -485,6 +501,7 @@ func (g *Gerenciador) executar(ctx context.Context, t *tarefa, c *Contexto) {
 			g.mu.Unlock()
 			return
 		}
+		atual = t.estado // a etapa pode ter avançado o estado (ex.: SEI)
 		t.progresso = nil
 		switch {
 		case err != nil && prox != "" && Permitida(atual, prox):
@@ -573,7 +590,18 @@ func (g *Gerenciador) encerrarLocked(estado Estado, e *erros.Erro) {
 	t.pergunta = nil
 	t.autos = nil
 	t.parada = false
+	t.pedido, t.respostaPedido = nil, nil
 	liberarDados(t)
+	if t.rodando {
+		// A sessão só é apagada quando a etapa em execução parar (ex.: o
+		// navegador do SEI ainda segura arquivos do perfil).
+		t.apagarAoParar = true
+		return
+	}
+	g.apagarSessaoLocked(t)
+}
+
+func (g *Gerenciador) apagarSessaoLocked(t *tarefa) {
 	if t.sessao != nil {
 		if err := t.sessao.Encerrar(); err != nil {
 			t.aviso = erros.De(err)

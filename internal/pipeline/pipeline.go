@@ -41,6 +41,8 @@ type Pipeline struct {
 	// LocalizarOCR devolve o motor de OCR (procurado só quando necessário).
 	LocalizarOCR func() (ocr.Motor, error)
 	DPI          int
+	// SEI obtém o PDF pelo SEI/RO (nil: modalidade indisponível).
+	SEI ObterSEI
 
 	once   sync.Once
 	motor  ocr.Motor
@@ -59,10 +61,11 @@ func (p *Pipeline) ocr() ocr.Motor {
 // Etapas devolve as etapas desta fase, por estado.
 func (p *Pipeline) Etapas() map[workflow.Estado]workflow.Etapa {
 	return map[workflow.Estado]workflow.Etapa{
-		workflow.Verificando:     p.verificar,
-		workflow.Extraindo:       p.extrair,
-		workflow.Classificando:   p.classificar,
-		workflow.Compatibilidade: p.compatibilidade,
+		workflow.SEIConectividade: p.obterSEI,
+		workflow.Verificando:      p.verificar,
+		workflow.Extraindo:        p.extrair,
+		workflow.Classificando:    p.classificar,
+		workflow.Compatibilidade:  p.compatibilidade,
 	}
 }
 

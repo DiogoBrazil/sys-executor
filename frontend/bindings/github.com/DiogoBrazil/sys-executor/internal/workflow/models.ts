@@ -306,6 +306,42 @@ export class PecaResumo {
 }
 
 /**
+ * PedidoVisao é o pedido exibido na interface (nunca contém valores digitados).
+ */
+export class PedidoVisao {
+    "id": string;
+    "tipo": TipoPedido;
+    "alerta": ErroVisao | null;
+
+    /** Creates a new PedidoVisao instance. */
+    constructor($$source: Partial<PedidoVisao> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("tipo" in $$source)) {
+            this["tipo"] = TipoPedido.$zero;
+        }
+        if (!("alerta" in $$source)) {
+            this["alerta"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new PedidoVisao instance from a string or object.
+     */
+    static createFrom($$source: any = {}): PedidoVisao {
+        const $$createField2_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("alerta" in $$parsedSource) {
+            $$parsedSource["alerta"] = $$createField2_0($$parsedSource["alerta"]);
+        }
+        return new PedidoVisao($$parsedSource as Partial<PedidoVisao>);
+    }
+}
+
+/**
  * PerguntaVisao é a pergunta enviada à interface.
  */
 export class PerguntaVisao {
@@ -336,7 +372,7 @@ export class PerguntaVisao {
      * Creates a new PerguntaVisao instance from a string or object.
      */
     static createFrom($$source: any = {}): PerguntaVisao {
-        const $$createField3_0 = $$createType1;
+        const $$createField3_0 = $$createType3;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("opcoes" in $$parsedSource) {
             $$parsedSource["opcoes"] = $$createField3_0($$parsedSource["opcoes"]);
@@ -417,9 +453,9 @@ export class ResumoAutos {
      * Creates a new ResumoAutos instance from a string or object.
      */
     static createFrom($$source: any = {}): ResumoAutos {
-        const $$createField1_0 = $$createType3;
-        const $$createField2_0 = $$createType5;
-        const $$createField3_0 = $$createType7;
+        const $$createField1_0 = $$createType5;
+        const $$createField2_0 = $$createType7;
+        const $$createField3_0 = $$createType9;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("paginas" in $$parsedSource) {
             $$parsedSource["paginas"] = $$createField1_0($$parsedSource["paginas"]);
@@ -463,6 +499,31 @@ export enum Tipo {
 };
 
 /**
+ * TipoPedido identifica o que a etapa precisa que o usuário informe.
+ */
+export enum TipoPedido {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    /**
+     * usuário, senha, órgão e número do processo
+     */
+    PedidoCredenciais = "CREDENCIAIS",
+
+    /**
+     * código de autenticação em dois fatores
+     */
+    PedidoOTP = "OTP",
+
+    /**
+     * senha de novo (processo sigiloso, V4 §13)
+     */
+    PedidoReautenticacao = "REAUTENTICACAO",
+};
+
+/**
  * Visao é o retrato da tarefa enviado à interface. Não contém texto gerado
  * pela IA nem conteúdo dos autos: só estado, etapas, progresso mensurável e
  * erro do catálogo (V4 §31.1; T07).
@@ -491,6 +552,11 @@ export class Visao {
      */
     "aviso": ErroVisao | null;
     "pergunta": PerguntaVisao | null;
+
+    /**
+     * dados que o usuário precisa informar (SEI)
+     */
+    "pedido": PedidoVisao | null;
     "autos": ResumoAutos | null;
 
     /**
@@ -533,6 +599,9 @@ export class Visao {
         if (!("pergunta" in $$source)) {
             this["pergunta"] = null;
         }
+        if (!("pedido" in $$source)) {
+            this["pedido"] = null;
+        }
         if (!("autos" in $$source)) {
             this["autos"] = null;
         }
@@ -547,12 +616,13 @@ export class Visao {
      * Creates a new Visao instance from a string or object.
      */
     static createFrom($$source: any = {}): Visao {
-        const $$createField6_0 = $$createType9;
-        const $$createField7_0 = $$createType11;
-        const $$createField8_0 = $$createType13;
-        const $$createField9_0 = $$createType13;
+        const $$createField6_0 = $$createType11;
+        const $$createField7_0 = $$createType13;
+        const $$createField8_0 = $$createType1;
+        const $$createField9_0 = $$createType1;
         const $$createField10_0 = $$createType15;
         const $$createField11_0 = $$createType17;
+        const $$createField12_0 = $$createType19;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("etapas" in $$parsedSource) {
             $$parsedSource["etapas"] = $$createField6_0($$parsedSource["etapas"]);
@@ -569,29 +639,34 @@ export class Visao {
         if ("pergunta" in $$parsedSource) {
             $$parsedSource["pergunta"] = $$createField10_0($$parsedSource["pergunta"]);
         }
+        if ("pedido" in $$parsedSource) {
+            $$parsedSource["pedido"] = $$createField11_0($$parsedSource["pedido"]);
+        }
         if ("autos" in $$parsedSource) {
-            $$parsedSource["autos"] = $$createField11_0($$parsedSource["autos"]);
+            $$parsedSource["autos"] = $$createField12_0($$parsedSource["autos"]);
         }
         return new Visao($$parsedSource as Partial<Visao>);
     }
 }
 
 // Private type creation functions
-const $$createType0 = OpcaoVisao.createFrom;
-const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = PaginaResumo.createFrom;
+const $$createType0 = ErroVisao.createFrom;
+const $$createType1 = $Create.Nullable($$createType0);
+const $$createType2 = OpcaoVisao.createFrom;
 const $$createType3 = $Create.Array($$createType2);
-const $$createType4 = PecaResumo.createFrom;
+const $$createType4 = PaginaResumo.createFrom;
 const $$createType5 = $Create.Array($$createType4);
-const $$createType6 = MidiaResumo.createFrom;
+const $$createType6 = PecaResumo.createFrom;
 const $$createType7 = $Create.Array($$createType6);
-const $$createType8 = Marco.createFrom;
+const $$createType8 = MidiaResumo.createFrom;
 const $$createType9 = $Create.Array($$createType8);
-const $$createType10 = Progresso.createFrom;
-const $$createType11 = $Create.Nullable($$createType10);
-const $$createType12 = ErroVisao.createFrom;
+const $$createType10 = Marco.createFrom;
+const $$createType11 = $Create.Array($$createType10);
+const $$createType12 = Progresso.createFrom;
 const $$createType13 = $Create.Nullable($$createType12);
 const $$createType14 = PerguntaVisao.createFrom;
 const $$createType15 = $Create.Nullable($$createType14);
-const $$createType16 = ResumoAutos.createFrom;
+const $$createType16 = PedidoVisao.createFrom;
 const $$createType17 = $Create.Nullable($$createType16);
+const $$createType18 = ResumoAutos.createFrom;
+const $$createType19 = $Create.Nullable($$createType18);

@@ -2,8 +2,10 @@
 import { computed } from "vue";
 import { acessarSEI, enviarPDF, estado, voltarAoInicio, voltarParaEntrada } from "../estado";
 import AvisoErro from "../components/AvisoErro.vue";
+import PainelSEI from "../components/PainelSEI.vue";
 
 const aguardandoArquivo = computed(() => estado.visao?.estado === "RECEBENDO_UPLOAD");
+const noSEI = computed(() => !!estado.visao?.estado.startsWith("SEI_"));
 </script>
 
 <template>
@@ -13,7 +15,9 @@ const aguardandoArquivo = computed(() => estado.visao?.estado === "RECEBENDO_UPL
       <p>Os dois caminhos levam ao mesmo processamento.</p>
     </div>
 
-    <div v-if="!aguardandoArquivo" class="opcoes">
+    <PainelSEI v-if="noSEI" />
+
+    <div v-else-if="!aguardandoArquivo" class="opcoes">
       <button class="opcao" :disabled="estado.ocupado" data-teste="entrada-SEI" @click="acessarSEI">
         <span class="nome">Acessar o SEI/RO</span>
         <span class="desc">
@@ -44,7 +48,7 @@ const aguardandoArquivo = computed(() => estado.visao?.estado === "RECEBENDO_UPL
     </section>
 
     <AvisoErro v-if="estado.erro" :erro="estado.erro" />
-    <AvisoErro v-else-if="aguardandoArquivo && estado.visao?.erro" :erro="estado.visao.erro" data-teste="erro-arquivo" />
+    <AvisoErro v-else-if="!noSEI && estado.visao?.erro" :erro="estado.visao.erro" data-teste="erro-arquivo" />
 
     <div>
       <button class="botao discreto" :disabled="estado.ocupado" data-teste="voltar-inicio" @click="voltarAoInicio">

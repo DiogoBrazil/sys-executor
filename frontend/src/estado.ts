@@ -1,7 +1,7 @@
 // Estado da interface: espelha a visão da tarefa enviada pelo Go.
 // Nada aqui é persistido (sem localStorage): a tarefa vive só na sessão.
 import { reactive } from "vue";
-import { api, responder as responderApi, type Resposta, type Visao } from "./api";
+import { api, credenciais, responder as responderApi, type Resposta, type Visao } from "./api";
 
 export interface ErroTela {
   codigo: string;
@@ -65,6 +65,9 @@ export async function enviarPDF() {
 }
 
 export const responder = (perguntaID: string, opcaoID: string) => executar(() => responderApi(perguntaID, opcaoID));
+export const informarCredenciais = (id: string, usuario: string, senha: string, orgao: string, processo: string) =>
+  executar(() => credenciais.informar(id, usuario, senha, orgao, processo));
+export const informarSegredo = (id: string, valor: string) => executar(() => credenciais.segredo(id, valor));
 export const acessarSEI = () => executar(() => api.escolherEntrada("SEI"));
 export const voltarParaEntrada = () => executar(api.voltarParaEntrada);
 export const cancelar = () => executar(api.cancelar);
@@ -84,6 +87,6 @@ export type Tela = "inicio" | "entrada" | "processamento";
 
 export function telaAtual(v: Visao | null): Tela {
   if (!v || v.estado === "NOVA") return "inicio";
-  if (["TIPO_ESCOLHIDO", "ENTRADA_ESCOLHIDA", "RECEBENDO_UPLOAD"].includes(v.estado)) return "entrada";
+  if (["TIPO_ESCOLHIDO", "ENTRADA_ESCOLHIDA", "RECEBENDO_UPLOAD"].includes(v.estado) || v.estado.startsWith("SEI_")) return "entrada";
   return "processamento";
 }

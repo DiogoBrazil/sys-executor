@@ -33,3 +33,9 @@ export const fontes = {
 };
 
 export const responder = (perguntaID: string, opcaoID: string): Promise<Resposta> => Tarefa.Responder(perguntaID, opcaoID);
+
+export const credenciais = {
+  informar: (pedidoID: string, usuario: string, senha: string, orgao: string, processo: string): Promise<Resposta> =>
+    Tarefa.InformarCredenciais(pedidoID, usuario, senha, orgao, processo),
+  segredo: (pedidoID: string, valor: string): Promise<Resposta> => Tarefa.InformarSegredo(pedidoID, valor),
+};

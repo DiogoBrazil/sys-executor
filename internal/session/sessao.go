@@ -261,3 +261,10 @@ func EsvaziarPasta(dir string, prazo time.Duration) bool {
 		time.Sleep(250 * time.Millisecond)
 	}
 }
+
+// ApagarArquivo sobrescreve com zeros e remove um arquivo avulso da sessão
+// (ex.: o PDF baixado em claro pelo navegador, logo depois de cifrado).
+func ApagarArquivo(p string) error {
+	sobrescrever(p)
+	return os.Remove(p)
+}

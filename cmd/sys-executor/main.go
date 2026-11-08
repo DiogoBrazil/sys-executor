@@ -6,8 +6,10 @@
 package main
 
 import (
+	"context"
 	"io/fs"
 	"log/slog"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
@@ -21,6 +23,7 @@ import (
 	"github.com/DiogoBrazil/sys-executor/internal/pastas"
 	"github.com/DiogoBrazil/sys-executor/internal/pipeline"
 	"github.com/DiogoBrazil/sys-executor/internal/prefs"
+	"github.com/DiogoBrazil/sys-executor/internal/sei"
 	"github.com/DiogoBrazil/sys-executor/internal/session"
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
 )
@@ -61,6 +64,16 @@ func main() {
 		Extrator:     extrator,
 		LocalizarOCR: func() (ocr.Motor, error) { return ocr.Localizar(componentes) },
 	}
+	// SEI/RO pelo Microsoft Edge instalado (Fase 2). Sem Edge, só o envio do PDF.
+	navegador, errNav := sei.LocalizarNavegador()
+	if errNav == nil {
+		cfgSEI := configSEI(navegador)
+		pipe.SEI = func(ctx context.Context, pasta string, in sei.Interlocutor) ([]byte, error) {
+			c := cfgSEI
+			c.PastaTrabalho = pasta
+			return sei.ObterPDF(ctx, c, in)
+		}
+	}
 
 	var wapp *application.App
 	ger := workflow.Novo(workflow.Opcoes{
@@ -71,7 +84,7 @@ func main() {
 				wapp.Event.Emit(app.EventoVisao, v)
 			}
 		},
-		SEIDisponivel: false, // Fase 2
+		SEIDisponivel: pipe.SEI != nil,
 	})
 
 	var janela *application.WebviewWindow
@@ -146,4 +159,21 @@ func main() {
 	if err != nil {
 		os.Exit(1)
 	}
+}
+
+// configSEI monta a configuração do cliente SEI. SYSEXEC_SEI_URL permite
+// apontar para o simulador local de testes (só http://127.0.0.1); em
+// produção vale o endereço oficial (https). SYSEXEC_SEI_VISIVEL=1 mostra a
+// janela do navegador (diagnóstico).
+func configSEI(navegador string) sei.Config {
+	c := sei.Config{Navegador: navegador, URLLogin: sei.URLLoginPadrao, Visivel: os.Getenv("SYSEXEC_SEI_VISIVEL") == "1"}
+	if u, err := url.Parse(os.Getenv("SYSEXEC_SEI_URL")); err == nil && u.Host != "" {
+		switch {
+		case u.Scheme == "https":
+			c.URLLogin = u.String()
+		case u.Scheme == "http" && u.Hostname() == "127.0.0.1":
+			c.URLLogin, c.PermitirHTTP = u.String(), true
+		}
+	}
+	return c
 }

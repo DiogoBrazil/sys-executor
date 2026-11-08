@@ -17,6 +17,7 @@ type Visao struct {
 	Erro      *ErroVisao     `json:"erro"`      // terminal: motivo; ativa: alerta da última etapa
 	Aviso     *ErroVisao     `json:"aviso"`     // ex.: limpeza incompleta (SES-003)
 	Pergunta  *PerguntaVisao `json:"pergunta"`
+	Pedido    *PedidoVisao   `json:"pedido"` // dados que o usuário precisa informar (SEI)
 	Autos     *ResumoAutos   `json:"autos"`
 	Parada    bool           `json:"parada"` // processamento parado aguardando versão futura (TAR-004)
 }

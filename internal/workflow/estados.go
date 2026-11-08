@@ -69,14 +69,15 @@ var transicoes = map[Estado][]Estado{
 	TipoEscolhido:    {TipoEscolhido, EntradaEscolhida},
 	EntradaEscolhida: {TipoEscolhido, SEIConectividade, RecebendoUpload},
 
-	// T03: sem internet → volta à escolha da entrada, preservando o tipo.
+	// Qualquer falha do SEI (T03 sem internet, senha, interface alterada) volta
+	// à escolha da entrada preservando o tipo, para o usuário enviar o PDF.
 	SEIConectividade:  {TipoEscolhido, SEILogin},
-	SEILogin:          {SEIOTP, SEILocalizando},
-	SEIOTP:            {SEILocalizando},
-	SEILocalizando:    {SEIReautenticacao, SEIGerandoPDF},
-	SEIReautenticacao: {SEIGerandoPDF},
-	SEIGerandoPDF:     {SEIBaixando},
-	SEIBaixando:       {Verificando},
+	SEILogin:          {TipoEscolhido, SEIOTP, SEILocalizando},
+	SEIOTP:            {TipoEscolhido, SEILocalizando},
+	SEILocalizando:    {TipoEscolhido, SEIReautenticacao, SEIGerandoPDF},
+	SEIReautenticacao: {TipoEscolhido, SEIGerandoPDF},
+	SEIGerandoPDF:     {TipoEscolhido, SEIBaixando},
+	SEIBaixando:       {TipoEscolhido, Verificando},
 
 	// Upload: o usuário pode voltar e escolher o SEI enquanto não enviou o PDF.
 	RecebendoUpload: {TipoEscolhido, Verificando},

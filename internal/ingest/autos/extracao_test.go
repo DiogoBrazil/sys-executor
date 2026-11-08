@@ -137,3 +137,28 @@ func TestTextoUtil(t *testing.T) {
 		}
 	}
 }
+
+// Integração com o Tesseract real (Windows): SYSEXEC_TESSERACT aponta para o executável.
+func TestExtrairComTesseractReal(t *testing.T) {
+	if os.Getenv("SYSEXEC_TESSERACT") == "" {
+		t.Skip("SYSEXEC_TESSERACT não definido")
+	}
+	m, err := ocr.Localizar("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := Extracao{PDF: extrator(), OCR: m}.Extrair(context.Background(), lerFixture(t), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := a.Paginas[3]
+	t.Logf("pág. 4: situação %s, confiança %.1f", p.Situacao, p.Confianca)
+	if p.Origem != OrigemOCR || (p.Situacao != OCROk && p.Situacao != OCRBaixo) {
+		t.Fatalf("%+v", p.Situacao)
+	}
+	for _, w := range []string{"TERMO", "INQUIRI", "testemunha", "câmeras"} {
+		if !strings.Contains(p.Texto, w) {
+			t.Errorf("OCR não leu %q: %q", w, p.Texto)
+		}
+	}
+}

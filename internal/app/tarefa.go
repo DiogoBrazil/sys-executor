@@ -9,8 +9,10 @@ package app
 import (
 	"errors"
 	"os"
+	"strings"
 
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
+	"github.com/DiogoBrazil/sys-executor/internal/session"
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
 )
 
@@ -90,6 +92,22 @@ func (s *TarefaService) SelecionarPDF() Resposta {
 // Responder escolhe uma opção da pergunta pendente.
 func (s *TarefaService) Responder(perguntaID, opcaoID string) Resposta {
 	return s.responder(s.g.Responder(perguntaID, opcaoID))
+}
+
+// InformarCredenciais entrega usuário, senha, órgão e número do processo ao
+// login do SEI. A senha vira []byte e é zerada depois do uso (melhor esforço:
+// a cópia em string recebida da interface não pode ser apagada pelo Go).
+func (s *TarefaService) InformarCredenciais(pedidoID, usuario, senha, orgao, processo string) Resposta {
+	return s.responder(s.g.Fornecer(pedidoID, workflow.RespostaPedido{
+		Campos:  map[string]string{"usuario": strings.TrimSpace(usuario), "orgao": orgao, "processo": strings.TrimSpace(processo)},
+		Segredo: session.NovoSegredo([]byte(senha)),
+	}))
+}
+
+// InformarSegredo entrega o código de dois fatores ou a senha de
+// reautenticação pedidos pelo SEI.
+func (s *TarefaService) InformarSegredo(pedidoID, valor string) Resposta {
+	return s.responder(s.g.Fornecer(pedidoID, workflow.RespostaPedido{Segredo: session.NovoSegredo([]byte(strings.TrimSpace(valor)))}))
 }
 
 // Cancelar interrompe a tarefa e descarta os temporários.

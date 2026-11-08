@@ -10,10 +10,12 @@ export {
     OpcaoVisao,
     PaginaResumo,
     PecaResumo,
+    PedidoVisao,
     PerguntaVisao,
     Progresso,
     ResumoAutos,
     Situacao,
     Tipo,
+    TipoPedido,
     Visao
 } from "./models.js";

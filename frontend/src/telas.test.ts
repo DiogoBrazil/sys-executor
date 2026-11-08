@@ -44,6 +44,16 @@ vi.mock("./api", () => ({
     chamadas.push(`responder:${p}:${o}`);
     return resp(visao("DELIMITANDO", { parada: true, erro: { codigo: "TAR-004", titulo: "t", mensagem: "m", acao: "a" } }));
   },
+  credenciais: {
+    informar: (id: string, u: string, senha: string, o: string, p: string) => {
+      chamadas.push(`credenciais:${id}:${u}:${senha}:${o}:${p}`);
+      return resp(visao("SEI_OTP", { pedido: { id: "p2", tipo: "OTP", alerta: null } }));
+    },
+    segredo: (id: string, valor: string) => {
+      chamadas.push(`segredo:${id}:${valor}`);
+      return resp(visao("SEI_LOCALIZANDO"));
+    },
+  },
   fontes: {
     enderecoPDF: () => Promise.resolve({ endereco: "", erro: { codigo: "TAR-003", titulo: "", mensagem: "", acao: "" } }),
     destaque: () => Promise.resolve({ pagina: 1, largura: 0, altura: 0, caixas: [], erro: null }),
@@ -213,5 +223,52 @@ describe("Fase 2 — autos, perguntas e parada", () => {
     expect(w.find('[data-teste="aguardando-pdf"]').exists()).toBe(true);
     expect(w.find('[data-teste="erro-arquivo"]').text()).toContain("PDF protegido por senha");
     expect(w.find('[data-teste="faixa-tipo"]').text()).toContain("Julgamento de PADS");
+  });
+});
+
+describe("Fase 2 — SEI", () => {
+  it("credenciais e código vão ao backend e os campos secretos são limpos (SEG13-01)", async () => {
+    visaoAtual = visao("SEI_LOGIN", { entrada: "SEI", pedido: { id: "p1", tipo: "CREDENCIAIS", alerta: null } });
+    const w = mount(App);
+    await flushPromises();
+    const f = w.find('[data-teste="form-credenciais"]');
+    const campos = f.findAll("input");
+    await campos[0].setValue("fulano");
+    await campos[1].setValue("segredo-123");
+    await campos[3].setValue("0000.000001/2026-01");
+    expect((campos[2].element as HTMLInputElement).value).toBe("PM");
+    await f.trigger("submit");
+    await flushPromises();
+    expect(chamadas).toContain("credenciais:p1:fulano:segredo-123:PM:0000.000001/2026-01");
+    const otp = w.find('[data-teste="form-otp"]');
+    expect(otp.exists()).toBe(true);
+    await w.find('[data-teste="campo-codigo"]').setValue("654321");
+    await otp.trigger("submit");
+    await flushPromises();
+    expect(chamadas).toContain("segredo:p2:654321");
+    expect(w.find('[data-teste="sei-andamento"]').text()).toContain("Descrição de SEI_LOCALIZANDO");
+    expect(w.html()).not.toContain("segredo-123");
+    expect(w.html()).not.toContain("654321");
+  });
+
+  it("reautenticação de sigiloso pede só a senha (SEG13-02) e mostra o alerta", async () => {
+    visaoAtual = visao("SEI_REAUTENTICACAO", {
+      entrada: "SEI",
+      pedido: { id: "p3", tipo: "REAUTENTICACAO", alerta: { codigo: "SEI-002", titulo: "Usuário ou senha não aceitos", mensagem: "m", acao: "a" } },
+    });
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="form-reautenticacao"]').text()).toContain("sigiloso");
+    expect(w.find('[data-teste="form-reautenticacao"]').findAll("input")).toHaveLength(1);
+    expect(w.find('[data-teste="alerta-sei"]').text()).toContain("Usuário ou senha não aceitos");
+  });
+
+  it("T03: sem internet volta à escolha com o aviso e oferece o envio do PDF", async () => {
+    visaoAtual = visao("TIPO_ESCOLHIDO", { tipo: "SR", erro: { codigo: "REDE-001", titulo: "Sem conexão com a internet", mensagem: "m", acao: "Envie o PDF completo do processo." } });
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="erro-arquivo"]').text()).toContain("Sem conexão com a internet");
+    expect(w.find('[data-teste="entrada-UPLOAD"]').exists()).toBe(true);
+    expect(w.find('[data-teste="faixa-tipo"]').text()).toContain("Relatório de Sindicância Regular");
   });
 });
