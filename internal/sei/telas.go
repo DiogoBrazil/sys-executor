@@ -59,12 +59,17 @@ var jsPreencher = script(`((nome, valor) => {
     const op = [...c.options].find(o => __norm(o.text) === v || __norm(o.value) === v);
     if (!op) return false;
     c.value = op.value;
-  } else {
-    c.focus();
-    c.value = valor;
+    c.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
   }
-  c.dispatchEvent(new Event('input', { bubbles: true }));
-  c.dispatchEvent(new Event('change', { bubbles: true }));
+  // O SEI/RO tem campos homônimos (ex.: pwdSenha como senha e como texto do
+  // "mostrar senha"): preenche todos os do mesmo formulário.
+  const alvos = [...(c.form ? c.form.elements : [c])].filter(e => e.name === nome && e.tagName === 'INPUT' && e.type !== 'hidden');
+  for (const e of (alvos.length ? alvos : [c])) {
+    e.focus();
+    e.value = valor;
+    for (const t of ['input', 'change', 'keyup']) e.dispatchEvent(new Event(t, { bubbles: true }));
+  }
   return true;
 })(%s, %s)`)
 
@@ -112,6 +117,18 @@ var jsGerar = script(`(() => {
 func script(corpo string) string {
 	return "(() => {\n" + scriptBase + "\nreturn (" + corpo + ");\n})()"
 }
+
+// jsResumo descreve a tela atual para diagnóstico: títulos, ações, nomes de
+// campos e rótulos de botões. Nenhum valor digitado ou texto da página.
+var jsResumo = script(`(() => {
+  const acao = d => { try { return new URL(d.location.href).searchParams.get('acao') || d.location.pathname; } catch (e) { return '?'; } };
+  return JSON.stringify(__docs.map(d => ({
+    titulo: (d.title || '').slice(0, 60),
+    acao: acao(d),
+    campos: [...d.querySelectorAll('input,select,textarea')].filter(e => e.type !== 'hidden').map(e => e.name || e.id || '?').slice(0, 12),
+    botoes: [...d.querySelectorAll('button,input[type=submit],input[type=button]')].map(b => (b.innerText || b.value || '').trim().slice(0, 25)).filter(Boolean).slice(0, 8),
+  })));
+})()`)
 
 // estadoTela é o resumo devolvido por jsEstado.
 type estadoTela struct {

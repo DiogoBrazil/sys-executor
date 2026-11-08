@@ -17,6 +17,7 @@ import (
 type Simulador struct {
 	Usuario, Senha, OTP string
 	ExigirOTP           bool
+	TelaDesconhecida    bool // após o login, devolve uma tela fora do mapeamento
 	ProcessoNormal      string
 	ProcessoSigiloso    string
 	PDF                 []byte
@@ -230,8 +231,16 @@ func (s *Simulador) login(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.PostFormValue("hdnAcao") {
 	case "2":
-		if r.PostFormValue("txtUsuario") != s.Usuario || r.PostFormValue("pwdSenha") != s.Senha || r.PostFormValue("selOrgao") != "10" {
-			formLogin(`<div class="infraExcecao">Usuário ou senha inválida.</div>`)
+		// O SEI/RO envia os dois campos pwdSenha (senha e "mostrar senha"); o
+		// simulador exige que ambos tragam a senha e responde por alert().
+		senhas := r.PostForm["pwdSenha"]
+		ok := len(senhas) == 2 && senhas[0] == s.Senha && senhas[1] == s.Senha
+		if r.PostFormValue("txtUsuario") != s.Usuario || !ok || r.PostFormValue("selOrgao") != "10" {
+			formLogin(`<script>alert('Usuário ou senha inválida.');</script>`)
+			return
+		}
+		if s.TelaDesconhecida {
+			pagina(w, "SEI - Aviso de manutenção 2026", `<form><input type="text" name="txtOutroCampo"><button type="button">Prosseguir</button></form>`)
 			return
 		}
 		if s.ExigirOTP {

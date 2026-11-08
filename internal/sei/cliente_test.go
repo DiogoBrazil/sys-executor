@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -187,5 +188,32 @@ func TestSemConexao(t *testing.T) {
 	}, &usuarioFalso{senhas: []string{"x"}})
 	if !errors.Is(err, erros.Novo(erros.RedeSemConexao)) {
 		t.Fatalf("esperado REDE-001, veio %v", err)
+	}
+}
+
+// Tela fora do mapeamento: SEI-005 com o resumo estrutural da tela (diagnóstico).
+func TestTelaDesconhecidaTrazResumo(t *testing.T) {
+	nav := navegadorDeTeste(t)
+	sim := seisim.Novo(pdfFicticio)
+	sim.TelaDesconhecida = true
+	srv := httptest.NewServer(sim)
+	defer srv.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	_, err := ObterPDF(ctx, Config{
+		Navegador: nav, URLLogin: srv.URL + "/sip/login.php", PastaTrabalho: t.TempDir(),
+		PermitirHTTP: true, TempoTela: 3 * time.Second,
+	}, &usuarioFalso{senhas: []string{"senha-certa"}, processo: "x"})
+	if !errors.Is(err, erros.Novo(erros.SEIInterfaceAlterada)) {
+		t.Fatalf("esperado SEI-005, veio %v", err)
+	}
+	msg := err.Error()
+	for _, esperado := range []string{"Aviso de manutenção ####", "txtOutroCampo", "Prosseguir"} {
+		if !strings.Contains(msg, esperado) {
+			t.Errorf("resumo sem %q: %s", esperado, msg)
+		}
+	}
+	if strings.Contains(msg, "senha-certa") {
+		t.Fatal("o resumo não pode conter valores digitados")
 	}
 }

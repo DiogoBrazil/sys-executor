@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
 	"github.com/DiogoBrazil/sys-executor/internal/session"
+	"github.com/DiogoBrazil/sys-executor/internal/texto"
 )
 
 // URLLoginPadrao é a entrada do SEI/RO (mapeada na F0-08).
@@ -311,6 +313,18 @@ type sessaoNavegador struct {
 
 	mu       sync.Mutex
 	iniciado bool
+	dialogo  string // texto do último diálogo JavaScript (alertas do SEI)
+}
+
+var reDigito = regexp.MustCompile(`[0-9]`)
+
+// ultimoDialogo devolve e consome o texto do último diálogo exibido pela página.
+func (s *sessaoNavegador) ultimoDialogo() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	d := s.dialogo
+	s.dialogo = ""
+	return d
 }
 
 // preparar inicia o navegador, liga a guarda, os diálogos e os downloads.
@@ -326,6 +340,10 @@ func (s *sessaoNavegador) preparar() error {
 			case *page.EventJavascriptDialogOpening:
 				// Alertas do SEI são confirmados (só têm "OK"); confirmações
 				// são recusadas: o cliente nunca aceita ação proposta pela página.
+				// O texto é guardado para reconhecer a resposta (ex.: senha inválida).
+				s.mu.Lock()
+				s.dialogo = e.Message
+				s.mu.Unlock()
 				aceitar := e.Type == page.DialogTypeAlert
 				go func() {
 					_, _ = chromedp.Call(tctx, page.HandleJavaScriptDialog, page.HandleJavaScriptDialogParams{Accept: aceitar})
@@ -413,14 +431,48 @@ func semRede(t string) bool {
 	return false
 }
 
+var (
+	reDlgCredencial = regexp.MustCompile(`(usuario|senha).{0,40}(invalid|incorret)|(invalid|incorret).{0,40}(usuario|senha)`)
+	reDlgCodigo     = regexp.MustCompile(`codigo.{0,40}(invalid|incorret|expirad)`)
+)
+
 func (s *sessaoNavegador) estado() (estadoTela, error) {
 	var e estadoTela
 	raw, err := chromedp.Run(s.ctx, chromedp.Evaluate[string](jsEstado))
 	if err != nil {
 		return e, err
 	}
-	err = json.Unmarshal([]byte(raw), &e)
-	return e, err
+	if err := json.Unmarshal([]byte(raw), &e); err != nil {
+		return e, err
+	}
+	// Respostas do SEI exibidas em caixa de diálogo, e não na página.
+	s.mu.Lock()
+	d := texto.SemAcentos(s.dialogo)
+	s.mu.Unlock()
+	if d != "" {
+		e.CredencialInvalida = e.CredencialInvalida || reDlgCredencial.MatchString(d)
+		e.CodigoInvalido = e.CodigoInvalido || reDlgCodigo.MatchString(d)
+	}
+	return e, nil
+}
+
+// resumoTela descreve a tela atual para o diagnóstico (sem valores; dígitos mascarados).
+func (s *sessaoNavegador) resumoTela() string {
+	raw, err := chromedp.Run(s.ctx, chromedp.Evaluate[string](jsResumo))
+	if err != nil {
+		raw = "indisponível: " + err.Error()
+	}
+	s.mu.Lock()
+	d := s.dialogo
+	s.mu.Unlock()
+	r := "tela atual: " + raw
+	if d != "" {
+		r += " | último aviso da página: " + d
+	}
+	if len(r) > 900 {
+		r = r[:900] + "…"
+	}
+	return reDigito.ReplaceAllString(r, "#")
 }
 
 // esperar consulta a tela até a condição ou o tempo máximo.
@@ -435,7 +487,7 @@ func (s *sessaoNavegador) esperar(max time.Duration, cond func(estadoTela) bool)
 			return e, s.ctx.Err()
 		}
 		if time.Now().After(fim) {
-			return e, errors.New("tela esperada não apareceu")
+			return e, errors.New("tela esperada não apareceu; " + s.resumoTela())
 		}
 		select {
 		case <-s.ctx.Done():
@@ -457,12 +509,14 @@ func (s *sessaoNavegador) avaliarBool(js string) error {
 }
 
 func (s *sessaoNavegador) preencher(nome, valor string) error {
+	s.ultimoDialogo()
 	n, _ := json.Marshal(nome)
 	v, _ := json.Marshal(valor)
 	return s.avaliarBool(fmt.Sprintf(jsPreencher, n, v))
 }
 
 func (s *sessaoNavegador) clicar(rotulo string) error {
+	s.ultimoDialogo()
 	r, _ := json.Marshal(rotulo)
 	return s.avaliarBool(fmt.Sprintf(jsClicar, r))
 }
