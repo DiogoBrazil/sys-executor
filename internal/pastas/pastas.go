@@ -40,3 +40,6 @@ func Padrao() (Pastas, error) {
 func (p Pastas) Trabalho() string     { return filepath.Join(p.Base, "trabalho") }
 func (p Pastas) WebView() string      { return filepath.Join(p.Base, "webview") }
 func (p Pastas) Preferencias() string { return filepath.Join(p.Base, "preferencias.json") }
+
+// Modelos guarda os GGUF instalados (persistentes; nenhum dado de processo).
+func (p Pastas) Modelos() string { return filepath.Join(p.Base, "modelos") }

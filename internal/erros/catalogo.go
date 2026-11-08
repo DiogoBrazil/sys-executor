@@ -39,6 +39,9 @@ const (
 	ModeloTravado       Codigo = "MOD-004"
 	ModeloGPUInstavel   Codigo = "MOD-005"
 	ModeloHardwareFraco Codigo = "MOD-006"
+	ModeloDownload      Codigo = "MOD-007"
+	ModeloIntegridade   Codigo = "MOD-008"
+	ModeloEmUso         Codigo = "MOD-009"
 
 	// Biblioteca jurídica e referências
 	BibliotecaIndisponivel Codigo = "BIB-001"
@@ -161,6 +164,15 @@ func init() {
 	def(ModeloHardwareFraco, CatModelo, "Computador sem recursos suficientes",
 		"Nenhum modelo disponível cabe nos recursos deste computador.",
 		"Use um computador com mais memória ou feche outros programas.")
+	def(ModeloDownload, CatModelo, "Download do modelo interrompido",
+		"Não foi possível concluir o download do modelo de IA.",
+		"Verifique a conexão e tente de novo; o download continua de onde parou.")
+	def(ModeloIntegridade, CatModelo, "Arquivo de modelo diferente do esperado",
+		"O arquivo do modelo não confere com a assinatura (SHA-256) do catálogo e foi descartado.",
+		"Baixe o modelo novamente ou importe o arquivo original.")
+	def(ModeloEmUso, CatModelo, "Modelo em uso",
+		"Este modelo está sendo usado pela tarefa em andamento e não pode ser removido agora.",
+		"Conclua ou cancele a tarefa e tente novamente.")
 
 	def(BibliotecaIndisponivel, CatBiblioteca, "Biblioteca jurídica indisponível",
 		"A biblioteca jurídica local não pôde ser aberta.",
