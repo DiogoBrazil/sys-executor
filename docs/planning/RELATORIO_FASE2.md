@@ -49,7 +49,7 @@ Ambiente: suíte Go completa nativa no Windows 11 do usuário (13 pacotes), com 
 
 ## 4. Pendências que dependem do usuário
 
-1. **`acao_ajax`**: valor da chamada `controlador_ajax.php` disparada ao clicar no ícone PDF (DevTools → Rede). Até lá a guarda bloqueia qualquer `acao_ajax`; se a chamada for necessária, a geração falha com "Tela do SEI não reconhecida" e o app oferece o envio do PDF.
+1. ~~**`acao_ajax`**~~ **Resolvido (08/11/2026):** o usuário inspecionou o ícone PDF (link comum) e a função `gerar()` (envio de formulário): a geração não usa `controlador_ajax.php`. A guarda mantém todo `acao_ajax` bloqueado; o simulador passou a reproduzir o HTML real.
 2. **P-09 — estrutura de um PDF real**: rodar `autos-mapa.exe` sobre um PDF consolidado real e colar o resultado (só estrutura, sem texto, dígitos mascarados) para calibrar a segmentação, hoje baseada numa suposição de rodapé "Referência: Processo nº … SEI nº …".
 3. **Teste com o SEI real** no app (pacote de teste em `Documentos\sys-executor-teste`).
 

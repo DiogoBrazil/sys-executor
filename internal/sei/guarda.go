@@ -34,8 +34,8 @@ var AcoesLeitura = []string{
 }
 
 // AcoesAjax são os valores de acao_ajax permitidos em controlador_ajax.php.
-// [A VALIDAR] O valor usado ao clicar no ícone "Gerar Arquivo PDF do
-// Processo" ainda será informado pelo usuário; até lá, nenhum é permitido.
+// O usuário confirmou (08/11/2026) que o ícone PDF e o botão "Gerar" não
+// usam controlador_ajax.php: nenhum valor é necessário, todos são bloqueados.
 var AcoesAjax = []string{}
 
 // Guarda decide se uma requisição do navegador pode seguir.

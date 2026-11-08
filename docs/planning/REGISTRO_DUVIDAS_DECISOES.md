@@ -95,7 +95,7 @@
 | P-06 | Certificado Authenticode para assinar instaladores | V4 §34 | Instituição providencia; sem ele, o SmartScreen avisa | Média (F8) |
 | P-07 | Taxa OSMF do WiX Toolset v6/v7 para gerar `.msi` | Pesquisa de 08/11/2026 | Verificar se se aplica a uso institucional; contingência `msitools/wixl` | Média (F8) |
 | P-08 | Licença do Qwen2.5-3B-Instruct (provável "Qwen Research", diferente de Apache-2.0) | V4 §37 | **RESOLVIDA na F0:** Qwen Research License (não comercial) → **fora do catálogo**. Qwen3.5-2B/4B, Qwen3-4B-Instruct-2507 e Qwen3-Embedding-0.6B são Apache-2.0 (RELATORIO_FASE0 §4.5) | — |
-| P-09 | PDF consolidado real do SEI e mapeamento das telas | V4 §2.1 | Telas mapeadas (F0-08). Na F2: botão `btnGerar` informado pelo usuário; **faltam** o valor de `acao_ajax` e a saída do `autos-mapa` sobre um PDF real (calibra a segmentação) | Alta (fecha a F2) |
+| P-09 | PDF consolidado real do SEI e mapeamento das telas | V4 §2.1 | Telas mapeadas (F0-08). Na F2: botão `btnGerar` informado pelo usuário; `acao_ajax` **resolvido** (a geração não usa ajax); **falta** a saída do `autos-mapa` sobre um PDF real (calibra a segmentação) | Alta (fecha a F2) |
 | P-10 | Desempenho do pdfium-wasm em autos longos; Tesseract via stdin; flag `--no-webui`; exclusão do WER; fallback de fonte | Técnico | **RESOLVIDA:** pdfium-wasm OK (806 págs em 0,67 s); Tesseract stdin OK; `--no-webui` OK; fallback de fonte exige empacotar Liberation Serif (F0). **Exclusão do WER validada na F1** (`WerAddExcludedApplication` por usuário, conferida no registro e reversível) | — |
 | P-11 | Duplicidade real RDPM-RO.pdf × RDPM dentro da Coletânea (2015, versão anterior ao Dec. 24.965/2020) | V4 §40.6 | Tela de decisão manter/substituir no bootstrap; o usuário escolhe | Média (F5) |
 
