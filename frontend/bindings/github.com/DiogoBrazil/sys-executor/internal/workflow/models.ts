@@ -27,6 +27,12 @@ export class ErroVisao {
     "mensagem": string;
     "acao": string;
 
+    /**
+     * Detalhe técnico, só no modo de diagnóstico (SYSEXEC_DIAGNOSTICO=1), com
+     * dígitos mascarados. Vazio no uso normal (V4 §33).
+     */
+    "detalhe": string;
+
     /** Creates a new ErroVisao instance. */
     constructor($$source: Partial<ErroVisao> = {}) {
         if (!("codigo" in $$source)) {
@@ -40,6 +46,9 @@ export class ErroVisao {
         }
         if (!("acao" in $$source)) {
             this["acao"] = "";
+        }
+        if (!("detalhe" in $$source)) {
+            this["detalhe"] = "";
         }
 
         Object.assign(this, $$source);

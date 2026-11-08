@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"io"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/klippa-app/go-pdfium/references"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/webassembly"
+	"github.com/tetratelabs/wazero"
 
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
 )
@@ -72,7 +74,17 @@ func NovoExtrator() Extrator { return &extratorPdfium{} }
 
 func (e *extratorPdfium) iniciar() error {
 	e.once.Do(func() {
-		e.pool, e.err = webassembly.Init(webassembly.Config{MinIdle: 1, MaxIdle: 1, MaxTotal: 1})
+		e.pool, e.err = webassembly.Init(webassembly.Config{
+			MinIdle: 1, MaxIdle: 1, MaxTotal: 1,
+			// O app é compilado sem console (-H windowsgui): stdout/stderr são
+			// identificadores inválidos e o wazero falharia ao instanciar o
+			// módulo ("GetFileType /dev/stdout"). Saídas descartadas.
+			Stdout: io.Discard,
+			Stderr: io.Discard,
+			// Nenhuma pasta do disco montada no WebAssembly (o padrão monta o
+			// volume inteiro): o PDF entra só pela memória.
+			FSConfig: wazero.NewFSConfig(),
+		})
 	})
 	return e.err
 }

@@ -8,6 +8,7 @@ export interface ErroTela {
   titulo: string;
   mensagem: string;
   acao: string;
+  detalhe?: string;
 }
 
 export const estado = reactive({

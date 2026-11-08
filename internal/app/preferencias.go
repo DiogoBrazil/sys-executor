@@ -32,9 +32,7 @@ func (s *PreferenciasService) DefinirPesquisaWeb(ligada bool) RespostaPreferenci
 	p, err := s.loja.Atualizar(func(p *prefs.Preferencias) { p.PesquisaWeb = ligada })
 	if err != nil {
 		e := erros.Com(erros.ArquivoEscrita, err)
-		return RespostaPreferencias{Preferencias: p, Erro: &workflow.ErroVisao{
-			Codigo: string(e.Codigo), Titulo: e.Titulo, Mensagem: e.Mensagem, Acao: e.Acao,
-		}}
+		return RespostaPreferencias{Preferencias: p, Erro: workflow.VisaoErro(e)}
 	}
 	return RespostaPreferencias{Preferencias: p}
 }

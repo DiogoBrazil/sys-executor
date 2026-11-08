@@ -150,5 +150,5 @@ func (s *FontesService) Buscar(consulta string) RespostaBusca {
 }
 
 func erroVisao(e *erros.Erro) *workflow.ErroVisao {
-	return &workflow.ErroVisao{Codigo: string(e.Codigo), Titulo: e.Titulo, Mensagem: e.Mensagem, Acao: e.Acao}
+	return workflow.VisaoErro(e)
 }

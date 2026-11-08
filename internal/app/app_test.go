@@ -98,3 +98,20 @@ func TestPreferenciasService(t *testing.T) {
 		t.Fatalf("%+v", r)
 	}
 }
+
+// Modo de diagnóstico: detalhe técnico com dígitos mascarados; desligado por padrão.
+func TestDetalheSoNoDiagnostico(t *testing.T) {
+	ler := func(string) ([]byte, error) { return nil, errors.New("abrir C:\\autos\\0021.123456: negado") }
+	s := servico(t, func() (string, error) { return "x.pdf", nil }, ler)
+	s.Iniciar()
+	s.EscolherTipo("PADS")
+	s.EscolherEntrada("UPLOAD")
+	if r := s.SelecionarPDF(); r.Erro == nil || r.Erro.Detalhe != "" {
+		t.Fatalf("sem diagnóstico não há detalhe: %+v", r.Erro)
+	}
+	t.Setenv("SYSEXEC_DIAGNOSTICO", "1")
+	r := s.SelecionarPDF()
+	if r.Erro == nil || !strings.Contains(r.Erro.Detalhe, "negado") || strings.ContainsAny(r.Erro.Detalhe, "0123456789") {
+		t.Fatalf("detalhe: %+v", r.Erro)
+	}
+}

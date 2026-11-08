@@ -1,6 +1,11 @@
 package workflow
 
-import "github.com/DiogoBrazil/sys-executor/internal/erros"
+import (
+	"os"
+	"regexp"
+
+	"github.com/DiogoBrazil/sys-executor/internal/erros"
+)
 
 // Visao é o retrato da tarefa enviado à interface. Não contém texto gerado
 // pela IA nem conteúdo dos autos: só estado, etapas, progresso mensurável e
@@ -52,14 +57,30 @@ type ErroVisao struct {
 	Titulo   string `json:"titulo"`
 	Mensagem string `json:"mensagem"`
 	Acao     string `json:"acao"`
+	// Detalhe técnico, só no modo de diagnóstico (SYSEXEC_DIAGNOSTICO=1), com
+	// dígitos mascarados. Vazio no uso normal (V4 §33).
+	Detalhe string `json:"detalhe"`
 }
 
-func visaoErro(e *erros.Erro) *ErroVisao {
+var digitos = regexp.MustCompile(`[0-9]`)
+
+// VisaoErro converte um erro do catálogo para a interface.
+func VisaoErro(e *erros.Erro) *ErroVisao {
 	if e == nil {
 		return nil
 	}
-	return &ErroVisao{Codigo: string(e.Codigo), Titulo: e.Titulo, Mensagem: e.Mensagem, Acao: e.Acao}
+	v := &ErroVisao{Codigo: string(e.Codigo), Titulo: e.Titulo, Mensagem: e.Mensagem, Acao: e.Acao}
+	if e.Causa != nil && os.Getenv("SYSEXEC_DIAGNOSTICO") == "1" {
+		d := digitos.ReplaceAllString(e.Causa.Error(), "#")
+		if r := []rune(d); len(r) > 300 {
+			d = string(r[:300]) + "…"
+		}
+		v.Detalhe = d
+	}
+	return v
 }
+
+func visaoErro(e *erros.Erro) *ErroVisao { return VisaoErro(e) }
 
 // grupo da linha do tempo (V4 §31.1: obtendo autos, extraindo texto/OCR,
 // classificando peças, analisando provas, consultando fontes, elaborando,

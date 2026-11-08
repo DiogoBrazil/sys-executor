@@ -43,9 +43,7 @@ func NovaTarefaService(g *workflow.Gerenciador, sel SeletorPDF) *TarefaService {
 func (s *TarefaService) responder(v *workflow.Visao, err error) Resposta {
 	if err != nil {
 		e := erros.De(err)
-		return Resposta{Visao: s.g.Visao(), Erro: &workflow.ErroVisao{
-			Codigo: string(e.Codigo), Titulo: e.Titulo, Mensagem: e.Mensagem, Acao: e.Acao,
-		}}
+		return Resposta{Visao: s.g.Visao(), Erro: workflow.VisaoErro(e)}
 	}
 	return Resposta{Visao: v}
 }
@@ -84,7 +82,12 @@ func (s *TarefaService) SelecionarPDF() Resposta {
 	}
 	dados, err := s.lerArquivo(caminho)
 	if err != nil {
-		return s.responder(nil, erros.Com(erros.ArquivoLeitura, errors.Unwrap(err)))
+		// Sem o caminho do arquivo (o nome pode conter o número do processo).
+		causa := errors.Unwrap(err)
+		if causa == nil {
+			causa = err
+		}
+		return s.responder(nil, erros.Com(erros.ArquivoLeitura, causa))
 	}
 	return s.responder(s.g.ReceberUpload(dados))
 }
