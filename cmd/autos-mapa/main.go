@@ -25,15 +25,73 @@ import (
 	"github.com/DiogoBrazil/sys-executor/internal/texto"
 )
 
+// Marcadores tolerantes a quebras de linha e espaços extras entre as palavras.
 var marcadores = []struct {
 	nome string
 	re   *regexp.Regexp
 }{
 	{"SEI_N", regexp.MustCompile(`sei\s*n[º°o.]*\s*:?\s*[0-9]{6,10}`)},
-	{"VERIFICADOR", regexp.MustCompile(`codigo verificador`)},
-	{"ASSINADO", regexp.MustCompile(`assinado eletronicamente`)},
-	{"REFERENCIA", regexp.MustCompile(`referencia:?\s*processo`)},
-	{"CRC", regexp.MustCompile(`codigo crc`)},
+	{"SEI_PAR", regexp.MustCompile(`\(\s*[0-9]{7,10}\s*\)`)}, // número SEI entre parênteses, como na árvore
+	{"VERIFICADOR", regexp.MustCompile(`codigo\s+verificador`)},
+	{"ASSINADO", regexp.MustCompile(`assinad[oa]\s+eletronicamente`)},
+	{"REFERENCIA", regexp.MustCompile(`referencia\s*:?\s*processo`)},
+	{"CRC", regexp.MustCompile(`codigo\s+crc`)},
+	{"AUTENTICIDADE", regexp.MustCompile(`autenticidade\s+(deste|do)\s+documento`)},
+	{"PROCESSO_N", regexp.MustCompile(`processo\s+n[º°o.]*\s*:?\s*[0-9]{4}\.[0-9]{6}/[0-9]{4}`)},
+}
+
+// vocabulario: palavras genéricas que podem aparecer no esqueleto das linhas.
+// Qualquer outra palavra (nomes, lugares, conteúdo) é trocada por "▒".
+var vocabulario = map[string]bool{}
+
+func init() {
+	for _, w := range strings.Fields(`sei n nº no numero processo documento documentos assinado assinada eletronicamente por em as às
+		conforme horario oficial de da do das dos e a o os as na no com para que se brasilia fundamento art artigo decreto lei
+		autenticidade deste pode ser conferida site informando codigo verificador crc referencia pagina pag pg folha fls fl
+		governo estado rondonia policia militar secretaria seguranca defesa cidadania comando geral corregedoria
+		memorando portaria termo notificacao ata despacho oficio certidao defesa previa alegacoes finais manifestacao
+		anexo inquiricao declaracoes declaracao videoconferencia presenca remessa relatorio sindicancia disciplinar
+		administrativo pads sr julgamento parecer requerimento peticao citacao intimacao mandado oitiva testemunha
+		interrogatorio qualificacao ciencia sobre recibo protocolo externo interno capa volume pdf gerado
+		emissao data hora usuario unidade orgao assinatura eletronica nome cargo funcao matricula cpf rg`) {
+		vocabulario[w] = true
+	}
+}
+
+var reURL = regexp.MustCompile(`https?://\S+|www\.\S+`)
+
+// esqueleto mostra a forma de uma linha sem o conteúdo.
+func esqueleto(linha string) string {
+	linha = reURL.ReplaceAllString(linha, " [url] ")
+	var out []string
+	for _, tok := range strings.Fields(linha) {
+		if tok == "[url]" {
+			out = append(out, tok)
+			continue
+		}
+		limpo := strings.Trim(texto.SemAcentos(tok), ".,;:()[]\"'“”«»-–—/|")
+		switch {
+		case limpo == "":
+			out = append(out, mascarar(tok))
+		case vocabulario[limpo]:
+			out = append(out, mascarar(tok))
+		case regexp.MustCompile(`^[0-9./\-]+$`).MatchString(limpo):
+			out = append(out, mascarar(tok))
+		default:
+			out = append(out, "▒")
+		}
+	}
+	return strings.Join(out, " ")
+}
+
+func linhasNaoVazias(t string) []string {
+	var ls []string
+	for _, l := range strings.Split(t, "\n") {
+		if l = strings.TrimSpace(l); l != "" {
+			ls = append(ls, l)
+		}
+	}
+	return ls
 }
 
 func main() {
@@ -81,7 +139,43 @@ func main() {
 		}
 		fmt.Printf("%3d | %-10s | %s\n", p.Numero, sit, strings.Join(ms, " "))
 	}
-	fmt.Printf("\nnúmeros SEI distintos encontrados: %d\n\n", len(seis))
+	fmt.Printf("\nnúmeros SEI distintos encontrados: %d\n", len(seis))
+
+	// Esqueleto do início e do fim de cada página (cabeçalhos, títulos, rodapés).
+	repet := map[string]int{}
+	type borda struct{ ini, fim []string }
+	bordas := make([]borda, len(a.Paginas))
+	for i, p := range a.Paginas {
+		ls := linhasNaoVazias(p.Texto)
+		var b borda
+		for k := 0; k < len(ls) && k < 2; k++ {
+			b.ini = append(b.ini, esqueleto(ls[k]))
+		}
+		for k := max(len(b.ini), len(ls)-3); k < len(ls); k++ {
+			b.fim = append(b.fim, esqueleto(ls[k]))
+		}
+		for _, l := range append(append([]string{}, b.ini...), b.fim...) {
+			repet[l]++
+		}
+		bordas[i] = b
+	}
+	marca := func(l string) string {
+		if repet[l] >= 3 {
+			return "[repete x" + fmt.Sprint(repet[l]) + "] " + l
+		}
+		return l
+	}
+	fmt.Println("\nEsqueleto das bordas (▒ = palavra omitida; # = dígito):")
+	for i, b := range bordas {
+		fmt.Printf("--- pág. %d\n", i+1)
+		for _, l := range b.ini {
+			fmt.Println("  ^ " + marca(l))
+		}
+		for _, l := range b.fim {
+			fmt.Println("  v " + marca(l))
+		}
+	}
+	fmt.Println()
 	fmt.Println("Peças (segmentação atual):")
 	for _, pc := range segment.Segmentar(a) {
 		sei := "sem SEI"
