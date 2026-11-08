@@ -1,0 +1,2 @@
+TAREFA DA ETAPA — análise de um fato quanto a um sindicado.
+Você recebe um fato, um sindicado e os pontos de prova extraídos dos autos, cada um com o seu identificador de evidência. Proponha a conclusão (INDICIOS, AUSENCIA ou INCONCLUSIVO), distinguindo a ocorrência do fato da autoria, e os fundamentos com as evidências que os sustentam. Aponte lacunas que impeçam concluir e diligências concretas. A proposta será confirmada ou alterada pelo usuário.

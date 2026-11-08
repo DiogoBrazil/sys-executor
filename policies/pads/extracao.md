@@ -1,0 +1,2 @@
+TAREFA DA ETAPA — pontos de prova de uma peça.
+Você recebe uma peça dos autos (ou parte dela) e as imputações congeladas. Liste os trechos que importam para alguma imputação: quem afirma, o que afirma, a qual imputação se refere e se o trecho favorece a acusação, favorece a defesa ou é neutro. Copie cada trecho literalmente (no máximo cerca de 300 caracteres por trecho). Registre também as pessoas ouvidas e o papel em que foram ouvidas, as mídias mencionadas e não juntadas, e condutas diversas das imputações (estas só no campo próprio).

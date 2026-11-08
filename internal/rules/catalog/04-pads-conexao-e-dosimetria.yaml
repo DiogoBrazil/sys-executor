@@ -43,6 +43,9 @@
   enunciado: "Havendo punição, examinar os sete fatores I–VII individualmente, indicando ausência de elementos quando for o caso"
   modulo: "validate.RequiredParts"
   enforced_by: [engine.VerificarArt36]
+  etapas: [redacao]
+  condicao: [tem_punicao]
+  instrucao_ia: "Havendo punição, examine individualmente os sete fatores do art. 36 (I a VII); sem elemento nos autos, escreva expressamente que há ausência de elementos."
   testes: ["DOS-36-01"]
   versao: 1
 
@@ -54,6 +57,8 @@
   enunciado: "Causas de justificação examinadas com fundamentação"
   modulo: "pads/circunstancias"
   enforced_by: [engine.Dosimetria]
+  etapas: [analise]
+  instrucao_ia: "Examine as causas de justificação do art. 37 com fundamento nos autos; NUNCA reconheça uma causa sem elemento concreto."
   testes: ["DOS-37-01"]
   versao: 1
 
@@ -65,6 +70,8 @@
   enunciado: "Atenuantes e agravantes com fundamentação específica, sem presunção"
   modulo: "pads/circunstancias"
   enforced_by: [engine.Dosimetria]
+  etapas: [analise]
+  instrucao_ia: "Sugira atenuantes e agravantes (arts. 38 e 39) só com fundamento específico nos autos e evidência citada; NUNCA presuma circunstância."
   testes: ["DOS-38-01"]
   versao: 1
 

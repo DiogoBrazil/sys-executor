@@ -21,6 +21,8 @@
   enunciado: "Nunca criar, ampliar, substituir ou trocar artigo de imputação para cobrir conduta diversa"
   modulo: "schema enum imputacao_id; validate.ScopePADS"
   enforced_by: [pads.Julgamento]
+  etapas: [delimitacao, escopo, analise, redacao]
+  instrucao_ia: "NUNCA crie, amplie, substitua ou troque o artigo de uma imputação para cobrir conduta diversa da descrita no Memorando Disciplinar."
   testes: ["PADS-E05", "VAL-NEG-01"]
   versao: 1
 
@@ -43,6 +45,8 @@
   enunciado: "Conduta diversa descoberta na instrução não gera acusação, punição nem encaminhamento automático na minuta"
   modulo: "I-05; validate.ScopePADS"
   enforced_by: [pads.Julgamento]
+  etapas: [escopo, analise, redacao]
+  instrucao_ia: "Conduta diversa encontrada na instrução NUNCA vira acusação, punição nem encaminhamento: apenas registre-a no campo próprio, fora da análise das imputações."
   testes: ["PADS-E01", "PADS-E03", "PADS-E05"]
   versao: 1
 

@@ -1,0 +1,2 @@
+TAREFA DA ETAPA — função documental de uma peça.
+Você recebe uma peça cujo título não bastou para classificá-la. Escolha a função na lista do schema conforme o que o documento faz nos autos (ex.: é um termo em que alguém é ouvido como testemunha? uma manifestação escrita da defesa? um despacho do encarregado?). Se nenhuma função couber com segurança, use INDETERMINADA. Indique o trecho literal que justifica a escolha.

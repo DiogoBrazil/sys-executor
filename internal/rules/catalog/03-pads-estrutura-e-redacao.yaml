@@ -19,6 +19,8 @@
   tipo: [POLITICA_IA]
   enunciado: "Relatório: procedimento, acusado, imputações, acusação, defesa prévia, provas, alegações finais, cronologia, sem antecipar culpa"
   modulo: "pads/relatorio"
+  etapas: [redacao]
+  instrucao_ia: "No RELATÓRIO, descreva procedimento, acusado, imputações, acusação, defesa prévia, provas, alegações finais e cronologia, sem antecipar culpa."
   testes: ["INT-PADS-01"]
   versao: 1
 
@@ -29,6 +31,8 @@
   tipo: [POLITICA_IA, VALIDADOR]
   enunciado: "Fundamentação por imputação: elementos, autoria, materialidade, provas favoráveis/desfavoráveis, defesa"
   modulo: "pads/fundamentacao; validate.ScopePADS"
+  etapas: [analise, redacao]
+  instrucao_ia: "Fundamente cada imputação separadamente: elementos, autoria, materialidade, provas favoráveis e desfavoráveis e teses da defesa."
   testes: ["INT-PADS-02"]
   versao: 1
 
@@ -39,6 +43,8 @@
   tipo: [POLITICA_IA]
   enunciado: "Prova insuficiente/contraditória → fundamentar; *in dubio pro reo* quando cabível"
   modulo: "pads/fundamentacao"
+  etapas: [analise, redacao]
+  instrucao_ia: "Se a prova for insuficiente ou contraditória, diga isso de forma fundamentada e aplique in dubio pro reo quando cabível; NUNCA supra a falta de prova com suposição."
   testes: ["A07", "P1"]
   versao: 1
 
@@ -49,6 +55,9 @@
   tipo: [TEXTO_FIXO, POLITICA_IA]
   enunciado: "Decisão por imputação; sanção com natureza, dias se cabíveis e fundamentos"
   modulo: "compose.PADS.Decisao"
+  etapas: [redacao]
+  condicao: [tem_punicao]
+  instrucao_ia: "Na DECISÃO, decida por imputação; havendo sanção, use exatamente a natureza, os dias e os fundamentos de CALCULO_OFICIAL."
   testes: ["INT-PADS-03"]
   versao: 1
 
@@ -99,6 +108,9 @@
   tipo: [POLITICA_IA, VALIDADOR]
   enunciado: "Não afirmar ter visto/ouvido mídia; descrições do usuário usadas naturalmente, sem etiqueta obrigatória"
   modulo: "nucleo; validate.SupportCheck"
+  etapas: [analise, redacao]
+  condicao: [midia_ausente]
+  instrucao_ia: "NUNCA afirme ter visto ou ouvido mídia (vídeo, áudio, imagem). Use a descrição fornecida pelo usuário como informação dos autos, sem inventar conteúdo."
   testes: ["A11", "V1"]
   versao: 1
 
@@ -109,5 +121,7 @@
   tipo: [POLITICA_IA, VALIDADOR]
   enunciado: "Não citar o art. 41 § 3º do RDPM como vigente; sem alerta na UI"
   modulo: "legal.NotaVigencia; validate.LegalRefs"
+  etapas: [analise, redacao]
+  instrucao_ia: "NUNCA cite o art. 41, § 3º, do RDPM como dispositivo vigente."
   testes: ["LIB-D01-01", "LIB-D01-02"]
   versao: 1

@@ -9,6 +9,8 @@
   tipo: [POLITICA_IA, VALIDADOR]
   enunciado: "Produzir apenas minutas de apoio; nunca decidir, assinar, publicar, homologar, punir, alterar ficha"
   modulo: "nucleo; validate.NoFakeActs"
+  etapas: [nucleo]
+  instrucao_ia: "Você redige MINUTAS de apoio para revisão humana. NUNCA decida, assine, publique, homologue, aplique punição nem afirme como efetivada alteração de ficha, pontuação ou comportamento."
   testes: ["SEG13-07", "T09"]
   versao: 1
 
@@ -29,6 +31,8 @@
   tipo: [POLITICA_IA, VALIDADOR]
   enunciado: "Não calcular prescrição nem auditar nulidades; relatar argumentos da defesa presentes nos autos"
   modulo: "nucleo; pads/fundamentacao"
+  etapas: [analise, redacao]
+  instrucao_ia: "NUNCA calcule prescrição nem audite nulidades. Relate os argumentos da defesa que constam dos autos."
   testes: ["A16", "A17"]
   versao: 1
 
@@ -40,6 +44,8 @@
   enunciado: "Não confundir PADS com SR (acusado×sindicado; julgamento×relatório); sem homologação/avocação"
   modulo: "domain/pads × domain/sr; validate.ScopeSR"
   enforced_by: [sr.ConclusaoSR, pads.Julgamento]
+  etapas: [nucleo]
+  instrucao_ia: "PADS é julgamento de um acusado; Sindicância Regular é relatório sobre sindicados. NUNCA misture os termos dos dois procedimentos nem proponha homologação ou avocação."
   testes: ["SR34", "T25"]
   versao: 1
 

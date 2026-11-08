@@ -39,6 +39,8 @@
   tipo: [POLITICA_IA]
   enunciado: "Portaria: número, identificação, data; não confundir com sindicância apensada"
   modulo: "sr/dados"
+  etapas: [delimitacao]
+  instrucao_ia: "Identifique a Portaria de instauração (número, autoridade e data); NUNCA a confunda com portaria de sindicância apensada."
   testes: ["SR01"]
   versao: 1
 
@@ -60,6 +62,8 @@
   tipo: [POLITICA_IA, VALIDADOR]
   enunciado: "Ofendido(s) identificados com segurança; não atribuir a todo narrador"
   modulo: "sr/dados"
+  etapas: [extracao]
+  instrucao_ia: "Indique como ofendido só quem os autos identificam com segurança como vítima; NUNCA trate todo narrador como ofendido."
   testes: ["SR02", "SR06"]
   versao: 1
 
@@ -70,6 +74,8 @@
   tipo: [POLITICA_IA]
   enunciado: "Testemunhas efetivamente ouvidas como testemunhas (Termo de Inquirição)"
   modulo: "sr/dados"
+  etapas: [extracao]
+  instrucao_ia: "Liste como testemunha só quem foi efetivamente ouvido como testemunha (Termo de Inquirição)."
   testes: ["SR04", "SR05"]
   versao: 1
 
@@ -80,6 +86,8 @@
   tipo: [POLITICA_IA]
   enunciado: "Perícias realizadas, com nº e SEI se houver; teor discutido em III"
   modulo: "sr/dados"
+  etapas: [extracao]
+  instrucao_ia: "Registre as perícias realizadas, com número do laudo e número SEI quando houver."
   testes: ["SR03"]
   versao: 1
 
@@ -90,6 +98,8 @@
   tipo: [POLITICA_IA]
   enunciado: "Outras informações: seleção relevante e sucinta, sem inventário nem repetição"
   modulo: "sr/dados"
+  etapas: [redacao]
+  instrucao_ia: "Em outras informações, selecione o relevante de forma sucinta; NUNCA faça inventário de peças nem repita o que já foi dito."
   testes: ["SR05", "SR07"]
   versao: 1
 
@@ -110,6 +120,8 @@
   tipo: [POLITICA_IA]
   enunciado: "II – Síntese a partir da portaria/notícia; linguagem preliminar; sem antecipar indício/culpa; fatos novos reservados à III"
   modulo: "sr/sintese"
+  etapas: [redacao]
+  instrucao_ia: "Na síntese (II), parta da portaria ou da notícia, em linguagem preliminar; NUNCA antecipe indício ou culpa; fatos novos ficam para a III."
   testes: ["SR08"]
   versao: 1
 
@@ -120,6 +132,8 @@
   tipo: [POLITICA_IA, VALIDADOR]
   enunciado: "III organizada por fato e, dentro dele, por pessoa; individualizar condutas; resultados distintos possíveis"
   modulo: "sr/analise"
+  etapas: [analise, redacao]
+  instrucao_ia: "Organize a análise por fato e, dentro de cada fato, por pessoa; individualize as condutas; pessoas diferentes podem ter resultados diferentes."
   testes: ["SR09", "SR12"]
   versao: 1
 
@@ -130,6 +144,8 @@
   tipo: [POLITICA_IA, VALIDADOR]
   enunciado: "Depoimentos: síntese fiel, transcrição pontual, atribuição precisa, omissão não é ocultação"
   modulo: "sr/analise; SupportCheck"
+  etapas: [analise, redacao]
+  instrucao_ia: "Sintetize os depoimentos com fidelidade, atribuindo cada afirmação a quem a fez; transcreva só trechos pontuais."
   testes: ["SR32"]
   versao: 1
 
@@ -140,6 +156,8 @@
   tipo: [POLITICA_IA]
   enunciado: "Contradições: avaliar relevância; secundária não vira indício"
   modulo: "sr/analise"
+  etapas: [analise]
+  instrucao_ia: "Avalie a relevância das contradições; contradição secundária NUNCA vira indício por si só."
   testes: ["SR14"]
   versao: 1
 
@@ -150,6 +168,8 @@
   tipo: [POLITICA_IA]
   enunciado: "Perícia: laudo negativo não prova inexistência; reproduzir limitações"
   modulo: "sr/analise"
+  etapas: [analise]
+  instrucao_ia: "Laudo pericial negativo NUNCA prova a inexistência do fato; reproduza as limitações declaradas no laudo."
   testes: ["SR15"]
   versao: 1
 
@@ -160,6 +180,8 @@
   tipo: [POLITICA_IA]
   enunciado: "Documentos de outros procedimentos incorporados: avaliar pertinência; não importar conclusões"
   modulo: "sr/analise"
+  etapas: [analise]
+  instrucao_ia: "Documentos de outros procedimentos: avalie a pertinência e NUNCA importe as conclusões daquele procedimento."
   testes: ["SR16"]
   versao: 1
 
@@ -170,6 +192,9 @@
   tipo: [PERGUNTA, POLITICA_IA]
   enunciado: "Mídia ausente: pedir descrição/transcrição; não presumir"
   modulo: "workflow"
+  etapas: [extracao, analise]
+  condicao: [midia_ausente]
+  instrucao_ia: "Mídia citada e não juntada: NUNCA presuma o conteúdo; aponte a lacuna para que o usuário forneça descrição ou transcrição."
   testes: ["SR17"]
   versao: 1
 
@@ -213,6 +238,8 @@
   tipo: [DETERMINISTICA, PERGUNTA, POLITICA_IA]
   enunciado: "Situação funcional de cada militar na data de cada fato; perguntar só o essencial"
   modulo: "domain/common.SituacaoFuncional"
+  etapas: [extracao]
+  instrucao_ia: "Registre a situação funcional de cada militar (ativa, reserva, reformado, convocado) na data de cada fato, só quando os autos a informarem."
   testes: ["SR22", "SR23"]
   versao: 1
 
@@ -223,6 +250,8 @@
   tipo: [POLITICA_IA]
   enunciado: "Proporcionalidade; nunca omitir prova relevante para encurtar; sem extensão artificial"
   modulo: "sr/analise"
+  etapas: [redacao]
+  instrucao_ia: "Seja proporcional: NUNCA omita prova relevante para encurtar o texto nem estenda o texto artificialmente."
   testes: ["SR30", "SR31"]
   versao: 1
 
@@ -233,6 +262,8 @@
   tipo: [POLITICA_IA, VALIDADOR]
   enunciado: "IV objetiva e fundamentada; sem repetir a prova; sem sanção"
   modulo: "sr/solucao"
+  etapas: [redacao]
+  instrucao_ia: "A solução (IV) é objetiva e fundamentada, sem repetir a prova e NUNCA com sanção."
   testes: ["SR27", "SR28"]
   versao: 1
 
@@ -265,6 +296,8 @@
   enunciado: "Indícios suficientes / ausência / inconclusivo; distinguir ocorrência de autoria"
   modulo: "sr/solucao"
   enforced_by: [sr.ConclusaoSR]
+  etapas: [analise]
+  instrucao_ia: "Para cada fato e sindicado, proponha indícios suficientes, ausência de indícios ou inconclusivo, distinguindo a ocorrência do fato da autoria."
   testes: ["SR13", "SR18", "S3", "S4"]
   versao: 1
 
@@ -276,6 +309,8 @@
   enunciado: "Enquadramento específico (crime comum, crime militar, transgressão), com diploma e artigo confirmados por fonte"
   modulo: "validate.LegalRefs"
   enforced_by: [sr.Enquadramento]
+  etapas: [analise, redacao]
+  instrucao_ia: "Enquadre só com diploma e artigo confirmados por fonte fornecida; NUNCA cite artigo de memória."
   testes: ["SR25", "SR26"]
   versao: 1
 
@@ -296,6 +331,8 @@
   tipo: [POLITICA_IA]
   enunciado: "Não preso à capitulação da portaria para os mesmos fatos"
   modulo: "sr/solucao"
+  etapas: [analise]
+  instrucao_ia: "O enquadramento não fica preso à capitulação da portaria para os mesmos fatos."
   testes: ["SR24"]
   versao: 1
 
@@ -306,6 +343,8 @@
   tipo: [POLITICA_IA, VALIDADOR]
   enunciado: "Providências só com necessidade específica; nunca \"instaurar PADS\" ou \"arquivar\" automáticos"
   modulo: "validate (lista de fórmulas automáticas)"
+  etapas: [redacao]
+  instrucao_ia: "Proponha providências só quando houver necessidade específica; NUNCA proponha instaurar PADS ou arquivar de forma automática."
   testes: ["SR27", "SR28", "SR29"]
   versao: 1
 
@@ -326,6 +365,8 @@
   tipo: [PERGUNTA, POLITICA_IA]
   enunciado: "Lacuna impeditiva → alertar + diligências concretas; o usuário decide prosseguir; conclusão inconclusiva qualificada"
   modulo: "workflow"
+  etapas: [analise]
+  instrucao_ia: "Lacuna que impede concluir: aponte-a e sugira diligências concretas; NUNCA conclua como se a prova estivesse completa."
   testes: ["SR13", "SR33"]
   versao: 1
 

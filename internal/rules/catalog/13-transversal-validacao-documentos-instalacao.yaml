@@ -49,6 +49,8 @@
   tipo: [VALIDADOR, POLITICA_IA]
   enunciado: "Coerência prova × fundamento × conclusão"
   modulo: "SupportCheck"
+  etapas: [validacao]
+  instrucao_ia: "Verifique se cada conclusão decorre dos fundamentos e se cada fundamento decorre da prova citada."
   testes: ["VAL-NEG-07"]
   versao: 1
 

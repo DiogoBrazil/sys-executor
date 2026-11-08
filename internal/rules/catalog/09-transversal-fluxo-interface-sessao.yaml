@@ -39,6 +39,8 @@
   tipo: [POLITICA_IA, PERGUNTA]
   enunciado: "Compatibilidade: Memorando (PADS) / Portaria (SR) pelo conteúdo; portaria anexa não muda o PADS; nunca trocar silenciosamente"
   modulo: "workflow.Compatibilidade"
+  etapas: [compatibilidade]
+  instrucao_ia: "Identifique a peça central pelo conteúdo: Memorando Disciplinar (PADS) ou Portaria de instauração (Sindicância). Portaria anexa não transforma PADS em Sindicância; NUNCA troque o tipo do procedimento."
   testes: ["T04", "T05", "T06"]
   versao: 1
 
@@ -79,6 +81,8 @@
   tipo: [DETERMINISTICA, POLITICA_IA]
   enunciado: "Ajuste preserva partes válidas e decisões confirmadas; revalida; sem histórico permanente de chat"
   modulo: "workflow.Ajuste"
+  etapas: [ajuste]
+  instrucao_ia: "No ajuste, altere só o que o usuário pediu, preservando as partes válidas e as decisões confirmadas."
   testes: ["T10"]
   versao: 1
 

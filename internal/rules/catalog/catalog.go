@@ -53,7 +53,37 @@ const (
 	Revogada = "revogada"
 )
 
+// Etapas do orquestrador às quais uma regra de IA se aplica (plano §5.4).
+// O núcleo entra em toda chamada.
+const (
+	EtapaNucleo          = "nucleo"
+	EtapaClassificacao   = "classificacao"
+	EtapaCompatibilidade = "compatibilidade"
+	EtapaDelimitacao     = "delimitacao"
+	EtapaExtracao        = "extracao"
+	EtapaEscopo          = "escopo"
+	EtapaAnalise         = "analise"
+	EtapaRedacao         = "redacao"
+	EtapaValidacao       = "validacao"
+	EtapaAjuste          = "ajuste"
+)
+
+// Etapas lista as etapas de IA (fora o núcleo), em ordem.
+var Etapas = []string{EtapaClassificacao, EtapaCompatibilidade, EtapaDelimitacao, EtapaExtracao,
+	EtapaEscopo, EtapaAnalise, EtapaRedacao, EtapaValidacao, EtapaAjuste}
+
+// Condições (flags do caso) que ativam regras.
+const (
+	CondMidiaAusente = "midia_ausente"
+	CondTemPunicao   = "tem_punicao"
+)
+
+// Condicoes lista as condições conhecidas.
+var Condicoes = []string{CondMidiaAusente, CondTemPunicao}
+
 var (
+	etapasValidas  = conjunto(append([]string{EtapaNucleo}, Etapas...)...)
+	condValidas    = conjunto(Condicoes...)
 	rotulosValidos = conjunto(Aprovado, Interpretacao, Proposta, AValidar)
 	tiposValidos   = conjunto(Deterministica, PoliticaIA, Validador, Pergunta, TextoFixo, UI, Seguranca, Arquitetura, Processo)
 	fluxosValidos  = conjunto("PADS", "SR", "TRV")
@@ -125,6 +155,28 @@ func (c *Catalogo) Testes() map[string][]string {
 			out[t] = append(out[t], r.ID)
 		}
 	}
+	return out
+}
+
+// Selecionar devolve as regras de IA vigentes do fluxo (PADS ou SR, mais as
+// transversais) para a etapa, com todas as condições satisfeitas, em ordem de
+// ID. A seleção é sempre por chave, nunca por similaridade (§2.2 da
+// estratégia).
+func (c *Catalogo) Selecionar(fluxo, etapa string, flags map[string]bool) []Regra {
+	var out []Regra
+	for _, r := range c.Regras {
+		if !r.Vigente() || !r.Tem(PoliticaIA) || (r.Fluxo != fluxo && r.Fluxo != "TRV") || !contem(r.Etapas, etapa) {
+			continue
+		}
+		ok := true
+		for _, cnd := range r.Condicao {
+			ok = ok && flags[cnd]
+		}
+		if ok {
+			out = append(out, r)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
 	return out
 }
 
@@ -241,6 +293,19 @@ func validar(r Regra) []string {
 	}
 	if r.InstrucaoIA != "" && !contem(r.Tipo, PoliticaIA) {
 		p = append(p, "instrucao_ia só em regra POLITICA_IA")
+	}
+	if contem(r.Tipo, PoliticaIA) && r.Vigente() && (strings.TrimSpace(r.InstrucaoIA) == "" || len(r.Etapas) == 0) {
+		p = append(p, "regra POLITICA_IA vigente sem instrucao_ia ou sem etapas")
+	}
+	for _, e := range r.Etapas {
+		if !etapasValidas[e] {
+			p = append(p, fmt.Sprintf("etapa inválida %q", e))
+		}
+	}
+	for _, c := range r.Condicao {
+		if !condValidas[c] {
+			p = append(p, fmt.Sprintf("condição inválida %q", c))
+		}
 	}
 	if r.Versao < 1 {
 		p = append(p, "versao deve ser ≥ 1")

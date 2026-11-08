@@ -1,0 +1,2 @@
+TAREFA DA ETAPA — delimitação da acusação.
+Você recebe o Memorando Disciplinar. Liste cada imputação exatamente como o memorando a descreve: a conduta, o dispositivo (artigo, inciso e alínea, se houver), a natureza (LEVE, MEDIA ou GRAVE) quando o memorando a informar, e a data do fato em dia, mês e ano. Para cada imputação, copie o trecho literal do memorando que a contém. Se o memorando não informar algum dado, deixe o campo vazio (0 nas datas). Não acrescente imputações que o memorando não faz.

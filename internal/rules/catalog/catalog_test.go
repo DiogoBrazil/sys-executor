@@ -61,6 +61,9 @@ func TestValidacao(t *testing.T) {
 		"status":             strings.Replace(valida, "versao: 1", "versao: 1\n  status: suspensa", 1),
 		"ID":                 strings.Replace(valida, "PADS-REI-900", "PADS-REI-9", 1),
 		"interpretação":      strings.Replace(valida, "versao: 1", "versao: 1\n  interpretacao: I-01", 1),
+		"etapa":              strings.Replace(valida, "versao: 1", "versao: 1\n  etapas: [inventada]", 1),
+		"condição":           strings.Replace(valida, "versao: 1", "versao: 1\n  condicao: [talvez]", 1),
+		"IA sem instrução":   strings.Replace(valida, "[DETERMINISTICA]", "[POLITICA_IA]", 1),
 	}
 	for nome, txt := range casos {
 		if err := carregarTexto(map[string]string{"a.yaml": txt}); err == nil {
@@ -72,5 +75,35 @@ func TestValidacao(t *testing.T) {
 	}
 	if err := carregarTexto(map[string]string{"a.yaml": valida + "---\n" + valida}); err == nil {
 		t.Error("dois documentos no mesmo arquivo")
+	}
+}
+
+func TestSelecionar(t *testing.T) {
+	c, _ := Carregar()
+	ids := func(rs []Regra) string {
+		var s []string
+		for _, r := range rs {
+			s = append(s, r.ID)
+		}
+		return strings.Join(s, " ")
+	}
+	nuc := ids(c.Selecionar("PADS", EtapaNucleo, nil))
+	for _, id := range []string{"TRV-ESC-001", "TRV-PRV-006", "TRV-PRV-007"} {
+		if !strings.Contains(nuc, id) {
+			t.Errorf("núcleo sem %s: %s", id, nuc)
+		}
+	}
+	sem := ids(c.Selecionar("PADS", EtapaRedacao, nil))
+	com := ids(c.Selecionar("PADS", EtapaRedacao, map[string]bool{CondTemPunicao: true}))
+	if strings.Contains(sem, "PADS-DOS-001") || !strings.Contains(com, "PADS-DOS-001") {
+		t.Fatalf("condição tem_punicao: %s | %s", sem, com)
+	}
+	if a := ids(c.Selecionar("SR", EtapaAnalise, nil)); strings.Contains(a, "PADS-") || !strings.Contains(a, "SR-SOL-004") {
+		t.Fatalf("SR recebeu regra do PADS: %s", a)
+	}
+	for _, e := range Etapas {
+		if e != EtapaAjuste && e != EtapaValidacao && len(c.Selecionar("PADS", e, nil))+len(c.Selecionar("SR", e, nil)) == 0 {
+			t.Errorf("etapa %s sem regras", e)
+		}
 	}
 }
