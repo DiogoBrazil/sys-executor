@@ -176,7 +176,7 @@ func ObterPDF(ctx context.Context, cfg Config, in Interlocutor) ([]byte, error) 
 		})
 		l.Senha.Zerar()
 		if err != nil {
-			return nil, erros.Com(erros.SEIInterfaceAlterada, err)
+			return nil, s.falhaTela("login (usuário, senha, órgão ou ACESSAR)", err)
 		}
 		e, err := s.esperar(cfg.TempoTela, func(e estadoTela) bool {
 			return e.OTP || e.Pesquisa || e.CredencialInvalida
@@ -217,7 +217,7 @@ func ObterPDF(ctx context.Context, cfg Config, in Interlocutor) ([]byte, error) 
 		})
 		cod.Zerar()
 		if err != nil {
-			return nil, erros.Com(erros.SEIInterfaceAlterada, err)
+			return nil, s.falhaTela("código de verificação ou Validar", err)
 		}
 		e, err = s.esperar(cfg.TempoTela, func(e estadoTela) bool { return e.Pesquisa || e.CodigoInvalido })
 		if err != nil {
@@ -235,10 +235,10 @@ func ObterPDF(ctx context.Context, cfg Config, in Interlocutor) ([]byte, error) 
 	// Pesquisa rápida do processo.
 	in.Fase(FaseLocalizando)
 	if err := s.preencher("txtPesquisaRapida", processo); err != nil {
-		return nil, erros.Com(erros.SEIInterfaceAlterada, err)
+		return nil, s.falhaTela("campo de pesquisa rápida", err)
 	}
 	if err := s.avaliarBool(jsSubmeterPesquisa); err != nil {
-		return nil, erros.Com(erros.SEIInterfaceAlterada, err)
+		return nil, s.falhaTela("envio da pesquisa rápida", err)
 	}
 	e, err := s.esperar(cfg.TempoTela, func(e estadoTela) bool {
 		return (e.ProcessoAberto && e.IconePDF) || e.Reautenticacao || e.NaoEncontrado || e.AcessoNegado
@@ -263,7 +263,7 @@ func ObterPDF(ctx context.Context, cfg Config, in Interlocutor) ([]byte, error) 
 		})
 		senha.Zerar()
 		if err != nil {
-			return nil, erros.Com(erros.SEIInterfaceAlterada, err)
+			return nil, s.falhaTela("reautenticação (senha ou Acessar)", err)
 		}
 		e, err = s.esperar(cfg.TempoTela, func(e estadoTela) bool {
 			return (e.ProcessoAberto && e.IconePDF) || e.CredencialInvalida || e.AcessoNegado
@@ -289,16 +289,16 @@ func ObterPDF(ctx context.Context, cfg Config, in Interlocutor) ([]byte, error) 
 	// Gerar Arquivo PDF do Processo → Todos os documentos disponíveis → Gerar.
 	in.Fase(FaseGerando)
 	if err := s.clicar("Gerar Arquivo PDF do Processo"); err != nil {
-		return nil, erros.Com(erros.SEIInterfaceAlterada, err)
+		return nil, s.falhaTela("ícone Gerar Arquivo PDF do Processo", err)
 	}
 	if _, err := s.esperar(cfg.TempoTela, func(e estadoTela) bool { return e.FormGerar }); err != nil {
-		return nil, erros.Com(erros.SEIInterfaceAlterada, err)
+		return nil, s.falhaTela("tela Gerar Arquivo PDF do Processo", err)
 	}
 	if err := s.avaliarBool(jsTodosDocumentos); err != nil {
-		return nil, erros.Com(erros.SEIInterfaceAlterada, err)
+		return nil, s.falhaTela("opção Todos os documentos disponíveis", err)
 	}
 	if err := s.avaliarBool(jsGerar); err != nil {
-		return nil, erros.Com(erros.SEIInterfaceAlterada, err)
+		return nil, s.falhaTela("botão Gerar (btnGerar)", err)
 	}
 	return s.aguardarDownload(ctx, cfg.TempoGeracao, in)
 }
@@ -454,6 +454,15 @@ func (s *sessaoNavegador) estado() (estadoTela, error) {
 		e.CodigoInvalido = e.CodigoInvalido || reDlgCodigo.MatchString(d)
 	}
 	return e, nil
+}
+
+// falhaTela é o SEI-005 com a etapa e, se faltar um elemento, a tela atual.
+func (s *sessaoNavegador) falhaTela(etapa string, err error) error {
+	msg := etapa + ": " + err.Error()
+	if !strings.Contains(err.Error(), "tela atual:") {
+		msg += "; " + s.resumoTela()
+	}
+	return erros.Com(erros.SEIInterfaceAlterada, errors.New(msg))
 }
 
 // resumoTela descreve a tela atual para o diagnóstico (sem valores; dígitos mascarados).

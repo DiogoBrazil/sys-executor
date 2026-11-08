@@ -109,13 +109,17 @@ var jsSubmeterPesquisa = script(`(() => {
   return true;
 })()`)
 
-// jsTodosDocumentos marca "Todos os documentos disponíveis" (já vem marcado
-// por padrão no SEI/RO; marcar de novo é inofensivo).
+// jsTodosDocumentos garante "Todos os documentos disponíveis" (já vem
+// marcada por padrão no SEI/RO). Procura pelo rótulo e pelo id optTodos, que
+// é o que a função gerar() da página consulta.
 var jsTodosDocumentos = script(`(() => {
   for (const d of __docs) {
+    const porId = d.getElementById('optTodos');
+    if (porId && porId.type === 'radio') { if (!porId.checked) porId.click(); return porId.checked; }
     for (const r of d.querySelectorAll('input[type=radio]')) {
-      const lab = r.id ? d.querySelector('label[for="' + r.id + '"]') : r.closest('label');
-      if (lab && __norm(lab.innerText).startsWith('todos os documentos disponiveis')) { r.click(); return true; }
+      const lab = (r.id && d.querySelector('label[for="' + r.id + '"]')) || r.closest('label') || r.nextElementSibling;
+      const t = __norm(lab ? lab.innerText || lab.textContent : '');
+      if (t.startsWith('todos os documentos disponiveis')) { if (!r.checked) r.click(); return r.checked; }
     }
   }
   return false;
