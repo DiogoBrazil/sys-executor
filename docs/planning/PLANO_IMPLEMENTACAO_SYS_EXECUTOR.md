@@ -536,7 +536,7 @@ Cada tarefa vai receber, em `PLANO_IMPLEMENTACAO`, a lista de arquivos, os teste
 - F3-07 memória de cálculo.
 - F3-08 catálogo YAML + `rulescov` completo.
 
-*Saída:* todos os casos numéricos da V4 verdes.
+*Saída:* todos os casos numéricos da V4 verdes. **Concluída em 08/11/2026** (`RELATORIO_FASE3.md`): 101 casos da seção 1 do plano de testes e 33 regras DET do motor com teste e `enforced_by`.
 
 **Fase 2 — Aquisição/extração:**
 - F2-01 Upload.

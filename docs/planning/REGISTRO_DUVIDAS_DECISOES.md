@@ -125,6 +125,12 @@ Se o usuário discordar de alguma interpretação I-xx, ela será corrigida nest
 | PT-F2-03 | Falha no SEI devolve à escolha da entrada com aviso, mantendo o tipo | T03 e V4 §30.3: oferecer o envio do PDF sem reiniciar | F2 |
 | PT-F2-04 | Etapa de fase futura pára a tarefa com o aviso TAR-004, sem destruí-la | Permite consultar autos, cobertura e fontes; nada é simulado | F2 |
 | PT-F2-05 | Edge sem janela (`--headless=new`), sem disfarçar o agente do navegador | Credenciais digitadas no app (V4 §33); janela visível só para diagnóstico | F2 |
+| PT-F3-01 | Caso de 29/02 material: calcular com 28/02 e com 01/03; perguntar só se os resultados diferirem | PADS-CMP-011: não impor critério e não perguntar sem necessidade | F3 |
+| PT-F3-02 | Catálogo com `rotulo` e `tipo` em lista; tipo "PT" → `ARQUITETURA`, "Processo" → `PROCESSO`; `modulo` (planejado) separado de `enforced_by` (símbolos reais conferidos) | Preservar a matriz sem perder combinações e impedir referência a código inexistente | F3 |
+| PT-F3-03 | Anotações `// Cobre: <caso>` e `// Regra: <ID>` nos testes | Casos de ponta a ponta não são dados como cobertos por teste de unidade | F3 |
+| PT-F3-04 | Reabrir o conjunto de imputações exige motivo, sobe a versão e invalida o julgamento da versão anterior | Versão auditável (PADS-ESC-001) | F3 |
+| PT-F3-05 | SR: indícios exigem enquadramento com fonte; ausência não tem; inconclusivo pode ter **[A VALIDAR na F6]** | SR-SOL-004/005 | F3 |
+| PT-F3-06 | Dependência `go.yaml.in/yaml/v3` v3.0.5 (MIT/Apache-2.0), já indireta | Leitura estrita do catálogo | F3 |
 
 ## 4. Histórico
 - 08/11/2026: criado o registro e respondidas D-01…D-07 durante o planejamento. Plano aprovado como planejamento, sem autorização de código.
@@ -134,3 +140,4 @@ Se o usuário discordar de alguma interpretação I-xx, ela será corrigida nest
 - 08/11/2026: Fase 1 (Fundação) executada com autorização do usuário. P-10 resolvida (WER). Decisões técnicas PT-F1-01…05 registradas. Resultados em `RELATORIO_FASE1.md`.
 - 08/11/2026: Fase 2 implementada e testada com Edge, Tesseract e pdfium reais (`RELATORIO_FASE2.md`). PT-F2-01…05 registradas. Fechamento aguarda `acao_ajax`, `autos-mapa` sobre PDF real e teste com o SEI real.
 - 08/11/2026: Fase 2 concluída. Fluxo completo validado pelo usuário no SEI/RO real (login, 2FA, sigiloso, geração e download do PDF) e com PDF real (30 peças conferidas com a árvore). Próxima: Fase 3, que exige autorização expressa.
+- 08/11/2026: Fase 3 (motor determinístico) concluída com autorização do usuário (`RELATORIO_FASE3.md`). Catálogo YAML semeado da matriz (185 regras); `rulescov -estrito` verde. PT-F3-01…06 registradas. Próxima: Fase 4, que exige autorização expressa.

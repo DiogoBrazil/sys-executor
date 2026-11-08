@@ -4,7 +4,7 @@
 > **Rótulos:** AP = aprovado pelo usuário · IN = interpretação registrada · PT = proposta técnica · AV = a validar em testes.
 > **Tipos:** DET determinística · IA política de IA · VAL validador · PRG pergunta · TXT texto fixo · UI · SEG segurança.
 > **Status inicial de todas as linhas:** `Planejado`. Os IDs de teste estão em `PLANO_TESTES_ACEITACAO.md`.
-> Esta matriz é a semente do catálogo `internal/rules/catalog/*.yaml`. A ferramenta `cmd/rulescov` deverá provar que todos os IDs de teste da V4 aparecem aqui.
+> Esta matriz semeou o catálogo `internal/rules/catalog/*.yaml` (Fase 3). Desde então o catálogo é a fonte das regras; a coluna "Módulo / política" é o planejamento, e o campo `enforced_by` do catálogo guarda os símbolos Go reais. O `cmd/rulescov` exige o mesmo conjunto de regras nos dois e prova que todos os IDs de teste da V4 aparecem no catálogo.
 
 ## 1. Escopo e natureza do produto
 
