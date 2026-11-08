@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, defineAsyncComponent, ref } from "vue";
 import { cancelar, estado, voltarAoInicio } from "../estado";
 import AvisoErro from "../components/AvisoErro.vue";
+import CartaoPergunta from "../components/CartaoPergunta.vue";
+import PainelAutos from "../components/PainelAutos.vue";
+// O PDF.js só é carregado quando o usuário abre os autos.
+const VisualizadorFontes = defineAsyncComponent(() => import("../components/VisualizadorFontes.vue"));
 
 const v = computed(() => estado.visao!);
 const confirmando = ref(false);
+const fonte = ref<{ pagina: number; inicio: number; fim: number } | null>(null);
+function abrir(pagina: number, inicio: number, fim: number) {
+  fonte.value = { pagina, inicio, fim };
+}
 
 const percentual = computed(() => {
   const p = v.value.progresso;
@@ -34,7 +42,17 @@ async function confirmarCancelamento() {
       <h1 v-if="!v.terminal">Processando os autos</h1>
       <h1 v-else>{{ tituloFinal }}</h1>
 
-      <div v-if="!v.terminal" class="agora" aria-live="polite" data-teste="estado-atual">
+      <CartaoPergunta v-if="v.pergunta" :pergunta="v.pergunta" />
+
+      <div v-if="v.parada" class="aviso" role="status" data-teste="parada">
+        <h3>As próximas etapas ainda não estão disponíveis</h3>
+        <p>
+          A delimitação, a análise e a redação da minuta chegam nas próximas versões do aplicativo. Você pode
+          consultar os autos lidos e cancelar a tarefa quando terminar.
+        </p>
+      </div>
+
+      <div v-else-if="!v.terminal && !v.pergunta" class="agora" aria-live="polite" data-teste="estado-atual">
         <p class="descricao">{{ v.descricao }}</p>
         <div v-if="percentual !== null" class="medida" data-teste="progresso">
           <div
@@ -55,6 +73,7 @@ async function confirmarCancelamento() {
         </div>
       </div>
 
+      <AvisoErro v-if="!v.terminal && v.erro && !v.parada" :erro="v.erro" tipo="aviso" />
       <AvisoErro v-if="v.terminal && v.erro && v.estado === 'FALHA'" :erro="v.erro" />
       <p v-else-if="v.terminal && v.erro" class="nota">{{ v.erro.mensagem }}</p>
       <AvisoErro v-if="v.aviso" :erro="v.aviso" tipo="aviso" />
@@ -77,7 +96,13 @@ async function confirmarCancelamento() {
           Voltar ao início
         </button>
       </div>
+      <button v-if="v.autos && !v.terminal" class="botao" data-teste="consultar-autos" @click="abrir(1, 0, 0)">
+        Consultar os autos
+      </button>
+      <PainelAutos v-if="v.autos && !v.terminal" :autos="v.autos" @abrir="abrir" />
     </section>
+
+    <VisualizadorFontes v-if="fonte" :pagina="fonte.pagina" :inicio="fonte.inicio" :fim="fonte.fim" @fechar="fonte = null" />
 
     <ol class="linha" aria-label="Etapas da tarefa" data-teste="linha-do-tempo">
       <li v-for="(m, i) in v.etapas" :key="m.chave" :class="m.situacao" :aria-current="m.situacao === 'ativa' ? 'step' : undefined">

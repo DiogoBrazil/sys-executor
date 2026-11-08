@@ -44,6 +44,7 @@ const aguardandoArquivo = computed(() => estado.visao?.estado === "RECEBENDO_UPL
     </section>
 
     <AvisoErro v-if="estado.erro" :erro="estado.erro" />
+    <AvisoErro v-else-if="aguardandoArquivo && estado.visao?.erro" :erro="estado.visao.erro" data-teste="erro-arquivo" />
 
     <div>
       <button class="botao discreto" :disabled="estado.ocupado" data-teste="voltar-inicio" @click="voltarAoInicio">

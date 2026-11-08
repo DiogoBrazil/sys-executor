@@ -69,6 +69,15 @@ export function Iniciar(): $CancellablePromise<$models.Resposta> {
 }
 
 /**
+ * Responder escolhe uma opção da pergunta pendente.
+ */
+export function Responder(perguntaID: string, opcaoID: string): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(1035478786, perguntaID, opcaoID).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
  * SelecionarPDF abre o diálogo nativo e envia o arquivo escolhido. Não pede
  * credenciais nem acessa o SEI (T02). O nome do arquivo não é guardado.
  */

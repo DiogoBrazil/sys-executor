@@ -20,3 +20,16 @@ export const api = {
     return Events.On(TarefaVisao, (ev) => cb((ev.data as Visao | null) ?? null));
   },
 };
+
+import * as Fontes from "../bindings/github.com/DiogoBrazil/sys-executor/internal/app/fontesservice";
+import type { RespostaBusca, RespostaDestaque, RespostaEndereco } from "../bindings/github.com/DiogoBrazil/sys-executor/internal/app/models";
+
+export type { RespostaBusca, RespostaDestaque };
+
+export const fontes = {
+  enderecoPDF: (): Promise<RespostaEndereco> => Fontes.EnderecoPDF(),
+  destaque: (pagina: number, inicio: number, fim: number): Promise<RespostaDestaque> => Fontes.Destaque(pagina, inicio, fim),
+  buscar: (consulta: string): Promise<RespostaBusca> => Fontes.Buscar(consulta),
+};
+
+export const responder = (perguntaID: string, opcaoID: string): Promise<Resposta> => Tarefa.Responder(perguntaID, opcaoID);

@@ -9,13 +9,17 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/DiogoBrazil/sys-executor/frontend"
 	"github.com/DiogoBrazil/sys-executor/internal/app"
+	"github.com/DiogoBrazil/sys-executor/internal/ingest/ocr"
+	"github.com/DiogoBrazil/sys-executor/internal/ingest/pdf"
 	"github.com/DiogoBrazil/sys-executor/internal/pastas"
+	"github.com/DiogoBrazil/sys-executor/internal/pipeline"
 	"github.com/DiogoBrazil/sys-executor/internal/prefs"
 	"github.com/DiogoBrazil/sys-executor/internal/session"
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
@@ -46,9 +50,22 @@ func main() {
 
 	loja, _ := prefs.Abrir(p.Preferencias()) // falha de gravação: segue com o padrão em memória
 
+	// Ingestão (Fase 2): pdfium em WebAssembly e Tesseract empacotado em
+	// <pasta do executável>\componentes\tesseract (SYSEXEC_TESSERACT em desenvolvimento).
+	extrator := pdf.NovoExtrator()
+	componentes := ""
+	if exe, err := os.Executable(); err == nil {
+		componentes = filepath.Join(filepath.Dir(exe), "componentes")
+	}
+	pipe := &pipeline.Pipeline{
+		Extrator:     extrator,
+		LocalizarOCR: func() (ocr.Motor, error) { return ocr.Localizar(componentes) },
+	}
+
 	var wapp *application.App
 	ger := workflow.Novo(workflow.Opcoes{
 		Sessoes: sessoes,
+		Etapas:  pipe.Etapas(),
 		Notificar: func(v *workflow.Visao) {
 			if wapp != nil {
 				wapp.Event.Emit(app.EventoVisao, v)
@@ -69,6 +86,8 @@ func main() {
 		return d.PromptForSingleSelection()
 	}
 
+	fontes := app.NovaFontesService(ger)
+
 	dist, err := fs.Sub(frontend.Dist, "dist")
 	if err != nil {
 		os.Exit(1)
@@ -83,8 +102,12 @@ func main() {
 		Services: []application.Service{
 			application.NewService(app.NovaTarefaService(ger, seletor)),
 			application.NewService(app.NovaPreferenciasService(loja)),
+			application.NewService(fontes),
 		},
-		Assets: application.AssetOptions{Handler: application.AssetFileServerFS(dist)},
+		Assets: application.AssetOptions{
+			Handler:    application.AssetFileServerFS(dist),
+			Middleware: fontes.Middleware, // PDF dos autos, sem cache (SEG-CACHE-01)
+		},
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: "sys-executor.desktop",
 			OnSecondInstanceLaunch: func(application.SecondInstanceData) {
@@ -103,6 +126,7 @@ func main() {
 		// Fechar o app descarta a tarefa em andamento (V4 §29.1: sem retomada).
 		OnShutdown: func() {
 			ger.Encerrar()
+			_ = extrator.Fechar()
 			faxina.Do(agendarFaxina)
 		},
 	})

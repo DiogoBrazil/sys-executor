@@ -6,7 +6,13 @@ export {
     ErroVisao,
     Estado,
     Marco,
+    MidiaResumo,
+    OpcaoVisao,
+    PaginaResumo,
+    PecaResumo,
+    PerguntaVisao,
     Progresso,
+    ResumoAutos,
     Situacao,
     Tipo,
     Visao

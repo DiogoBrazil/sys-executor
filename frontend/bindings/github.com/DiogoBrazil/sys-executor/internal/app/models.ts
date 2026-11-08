@@ -7,10 +7,49 @@ import { Create as $Create } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as autos$0 from "../ingest/autos/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as prefs$0 from "../prefs/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as workflow$0 from "../workflow/models.js";
+
+/**
+ * Caixa em pontos, origem no canto superior esquerdo.
+ */
+export class Caixa {
+    "x0": number;
+    "y0": number;
+    "x1": number;
+    "y1": number;
+
+    /** Creates a new Caixa instance. */
+    constructor($$source: Partial<Caixa> = {}) {
+        if (!("x0" in $$source)) {
+            this["x0"] = 0;
+        }
+        if (!("y0" in $$source)) {
+            this["y0"] = 0;
+        }
+        if (!("x1" in $$source)) {
+            this["x1"] = 0;
+        }
+        if (!("y1" in $$source)) {
+            this["y1"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Caixa instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Caixa {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Caixa($$parsedSource as Partial<Caixa>);
+    }
+}
 
 /**
  * Resposta é o retorno de todo comando da interface.
@@ -49,6 +88,122 @@ export class Resposta {
 }
 
 /**
+ * RespostaBusca traz as ocorrências encontradas nos autos.
+ */
+export class RespostaBusca {
+    "ocorrencias": autos$0.Ocorrencia[];
+    "erro": workflow$0.ErroVisao | null;
+
+    /** Creates a new RespostaBusca instance. */
+    constructor($$source: Partial<RespostaBusca> = {}) {
+        if (!("ocorrencias" in $$source)) {
+            this["ocorrencias"] = [];
+        }
+        if (!("erro" in $$source)) {
+            this["erro"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RespostaBusca instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RespostaBusca {
+        const $$createField0_0 = $$createType5;
+        const $$createField1_0 = $$createType3;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("ocorrencias" in $$parsedSource) {
+            $$parsedSource["ocorrencias"] = $$createField0_0($$parsedSource["ocorrencias"]);
+        }
+        if ("erro" in $$parsedSource) {
+            $$parsedSource["erro"] = $$createField1_0($$parsedSource["erro"]);
+        }
+        return new RespostaBusca($$parsedSource as Partial<RespostaBusca>);
+    }
+}
+
+/**
+ * RespostaDestaque traz o tamanho da página e as caixas do trecho (UI-SRC-01).
+ */
+export class RespostaDestaque {
+    "pagina": number;
+    "largura": number;
+    "altura": number;
+    "caixas": Caixa[];
+    "erro": workflow$0.ErroVisao | null;
+
+    /** Creates a new RespostaDestaque instance. */
+    constructor($$source: Partial<RespostaDestaque> = {}) {
+        if (!("pagina" in $$source)) {
+            this["pagina"] = 0;
+        }
+        if (!("largura" in $$source)) {
+            this["largura"] = 0;
+        }
+        if (!("altura" in $$source)) {
+            this["altura"] = 0;
+        }
+        if (!("caixas" in $$source)) {
+            this["caixas"] = [];
+        }
+        if (!("erro" in $$source)) {
+            this["erro"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RespostaDestaque instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RespostaDestaque {
+        const $$createField3_0 = $$createType7;
+        const $$createField4_0 = $$createType3;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("caixas" in $$parsedSource) {
+            $$parsedSource["caixas"] = $$createField3_0($$parsedSource["caixas"]);
+        }
+        if ("erro" in $$parsedSource) {
+            $$parsedSource["erro"] = $$createField4_0($$parsedSource["erro"]);
+        }
+        return new RespostaDestaque($$parsedSource as Partial<RespostaDestaque>);
+    }
+}
+
+/**
+ * RespostaEndereco devolve o endereço do PDF da tarefa ativa.
+ */
+export class RespostaEndereco {
+    "endereco": string;
+    "erro": workflow$0.ErroVisao | null;
+
+    /** Creates a new RespostaEndereco instance. */
+    constructor($$source: Partial<RespostaEndereco> = {}) {
+        if (!("endereco" in $$source)) {
+            this["endereco"] = "";
+        }
+        if (!("erro" in $$source)) {
+            this["erro"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RespostaEndereco instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RespostaEndereco {
+        const $$createField1_0 = $$createType3;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("erro" in $$parsedSource) {
+            $$parsedSource["erro"] = $$createField1_0($$parsedSource["erro"]);
+        }
+        return new RespostaEndereco($$parsedSource as Partial<RespostaEndereco>);
+    }
+}
+
+/**
  * RespostaPreferencias é o retorno dos comandos de preferências.
  */
 export class RespostaPreferencias {
@@ -71,7 +226,7 @@ export class RespostaPreferencias {
      * Creates a new RespostaPreferencias instance from a string or object.
      */
     static createFrom($$source: any = {}): RespostaPreferencias {
-        const $$createField0_0 = $$createType4;
+        const $$createField0_0 = $$createType8;
         const $$createField1_0 = $$createType3;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("preferencias" in $$parsedSource) {
@@ -89,4 +244,8 @@ const $$createType0 = workflow$0.Visao.createFrom;
 const $$createType1 = $Create.Nullable($$createType0);
 const $$createType2 = workflow$0.ErroVisao.createFrom;
 const $$createType3 = $Create.Nullable($$createType2);
-const $$createType4 = prefs$0.Preferencias.createFrom;
+const $$createType4 = autos$0.Ocorrencia.createFrom;
+const $$createType5 = $Create.Array($$createType4);
+const $$createType6 = Caixa.createFrom;
+const $$createType7 = $Create.Array($$createType6);
+const $$createType8 = prefs$0.Preferencias.createFrom;

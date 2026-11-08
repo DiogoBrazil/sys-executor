@@ -1,7 +1,7 @@
 // Estado da interface: espelha a visão da tarefa enviada pelo Go.
 // Nada aqui é persistido (sem localStorage): a tarefa vive só na sessão.
 import { reactive } from "vue";
-import { api, type Resposta, type Visao } from "./api";
+import { api, responder as responderApi, type Resposta, type Visao } from "./api";
 
 export interface ErroTela {
   codigo: string;
@@ -64,6 +64,7 @@ export async function enviarPDF() {
   await executar(api.selecionarPDF);
 }
 
+export const responder = (perguntaID: string, opcaoID: string) => executar(() => responderApi(perguntaID, opcaoID));
 export const acessarSEI = () => executar(() => api.escolherEntrada("SEI"));
 export const voltarParaEntrada = () => executar(api.voltarParaEntrada);
 export const cancelar = () => executar(api.cancelar);

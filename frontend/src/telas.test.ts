@@ -40,6 +40,15 @@ vi.mock("./api", () => ({
     descartar: () => { chamadas.push("descartar"); return resp(null); },
     aoMudar: () => () => {},
   },
+  responder: (p: string, o: string) => {
+    chamadas.push(`responder:${p}:${o}`);
+    return resp(visao("DELIMITANDO", { parada: true, erro: { codigo: "TAR-004", titulo: "t", mensagem: "m", acao: "a" } }));
+  },
+  fontes: {
+    enderecoPDF: () => Promise.resolve({ endereco: "", erro: { codigo: "TAR-003", titulo: "", mensagem: "", acao: "" } }),
+    destaque: () => Promise.resolve({ pagina: 1, largura: 0, altura: 0, caixas: [], erro: null }),
+    buscar: () => Promise.resolve({ ocorrencias: [], erro: null }),
+  },
 }));
 
 import App from "./App.vue";
@@ -144,5 +153,65 @@ describe("T07 — tarefa em execução", () => {
     expect(w.text()).toContain("A tarefa não pôde continuar");
     expect(w.find('[data-teste="aviso-erro"]').text()).toContain("Etapa ainda não disponível");
     expect(w.find('[data-teste="voltar-inicio"]').exists()).toBe(true);
+  });
+});
+
+const resumo = {
+  totalPaginas: 9,
+  compatibilidade: "COMPATIVEL",
+  pecaCentral: "PEC-01",
+  paginas: [
+    { numero: 1, situacao: "LIDA", origem: "NATIVO", confianca: 0, peca: "PEC-01" },
+    { numero: 2, situacao: "OCR_BAIXO", origem: "OCR", confianca: 60, peca: "PEC-02" },
+    { numero: 3, situacao: "VAZIA", origem: "", confianca: 0, peca: "PEC-02" },
+  ],
+  pecas: [
+    { id: "PEC-01", titulo: "MEMORANDO DISCIPLINAR", funcao: "MEMORANDO_DISCIPLINAR", rotulo: "Memorando Disciplinar", paginaInicial: 1, paginaFinal: 1, sei: "0090000001", provavel: false, externo: false, situacao: "LIDA" },
+    { id: "PEC-02", titulo: "MANIFESTAÇÃO", funcao: "DEFESA_PREVIA", rotulo: "Defesa prévia", paginaInicial: 2, paginaFinal: 3, sei: "", provavel: true, externo: true, situacao: "OCR_BAIXO" },
+  ],
+  midias: [{ pagina: 2, peca: "PEC-02", termo: "gravação", inicio: 10, fim: 18 }],
+};
+
+describe("Fase 2 — autos, perguntas e parada", () => {
+  it("pergunta de compatibilidade mostra opções e envia a resposta (T04)", async () => {
+    visaoAtual = visao("AGUARDANDO_ESCLARECIMENTO", {
+      pergunta: { id: "compatibilidade", titulo: "Os autos parecem ser de Relatório de Sindicância Regular", contexto: "…", opcoes: [
+        { id: "outro", rotulo: "Enviar outro PDF" }, { id: "continuar", rotulo: "Continuar como Julgamento de PADS" }, { id: "cancelar", rotulo: "Cancelar a tarefa" },
+      ] },
+    });
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="pergunta"]').text()).toContain("Relatório de Sindicância Regular");
+    expect(w.find('[data-teste="faixa-tipo"]').text()).toContain("Julgamento de PADS");
+    await w.find('[data-teste="opcao-continuar"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain("responder:compatibilidade:continuar");
+    expect(w.find('[data-teste="parada"]').exists()).toBe(true);
+  });
+
+  it("painel mostra peças, cobertura, páginas incertas e mídias; parada é explícita", async () => {
+    visaoAtual = visao("DELIMITANDO", { parada: true, autos: resumo, erro: { codigo: "TAR-004", titulo: "t", mensagem: "m", acao: "a" } });
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="parada"]').exists()).toBe(true);
+    expect(w.find('[data-teste="estado-atual"]').exists()).toBe(false);
+    const pecas = w.find('[data-teste="pecas"]').text();
+    expect(pecas).toContain("Memorando Disciplinar");
+    expect(pecas).toContain("peça central");
+    expect(pecas).toContain("provável, pela ordem dos autos");
+    expect(pecas).toContain("documento externo");
+    expect(w.find('[data-teste="cobertura"]').text()).toContain("1 OCR de baixa qualidade");
+    expect(w.find('[data-teste="paginas-problema"]').text()).toContain("2");
+    expect(w.find('[data-teste="midias"]').text()).toContain("gravação");
+    expect(w.find('[data-teste="cancelar"]').exists()).toBe(true);
+  });
+
+  it("PDF protegido volta ao envio com o alerta, mantendo o tipo", async () => {
+    visaoAtual = visao("RECEBENDO_UPLOAD", { erro: { codigo: "PDF-004", titulo: "PDF protegido por senha", mensagem: "m", acao: "a" } });
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="aguardando-pdf"]').exists()).toBe(true);
+    expect(w.find('[data-teste="erro-arquivo"]').text()).toContain("PDF protegido por senha");
+    expect(w.find('[data-teste="faixa-tipo"]').text()).toContain("Julgamento de PADS");
   });
 });

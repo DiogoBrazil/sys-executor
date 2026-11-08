@@ -134,6 +134,218 @@ export class Marco {
 }
 
 /**
+ * MidiaResumo é uma menção a mídia não incorporada aos autos.
+ */
+export class MidiaResumo {
+    "pagina": number;
+    "peca": string;
+    "termo": string;
+    "inicio": number;
+    "fim": number;
+
+    /** Creates a new MidiaResumo instance. */
+    constructor($$source: Partial<MidiaResumo> = {}) {
+        if (!("pagina" in $$source)) {
+            this["pagina"] = 0;
+        }
+        if (!("peca" in $$source)) {
+            this["peca"] = "";
+        }
+        if (!("termo" in $$source)) {
+            this["termo"] = "";
+        }
+        if (!("inicio" in $$source)) {
+            this["inicio"] = 0;
+        }
+        if (!("fim" in $$source)) {
+            this["fim"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new MidiaResumo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): MidiaResumo {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new MidiaResumo($$parsedSource as Partial<MidiaResumo>);
+    }
+}
+
+/**
+ * OpcaoVisao é uma opção exibida.
+ */
+export class OpcaoVisao {
+    "id": string;
+    "rotulo": string;
+
+    /** Creates a new OpcaoVisao instance. */
+    constructor($$source: Partial<OpcaoVisao> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("rotulo" in $$source)) {
+            this["rotulo"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new OpcaoVisao instance from a string or object.
+     */
+    static createFrom($$source: any = {}): OpcaoVisao {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new OpcaoVisao($$parsedSource as Partial<OpcaoVisao>);
+    }
+}
+
+/**
+ * PaginaResumo é uma linha do mapa de cobertura.
+ */
+export class PaginaResumo {
+    "numero": number;
+    "situacao": string;
+    "origem": string;
+    "confianca": number;
+    "peca": string;
+
+    /** Creates a new PaginaResumo instance. */
+    constructor($$source: Partial<PaginaResumo> = {}) {
+        if (!("numero" in $$source)) {
+            this["numero"] = 0;
+        }
+        if (!("situacao" in $$source)) {
+            this["situacao"] = "";
+        }
+        if (!("origem" in $$source)) {
+            this["origem"] = "";
+        }
+        if (!("confianca" in $$source)) {
+            this["confianca"] = 0;
+        }
+        if (!("peca" in $$source)) {
+            this["peca"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new PaginaResumo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): PaginaResumo {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new PaginaResumo($$parsedSource as Partial<PaginaResumo>);
+    }
+}
+
+/**
+ * PecaResumo é uma peça identificada.
+ */
+export class PecaResumo {
+    "id": string;
+    "titulo": string;
+    "funcao": string;
+    "rotulo": string;
+    "paginaInicial": number;
+    "paginaFinal": number;
+    "sei": string;
+    "provavel": boolean;
+    "externo": boolean;
+
+    /**
+     * pior situação de leitura entre as páginas
+     */
+    "situacao": string;
+
+    /** Creates a new PecaResumo instance. */
+    constructor($$source: Partial<PecaResumo> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("titulo" in $$source)) {
+            this["titulo"] = "";
+        }
+        if (!("funcao" in $$source)) {
+            this["funcao"] = "";
+        }
+        if (!("rotulo" in $$source)) {
+            this["rotulo"] = "";
+        }
+        if (!("paginaInicial" in $$source)) {
+            this["paginaInicial"] = 0;
+        }
+        if (!("paginaFinal" in $$source)) {
+            this["paginaFinal"] = 0;
+        }
+        if (!("sei" in $$source)) {
+            this["sei"] = "";
+        }
+        if (!("provavel" in $$source)) {
+            this["provavel"] = false;
+        }
+        if (!("externo" in $$source)) {
+            this["externo"] = false;
+        }
+        if (!("situacao" in $$source)) {
+            this["situacao"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new PecaResumo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): PecaResumo {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new PecaResumo($$parsedSource as Partial<PecaResumo>);
+    }
+}
+
+/**
+ * PerguntaVisao é a pergunta enviada à interface.
+ */
+export class PerguntaVisao {
+    "id": string;
+    "titulo": string;
+    "contexto": string;
+    "opcoes": OpcaoVisao[];
+
+    /** Creates a new PerguntaVisao instance. */
+    constructor($$source: Partial<PerguntaVisao> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("titulo" in $$source)) {
+            this["titulo"] = "";
+        }
+        if (!("contexto" in $$source)) {
+            this["contexto"] = "";
+        }
+        if (!("opcoes" in $$source)) {
+            this["opcoes"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new PerguntaVisao instance from a string or object.
+     */
+    static createFrom($$source: any = {}): PerguntaVisao {
+        const $$createField3_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("opcoes" in $$parsedSource) {
+            $$parsedSource["opcoes"] = $$createField3_0($$parsedSource["opcoes"]);
+        }
+        return new PerguntaVisao($$parsedSource as Partial<PerguntaVisao>);
+    }
+}
+
+/**
  * Progresso só existe quando há métrica real (páginas, peças) — V4 §31.1.
  */
 export class Progresso {
@@ -162,6 +374,63 @@ export class Progresso {
     static createFrom($$source: any = {}): Progresso {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new Progresso($$parsedSource as Partial<Progresso>);
+    }
+}
+
+/**
+ * ResumoAutos é o que a interface mostra sobre os autos lidos (cobertura,
+ * peças e mídias). Não contém texto dos autos.
+ */
+export class ResumoAutos {
+    "totalPaginas": number;
+    "paginas": PaginaResumo[];
+    "pecas": PecaResumo[];
+    "midias": MidiaResumo[];
+    "compatibilidade": string;
+    "pecaCentral": string;
+
+    /** Creates a new ResumoAutos instance. */
+    constructor($$source: Partial<ResumoAutos> = {}) {
+        if (!("totalPaginas" in $$source)) {
+            this["totalPaginas"] = 0;
+        }
+        if (!("paginas" in $$source)) {
+            this["paginas"] = [];
+        }
+        if (!("pecas" in $$source)) {
+            this["pecas"] = [];
+        }
+        if (!("midias" in $$source)) {
+            this["midias"] = [];
+        }
+        if (!("compatibilidade" in $$source)) {
+            this["compatibilidade"] = "";
+        }
+        if (!("pecaCentral" in $$source)) {
+            this["pecaCentral"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ResumoAutos instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ResumoAutos {
+        const $$createField1_0 = $$createType3;
+        const $$createField2_0 = $$createType5;
+        const $$createField3_0 = $$createType7;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("paginas" in $$parsedSource) {
+            $$parsedSource["paginas"] = $$createField1_0($$parsedSource["paginas"]);
+        }
+        if ("pecas" in $$parsedSource) {
+            $$parsedSource["pecas"] = $$createField2_0($$parsedSource["pecas"]);
+        }
+        if ("midias" in $$parsedSource) {
+            $$parsedSource["midias"] = $$createField3_0($$parsedSource["midias"]);
+        }
+        return new ResumoAutos($$parsedSource as Partial<ResumoAutos>);
     }
 }
 
@@ -211,12 +480,23 @@ export class Visao {
      * nil quando não há métrica real
      */
     "progresso": Progresso | null;
+
+    /**
+     * terminal: motivo; ativa: alerta da última etapa
+     */
     "erro": ErroVisao | null;
 
     /**
      * ex.: limpeza incompleta (SES-003)
      */
     "aviso": ErroVisao | null;
+    "pergunta": PerguntaVisao | null;
+    "autos": ResumoAutos | null;
+
+    /**
+     * processamento parado aguardando versão futura (TAR-004)
+     */
+    "parada": boolean;
 
     /** Creates a new Visao instance. */
     constructor($$source: Partial<Visao> = {}) {
@@ -250,6 +530,15 @@ export class Visao {
         if (!("aviso" in $$source)) {
             this["aviso"] = null;
         }
+        if (!("pergunta" in $$source)) {
+            this["pergunta"] = null;
+        }
+        if (!("autos" in $$source)) {
+            this["autos"] = null;
+        }
+        if (!("parada" in $$source)) {
+            this["parada"] = false;
+        }
 
         Object.assign(this, $$source);
     }
@@ -258,10 +547,12 @@ export class Visao {
      * Creates a new Visao instance from a string or object.
      */
     static createFrom($$source: any = {}): Visao {
-        const $$createField6_0 = $$createType1;
-        const $$createField7_0 = $$createType3;
-        const $$createField8_0 = $$createType5;
-        const $$createField9_0 = $$createType5;
+        const $$createField6_0 = $$createType9;
+        const $$createField7_0 = $$createType11;
+        const $$createField8_0 = $$createType13;
+        const $$createField9_0 = $$createType13;
+        const $$createField10_0 = $$createType15;
+        const $$createField11_0 = $$createType17;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("etapas" in $$parsedSource) {
             $$parsedSource["etapas"] = $$createField6_0($$parsedSource["etapas"]);
@@ -275,14 +566,32 @@ export class Visao {
         if ("aviso" in $$parsedSource) {
             $$parsedSource["aviso"] = $$createField9_0($$parsedSource["aviso"]);
         }
+        if ("pergunta" in $$parsedSource) {
+            $$parsedSource["pergunta"] = $$createField10_0($$parsedSource["pergunta"]);
+        }
+        if ("autos" in $$parsedSource) {
+            $$parsedSource["autos"] = $$createField11_0($$parsedSource["autos"]);
+        }
         return new Visao($$parsedSource as Partial<Visao>);
     }
 }
 
 // Private type creation functions
-const $$createType0 = Marco.createFrom;
+const $$createType0 = OpcaoVisao.createFrom;
 const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = Progresso.createFrom;
-const $$createType3 = $Create.Nullable($$createType2);
-const $$createType4 = ErroVisao.createFrom;
-const $$createType5 = $Create.Nullable($$createType4);
+const $$createType2 = PaginaResumo.createFrom;
+const $$createType3 = $Create.Array($$createType2);
+const $$createType4 = PecaResumo.createFrom;
+const $$createType5 = $Create.Array($$createType4);
+const $$createType6 = MidiaResumo.createFrom;
+const $$createType7 = $Create.Array($$createType6);
+const $$createType8 = Marco.createFrom;
+const $$createType9 = $Create.Array($$createType8);
+const $$createType10 = Progresso.createFrom;
+const $$createType11 = $Create.Nullable($$createType10);
+const $$createType12 = ErroVisao.createFrom;
+const $$createType13 = $Create.Nullable($$createType12);
+const $$createType14 = PerguntaVisao.createFrom;
+const $$createType15 = $Create.Nullable($$createType14);
+const $$createType16 = ResumoAutos.createFrom;
+const $$createType17 = $Create.Nullable($$createType16);

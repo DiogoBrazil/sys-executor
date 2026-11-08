@@ -87,6 +87,11 @@ func (s *TarefaService) SelecionarPDF() Resposta {
 	return s.responder(s.g.ReceberUpload(dados))
 }
 
+// Responder escolhe uma opção da pergunta pendente.
+func (s *TarefaService) Responder(perguntaID, opcaoID string) Resposta {
+	return s.responder(s.g.Responder(perguntaID, opcaoID))
+}
+
 // Cancelar interrompe a tarefa e descarta os temporários.
 func (s *TarefaService) Cancelar() Resposta { return s.responder(s.g.Cancelar()) }
 
