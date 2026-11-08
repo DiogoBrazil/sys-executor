@@ -4,3 +4,7 @@ poc/wails/frontend/dist/
 poc/wails/bin/
 *.exe
 *.db
+
+# App
+/frontend/dist/
+/bin/
