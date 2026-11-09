@@ -83,6 +83,19 @@
   11. Modo thinking desligado nos perfis CPU.
 - **Impacto:** plano (§§7, 9, 10, 12, 14) e ADRs 003–007 atualizados em 08/11/2026.
 
+### D-10 — Migração da inferência local para a Gemini API (09/11/2026)
+- **Contexto:** os modelos locais (Qwen3.5 2B/4B em CPU) levaram de 1 a 6 minutos por caso no hardware disponível (RELATORIO_FASE4 §3). O usuário decidiu substituir a inferência local pela **Gemini API**, com chave cadastrada pelo próprio usuário, chamada pelo backend Go com o SDK oficial `google.golang.org/genai`. A V4 recebeu a **Emenda 1 (seção 47)**.
+- **Decisões do usuário nesta sessão:**
+  1. **Nível da conta:** qualquer nível de conta, **sem aviso** na interface. Em vez do aviso, o usuário pediu que se avaliasse substituir dados pessoais por apelidos antes do envio; avaliada como viável em melhor esforço e adotada (item 5).
+  2. **Confirmação de envio em cada tarefa**, antes da primeira etapa de IA, com modelo, peças/páginas, estimativa aproximada de tokens e resumo da pseudonimização.
+  3. **Emendar a V4** (seção 47) em vez de registrar só aqui; regras afetadas do catálogo revogadas ou reescritas, com novas regras para o provedor.
+  4. **Documentos — estratégia A:** extração local mantida (pdfium/OCR/segmentação/conferência literal); só os blocos de texto de cada etapa são enviados; sem envio de PDF, sem Files API e sem armazenamento de contexto no provedor.
+  5. **Pseudonimização:** nomes de pessoas, CPF, RG, matrícula, telefone, e-mail, CEP, endereço e data de nascimento detectados localmente são trocados por marcadores e restaurados na resposta; datas dos fatos, números SEI/processo e links não são trocados.
+- **Limites registrados (pseudonimização):** não é anonimização garantida. Nomes sem âncora reconhecível (posto/graduação, papel processual, rótulos), grafias quebradas por OCR ou hifenização podem passar; o contexto (datas, unidade, fatos) pode permitir reidentificação. O usuário pode informar outros nomes na confirmação.
+- **Fora do escopo:** OAuth, Vertex AI, outros provedores, fallback local.
+- **Impacto:** remoção de `llama-server`, GGUF, gerenciador de modelos, hardware/GPU e tela Modelos; nova tela de configurações de IA; chave guardada com DPAPI (conta do usuário); `store=false` e nenhuma ferramenta em toda requisição; nova pergunta `envio-ia`; novos códigos de erro IA-*; ADR_009 substitui o ADR_003. Regras jurídicas, motor determinístico, validadores, perguntas e SEI inalterados.
+- **Pendência:** busca semântica da biblioteca (V4 §§40.4, 47.7) — decidir no início da Fase 5.
+
 ## 2. Pendências reais (não bloqueiam o plano)
 
 | ID | Pendência | Origem | Tratamento | Prioridade |

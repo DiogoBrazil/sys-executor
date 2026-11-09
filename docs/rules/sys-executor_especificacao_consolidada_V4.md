@@ -4,6 +4,7 @@
 > **Atualizado:** 08/11/2026 — **V4**: documento único que reúne a íntegra da V3 (seções 1–27) e as decisões transversais e de inteligência artificial aprovadas posteriormente (seções 28–46). A V3 já incluía a definição concluída das regras do Relatório de Sindicância Regular e a vinculação estrita do julgamento de PADS às imputações do Memorando Disciplinar.  
 > **Finalidade deste arquivo:** transferir integralmente para uma nova conversa o contexto, as decisões, os critérios jurídicos e técnicos, as dúvidas e as próximas etapas do projeto, evitando recomeçar a discussão.  
 > **Hierarquia de decisões:** as regras posteriores incluídas nesta versão substituem explicitamente disposições anteriores incompatíveis. As seções 15–20 detalham o PADS; as seções 21–27 consolidam as regras de SR, as diferenças entre os procedimentos e a revisão humana; **as seções 28–46 (V4) consolidam as decisões transversais e de IA e prevalecem sobre trechos das seções 1–27 que ainda tratavam esses assuntos como pendentes**. Os pontos das seções 1–27 alcançados por essas decisões estão sinalizados com **[Atualização V4]**, mantido o texto original para histórico. Preservar o restante.  
+> **Emenda 1 (09/11/2026) — seção 47:** a inferência por modelos locais foi substituída pela **Gemini API** (Google), por decisão expressa do usuário. A seção 47 prevalece sobre as seções 28–46 **somente** quanto ao mecanismo de inferência, à conectividade exigida pela IA, aos modelos e à guarda da chave de API; os pontos alcançados estão sinalizados com **[Emenda §47]**, mantido o texto original para histórico. **Nenhuma regra jurídica, de cálculo, de perguntas, de validação, de revisão ou do SEI foi alterada.**  
 > **Legenda (V4):** **[APROVADO]** decisão explícita do usuário; **[PROPOSTA TÉCNICA]** detalhamento recomendado, não imposição normativa nem escolha técnica validada; **[VALIDAR EM TESTES]** solução/valor provisório dependente de prova de desempenho ou compatibilidade.  
 
 
@@ -1219,6 +1220,8 @@ Os itens ainda pendentes no núcleo anterior continuam válidos, exceto a afirma
 
 ### 29.3. Distinção obrigatória entre armazenamento permanente e transitório
 
+> **[Emenda §47]** A linha "Modelos locais" deixa de existir e é acrescentada a linha "Chave da Gemini API" (seção 47.4).
+
 | Armazenamento | Conteúdo | Persistência |
 |---|---|---|
 | Biblioteca jurídica | Leis, regulamentos, normas, jurisprudência e respectivos índices | Permanente e gerenciável |
@@ -1352,6 +1355,8 @@ O usuário autorizou **sugestão técnica seguindo a redação oficial**. Recome
 
 ## 34. Instalação do aplicativo e dependências — [APROVADO]
 
+> **[Emenda §47]** Superada no que trata de inferência por modelos locais (GGUF, llama-server, download/importação de modelos, hardware, GPU, quantização e contexto por memória). O restante desta seção permanece em vigor; ver seção 47.
+
 - Distribuir para Windows com instaladores **`.exe` e `.msi`**, com artefatos adequados às diferentes arquiteturas suportadas (um por arquitetura quando aplicável).
 - Atualizações do sys-executor ocorrerão por **novo build e entrega de novo instalador**; não implementar atualização automática como requisito inicial.
 - Instalar e configurar **automaticamente** dependências de execução, bibliotecas necessárias, OCR e mecanismo de inferência pelo instalador/aplicativo sempre que tecnicamente possível.
@@ -1361,12 +1366,16 @@ O usuário autorizou **sugestão técnica seguindo a redação oficial**. Recome
 
 ## 35. Modo offline e conectividade — [APROVADO]
 
+> **[Emenda §47]** Superada no que trata de inferência por modelos locais (GGUF, llama-server, download/importação de modelos, hardware, GPU, quantização e contexto por memória). O restante desta seção permanece em vigor; ver seção 47.
+
 - Depois de instalados os modelos de IA, componentes necessários e a biblioteca jurídica, o aplicativo deve ser capaz de **analisar PDFs de autos enviados manualmente, gerar, validar, revisar e regenerar minutas integralmente offline**.
 - Funcionalidades que exigem acesso remoto continuam dependentes de internet: autenticação/navegação/download do SEI, pesquisas jurídicas na web, downloads de novos modelos e downloads/consultas externas necessárias.
 - Ao selecionar acesso SEI sem conexão, explicar a limitação e oferecer **upload de PDF**, preservando a seleção do procedimento e a configuração corrente.
 - O aplicativo não deve tentar silenciosamente consultar fontes externas se a pesquisa web estiver desligada ou a máquina offline.
 
 ## 36. Estratégia geral da IA local — [APROVADO]
+
+> **[Emenda §47]** Superada no que trata de inferência por modelos locais (GGUF, llama-server, download/importação de modelos, hardware, GPU, quantização e contexto por memória). O restante desta seção permanece em vigor; ver seção 47.
 
 1. **IA local é prioritária** na primeira versão.
 2. Arquitetura preparada para integração **futura e opcional** com provedores de IA externos, sem implementá-los como requisito inicial nem autorizar envio de autos a terceiros.
@@ -1376,6 +1385,8 @@ O usuário autorizou **sugestão técnica seguindo a redação oficial**. Recome
 6. A proposta `Go + sidecar llama-server + RAG local`, apresentada no PDF de referência pelo usuário, é **insumo para avaliação técnica**, não especificação obrigatória a ser copiada integralmente. Corrigir problemas de gerenciamento de subprocessos, segurança e embeddings antes de implementar.
 
 ## 37. Gerenciamento e seleção de modelos de geração — [APROVADO]
+
+> **[Emenda §47]** Superada no que trata de inferência por modelos locais (GGUF, llama-server, download/importação de modelos, hardware, GPU, quantização e contexto por memória). O restante desta seção permanece em vigor; ver seção 47.
 
 - Manter **mais de um modelo local instalado**.
 - Para cada tarefa, executar **apenas o modelo de geração selecionado**; modelos auxiliares de embeddings são componentes separados e podem ser usados sequencialmente.
@@ -1387,6 +1398,8 @@ O usuário autorizou **sugestão técnica seguindo a redação oficial**. Recome
 - O aplicativo não precisa mostrar tokens gerados em tempo real; pode utilizar streaming **internamente** se vantajoso tecnicamente.
 
 ## 38. Hardware, GPU, quantização e contexto — [APROVADO COMO DIRETRIZES INICIAIS; VALIDAR EM TESTES]
+
+> **[Emenda §47]** Superada no que trata de inferência por modelos locais (GGUF, llama-server, download/importação de modelos, hardware, GPU, quantização e contexto por memória). O restante desta seção permanece em vigor; ver seção 47.
 
 ### 38.1. Perfis de hardware
 
@@ -1609,3 +1622,64 @@ O usuário aprovou **avaliar tecnicamente** as seguintes escolhas, sem necessida
 ## ESTADO FINAL — V4 (08/11/2026)
 
 **ESPECIFICAÇÃO CONSOLIDADA ÚNICA. CONCLUÍDO O LEVANTAMENTO DOS REQUISITOS FUNCIONAIS, JURÍDICOS, TRANSVERSAIS E DE ARQUITETURA DE IA DO SYS-EXECUTOR: REGRAS DE JULGAMENTO DE PADS (VINCULADO ÀS IMPUTAÇÕES DO MEMORANDO DISCIPLINAR) E DE RELATÓRIO DE SINDICÂNCIA REGULAR PRESERVADAS; SESSÕES EFÊMERAS; ENTRADA POR SEI OU UPLOAD DE PDF; INTERFACE DE EXECUÇÃO SEM CHATBOT; FORMATAÇÃO INSTITUCIONAL ÚNICA; IA LOCAL PRIORITÁRIA COM RAG JURÍDICO; FUNCIONAMENTO OFFLINE COM PDF ENVIADO PELO USUÁRIO; PESQUISA WEB DESABILITADA POR PADRÃO; VALIDAÇÃO AUTOMÁTICA OBRIGATÓRIA E REVISÃO HUMANA FINAL DE TODA MINUTA. PERMANECEM APENAS ESCOLHAS TÉCNICAS A VALIDAR EM TESTES (SEÇÃO 43), A CONFERÊNCIA NORMATIVA COMO SALVAGUARDA (SEÇÃO 44) E CASOS-LIMITE RAROS. ESTE MARKDOWN É A FONTE DA VERDADE DO PROJETO, NÃO O PROMPT DEFINITIVO DE IMPLEMENTAÇÃO. O PROMPT DEFINITIVO SOMENTE PODERÁ SER GERADO APÓS AUTORIZAÇÃO EXPRESSA DO USUÁRIO.**
+
+---
+
+## 47. EMENDA 1 — Migração da inferência para a Gemini API — [APROVADO] (09/11/2026)
+
+### 47.1. Decisão e alcance
+
+- Por decisão expressa do usuário, a inferência por modelos de linguagem executados no computador (GGUF, `llama.cpp`/`llama-server`) **é removida** e substituída pela **Gemini API** (Google), acessada pelo backend Go com o SDK oficial `google.golang.org/genai` e autenticada por **chave de API cadastrada pelo próprio usuário**. Motivo: desempenho insatisfatório dos modelos locais no hardware disponível.
+- A troca é **exclusivamente de infraestrutura de inferência**. Permanecem integralmente em vigor, sem alteração: as regras jurídicas e de redação das seções 1–27; o motor determinístico em Go (seção 36, item 5); as perguntas, confirmações e autorizações (inclusive as da SR, seção 24.3); a vinculação do PADS às imputações do Memorando Disciplinar (seção 22); a validação obrigatória (seção 42); a revisão humana; a biblioteca jurídica local (seção 40); a pesquisa web desabilitada por padrão (seção 41); as sessões efêmeras (seção 29); as credenciais do SEI somente em memória (seção 33).
+- Não há fallback para modelo local. OAuth, Vertex AI e outros provedores ficam fora do escopo desta emenda.
+
+### 47.2. Seções alcançadas
+
+| Seção | Efeito da emenda |
+|---|---|
+| 1, 2, 12.2 e "Estado final — V4" | Onde se lê "IA local prioritária" e "sem envio de autos a terceiros", vale a seção 47 |
+| 29.3 | Sai "Modelos locais"; entra "Chave da Gemini API" (47.4) |
+| 34 | Sem mecanismo de inferência, pesos GGUF ou download de modelos no instalador/primeiro uso; demais itens mantidos |
+| 35 | A análise e a geração por IA **exigem internet**; as demais funções seguem offline (47.6) |
+| 36, itens 1–3 | Provedor autorizado: Gemini API. Itens 4–6 mantidos |
+| 37 | Substituída por 47.5 (seleção de modelo Gemini). Mantido: sem streaming de tokens na interface |
+| 38 | Superada (perfis de hardware, GPU, quantização, contexto por memória). Mantido de 38.3: "contexto maior não substitui recuperação documental estruturada"; mantido de 38.4: não simular sucesso nem seguir com análise degradada sem conhecimento do usuário |
+
+### 47.3. Envio de conteúdo ao provedor
+
+- **Somente o necessário:** o texto dos autos continua extraído localmente (pdfium/OCR), segmentado e conferido no computador; a IA recebe apenas os blocos de texto de cada etapa, como antes. **Não** se envia o PDF, **não** se usa a Files API nem armazenamento de contexto no provedor.
+- **Confirmação em cada tarefa:** antes da primeira etapa de IA, o usuário vê o modelo, as peças e páginas que serão lidas, uma estimativa aproximada de tokens e o resumo da pseudonimização, e **autoriza ou recusa** o envio. Sem autorização, nada é enviado e a tarefa para de forma recuperável.
+- **Pseudonimização (melhor esforço):** antes do envio, nomes de pessoas, CPF, RG, matrícula, telefone, e-mail, CEP, endereço e data de nascimento detectados localmente são substituídos por marcadores (ex.: `[PESSOA-03]`, `[CPF-01]`) e restaurados na resposta. Datas dos fatos, números SEI e de processo e links não são substituídos. Posto/graduação é mantido. O usuário pode informar, na confirmação, outros nomes ou dados a ocultar. **Não é anonimização garantida**: dados sem padrão reconhecível podem passar, e o contexto pode permitir reidentificação.
+- **Sem retenção opcional:** toda requisição desliga o registro de requisições do provedor ("store" = falso); o modelo não recebe ferramentas (sem busca na web, URL, execução de código ou chamada de funções).
+- **Nível da conta:** qualquer nível de conta da Gemini API é aceito, sem aviso na interface (decisão do usuário). Fica registrado que, pelos termos do provedor, o nível gratuito pode usar o conteúdo para melhoria de produtos, com revisão humana, e que o nível pago registra prompts e respostas por tempo limitado para prevenção de abuso.
+- Valem, quanto ao provedor, as ressalvas já previstas nas seções 1.1 (item 9) e 11: o aplicativo **não promete apagar** registros, logs ou retenções do provedor externo. A confirmação do usuário **não substitui** eventual autorização institucional para tratar dados da PMRO em serviço externo.
+
+### 47.4. Chave da Gemini API
+
+| Armazenamento | Conteúdo | Persistência |
+|---|---|---|
+| Chave da Gemini API | Chave cadastrada pelo usuário | Permanente, protegida pelo Windows (DPAPI, conta do usuário); substituível e removível pelo usuário |
+
+- A chave é lida e usada somente pelo backend; nunca é exibida de volta, enviada à interface, incluída em eventos, preferências, mensagens de erro ou logs, nem empacotada no instalador.
+- A validação da chave usa a listagem de modelos, sem geração de texto.
+- A regra da seção 33 sobre a **senha do SEI** (somente memória, a cada tarefa, sem arquivo cifrado) permanece inalterada; a chave da Gemini API não é credencial do SEI.
+
+### 47.5. Escolha do modelo
+
+- Nenhum modelo é fixado no código. O aplicativo lista os modelos Gemini de texto disponíveis para a chave, com nome, identificador, estágio (estável, prévia, experimental ou apelido "latest"), limites e capacidade de raciocínio; o usuário escolhe um e pode testá-lo.
+- Um único modelo por tarefa. Atribuir modelos diferentes a etapas diferentes depende de nova decisão do usuário.
+- Os parâmetros técnicos (janela de trabalho, raciocínio, temperatura) são calibrados no benchmark sintético, sem dados reais, mantidos os portões rígidos: **zero violações aceitas após validação e zero citações inventadas aprovadas**.
+
+### 47.6. Conectividade e falhas
+
+- Sem internet, chave ausente, inválida ou revogada, cota esgotada, modelo indisponível, tempo esgotado, resposta bloqueada ou incompleta: mensagem clara em português, **parada recuperável** com o estado da tarefa preservado e opção de tentar novamente; nunca sucesso simulado nem resposta interrompida tratada como concluída.
+- Funcionam sem internet: abrir e ler PDF, OCR, segmentação, visualização das fontes, cálculos determinísticos e as demais funções que não dependem da IA. O acesso ao SEI continua dependendo de internet (seção 35).
+- O cancelamento pelo usuário interrompe a requisição em andamento.
+
+### 47.7. Pendência registrada
+
+- A busca semântica da biblioteca jurídica (seção 40.4) previa embeddings locais. Com a remoção da inferência local, a escolha entre busca somente lexical e embeddings do provedor (apenas para a legislação pública, com consultas compostas pelo Go a partir do catálogo) será decidida pelo usuário no início da fase da biblioteca.
+
+## ESTADO FINAL — V4 + EMENDA 1 (09/11/2026)
+
+**INFERÊNCIA POR GEMINI API COM CHAVE DO USUÁRIO (SEÇÃO 47), EM SUBSTITUIÇÃO À IA LOCAL. ENVIO SOMENTE DO NECESSÁRIO, COM CONFIRMAÇÃO EM CADA TAREFA E PSEUDONIMIZAÇÃO DE DADOS PESSOAIS. TODAS AS DEMAIS REGRAS DA V4 PERMANECEM EM VIGOR.**
