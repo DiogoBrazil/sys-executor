@@ -55,6 +55,9 @@ async function confirmarCancelamento() {
           <button v-if="erroDeIA" class="botao" data-teste="abrir-config-ia" @click="abrirConfigIA">Abrir configurações de IA</button>
         </div>
       </div>
+      <div v-else-if="v.parada && v.erro && v.erro.codigo !== 'TAR-004'" class="retomar" data-teste="parada-erro">
+        <AvisoErro :erro="v.erro" tipo="aviso" />
+      </div>
       <div v-else-if="v.parada" class="aviso" role="status" data-teste="parada">
         <h3>As próximas etapas ainda não estão disponíveis</h3>
         <p>

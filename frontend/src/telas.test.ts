@@ -384,6 +384,14 @@ describe("F4 — revisão, retomada e painel", () => {
     expect(chamadas).toContain("retomar");
   });
 
+  it("parada com erro não retomável mostra o erro, não o aviso de fim de fase", async () => {
+    visaoAtual = visao("ANALISANDO", { parada: true, retomavel: false, erro: { codigo: "IA-005", titulo: "Limite de uso da Gemini API atingido", mensagem: "m", acao: "a" } });
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="parada"]').exists()).toBe(false);
+    expect(w.find('[data-teste="parada-erro"]').text()).toContain("Limite de uso");
+  });
+
   it("respostas dadas podem ser alteradas; painel mostra fontes", async () => {
     visaoAtual = visao("CONSULTANDO_FONTES", {
       parada: true, erro: { codigo: "TAR-004", titulo: "t", mensagem: "m", acao: "a" },

@@ -624,6 +624,11 @@ func (g *Gerenciador) iniciarProcessamentoLocked() {
 		if t.apagarAoParar {
 			t.apagarAoParar = false
 			g.apagarSessaoLocked(t)
+		}
+		// A última visão foi emitida com rodando=true (ex.: parada por erro
+		// recuperável): sem esta emissão a interface ficava com Retomavel=false,
+		// escondia o erro e não oferecia "Tentar novamente".
+		if g.t == t {
 			g.emitirLocked()
 		}
 		g.mu.Unlock()

@@ -589,3 +589,37 @@ func TestPerguntasComCamposRevisaoERetomada(t *testing.T) {
 		t.Fatal("revisar resposta inexistente")
 	}
 }
+
+// A interface só recebe eventos: a última visão emitida depois de uma parada
+// por erro recuperável precisa ser retomável e trazer o erro (antes, a
+// última emissão saía com rodando=true e a tela escondia o erro).
+func TestUltimaVisaoEmitidaDaParadaEhRetomavel(t *testing.T) {
+	etapas := map[Estado]Etapa{
+		Verificando:     func(ctx context.Context, c *Contexto) (Estado, error) { return Extraindo, nil },
+		Extraindo:       func(ctx context.Context, c *Contexto) (Estado, error) { return Classificando, nil },
+		Classificando:   func(ctx context.Context, c *Contexto) (Estado, error) { return Compatibilidade, nil },
+		Compatibilidade: func(ctx context.Context, c *Contexto) (Estado, error) { return Delimitando, nil },
+		Delimitando: func(ctx context.Context, c *Contexto) (Estado, error) {
+			return Delimitando, erros.Novo(erros.IACota)
+		},
+	}
+	g, r, _ := novo(t, etapas)
+	_, _ = g.Iniciar()
+	_, _ = g.EscolherTipo(TipoPADS)
+	_, _ = g.EscolherEntrada(EntradaUpload)
+	_, _ = g.ReceberUpload(pdfMinimo)
+	esperar(t, g, func(v *Visao) bool { return v.Retomavel })
+	limite := time.Now().Add(2 * time.Second)
+	for {
+		r.mu.Lock()
+		ult := r.visoes[len(r.visoes)-1]
+		r.mu.Unlock()
+		if ult.Parada && ult.Retomavel && ult.Erro != nil && ult.Erro.Codigo == "IA-005" {
+			return
+		}
+		if time.Now().After(limite) {
+			t.Fatalf("última visão emitida: parada=%v retomavel=%v erro=%+v", ult.Parada, ult.Retomavel, ult.Erro)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}
