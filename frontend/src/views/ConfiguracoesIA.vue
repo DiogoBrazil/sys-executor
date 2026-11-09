@@ -132,6 +132,9 @@ async function remover() {
             }}
           </p>
           <p v-if="x.testeErro" class="nota">{{ x.testeErro.titulo }}: {{ x.testeErro.mensagem }}</p>
+          <p v-if="x.testeErro?.detalhe" class="nota diagnostico" :data-teste="'diagnostico-' + x.id">
+            Diagnóstico ({{ x.testeErro.codigo }}): {{ x.testeErro.detalhe }}
+          </p>
           <div class="acoes">
             <button
               v-if="x.id !== m.modeloSelecionado"
@@ -187,6 +190,7 @@ dt { color: var(--tinta-suave); }
 dd { margin: 0; }
 .nota, .meta { font-size: var(--t-sm); color: var(--tinta-suave); }
 .endereco { font-family: ui-monospace, Consolas, monospace; }
+.diagnostico { word-break: break-word; max-height: 9rem; overflow: auto; }
 .modelo { border-top: 1px solid var(--linha); padding-top: 0.8rem; display: grid; gap: 0.35rem; }
 .modelo.uso h3::before { content: ""; display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--ok); margin-right: 0.5rem; vertical-align: middle; }
 .cabeca { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }

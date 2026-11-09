@@ -57,40 +57,58 @@ func classificar(ctx context.Context, err error, chave string) falhaGemini {
 	if errors.As(err, &dnserr) || errors.As(err, &operr) || errors.As(err, &uerr) {
 		return falhaGemini{erro: erros.Com(erros.IASemConexao, sanear(err, chave)), repetir: true}
 	}
-	return falhaGemini{erro: erros.Com(erros.IAIndisponivel, sanear(err, chave))}
+	// Não reconhecido: o tipo entra na causa (só diagnóstico em memória).
+	return falhaGemini{erro: erros.Com(erros.IAIndisponivel, sanear(fmt.Errorf("%T: %w", err, err), chave))}
 }
 
 func classificarAPI(e genai.APIError, chave string) falhaGemini {
 	causa := sanear(fmt.Errorf("gemini %d %s: %s", e.Code, e.Status, e.Message), chave)
 	motivo := razao(e)
+	// Créditos pré-pagos esgotados ou faturamento pendente: não adianta
+	// repetir nem esperar (o código HTTP varia; vale o texto e o status).
+	if semCreditos(e, motivo) {
+		return falhaGemini{erro: erros.Com(erros.IASemCreditos, causa)}
+	}
 	switch {
 	case e.Code == 400 && (motivo == "API_KEY_INVALID" || strings.Contains(strings.ToLower(e.Message), "api key not valid")):
 		return falhaGemini{erro: erros.Com(erros.IAChaveInvalida, causa)}
-	case e.Code == 401:
+	case e.Code == 401 || e.Status == "UNAUTHENTICATED":
 		return falhaGemini{erro: erros.Com(erros.IAChaveInvalida, causa)}
 	case e.Code == 400 && e.Status == "FAILED_PRECONDITION":
 		// Ex.: nível gratuito indisponível na região, faturamento exigido.
 		return falhaGemini{erro: erros.Com(erros.IAPermissaoNegada, causa)}
-	case e.Code == 403:
+	case e.Code == 403 || e.Status == "PERMISSION_DENIED":
 		if motivo == "API_KEY_INVALID" || strings.Contains(motivo, "API_KEY") {
 			return falhaGemini{erro: erros.Com(erros.IAChaveInvalida, causa)}
 		}
 		return falhaGemini{erro: erros.Com(erros.IAPermissaoNegada, causa)}
-	case e.Code == 404:
+	case e.Code == 404 || e.Status == "NOT_FOUND":
 		return falhaGemini{erro: erros.Com(erros.IAModeloIndisponivel, causa)}
-	case e.Code == 429:
+	case e.Code == 429 || e.Status == "RESOURCE_EXHAUSTED":
 		espera, temEspera := retryInfo(e)
 		if cotaDiaria(e) || (temEspera && espera > esperaMaxRetryInfo) {
 			return falhaGemini{erro: erros.Com(erros.IACota, causa)}
 		}
 		return falhaGemini{erro: erros.Com(erros.IACota, causa), repetir: true, aguardar: espera}
-	case e.Code == 500 || e.Code == 502 || e.Code == 503 || e.Code == 504:
+	case e.Code == 500 || e.Code == 502 || e.Code == 503 || e.Code == 504 ||
+		e.Status == "UNAVAILABLE" || e.Status == "INTERNAL" || e.Status == "DEADLINE_EXCEEDED":
 		return falhaGemini{erro: erros.Com(erros.IAIndisponivel, causa), repetir: true}
 	case e.Code == 400:
 		// Pedido rejeitado (schema, argumento): defeito do aplicativo, não do usuário.
 		return falhaGemini{erro: erros.Com(erros.InternoInesperado, causa)}
 	}
 	return falhaGemini{erro: erros.Com(erros.IAIndisponivel, causa)}
+}
+
+// semCreditos reconhece a recusa por falta de créditos ou de faturamento.
+func semCreditos(e genai.APIError, motivo string) bool {
+	m := strings.ToLower(e.Message)
+	for _, t := range []string{"prepayment", "credits are depleted", "billing", "insufficient credit", "out of credits"} {
+		if strings.Contains(m, t) {
+			return true
+		}
+	}
+	return strings.Contains(motivo, "BILLING")
 }
 
 // razao lê google.rpc.ErrorInfo.reason dos detalhes.

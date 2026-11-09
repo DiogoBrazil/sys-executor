@@ -259,6 +259,8 @@ func TestErrosDaAPI(t *testing.T) {
 		{"cota por minuto repete e passa", []resp{erroAPI(429, "RESOURCE_EXHAUSTED", "quota",
 			`[{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"2s"}]`), ok(`{"a":"b"}`)}, "", 2, true},
 		{"503 três vezes", []resp{erroAPI(503, "UNAVAILABLE", "overloaded", "")}, erros.IAIndisponivel, tentativasTransporte, false},
+		{"créditos pré-pagos esgotados", []resp{erroAPI(402, "RESOURCE_EXHAUSTED", "Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing.", "")}, erros.IASemCreditos, 1, false},
+		{"status sem código conhecido", []resp{erroAPI(499, "UNAVAILABLE", "try later", "")}, erros.IAIndisponivel, tentativasTransporte, false},
 		{"400 do pedido é defeito interno", []resp{erroAPI(400, "INVALID_ARGUMENT", "schema too complex", "")}, erros.InternoInesperado, 1, false},
 	}
 	for _, c := range casos {
