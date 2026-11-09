@@ -2,6 +2,8 @@
 
 Atualizado em 09/11/2026. Branch: **`add-mode-apikey-oauth`** (nada foi enviado ao remoto nem mesclado).
 
+> **Atualização de 09/11/2026 — D-11:** o usuário aprovou o plano `docs/planning/PLANO_CHATGPT_PECAS_PRIVACIDADE.md`. Ele trata do ChatGPT pelo *Sign in with ChatGPT* como 2º provedor, do cadastro peça por peça, do enquadramento manual (RDPM/Estatuto) e da barreira obrigatória de privacidade. A D-11 reabre parcialmente o item 1 da §1 abaixo, que excluía o OAuth e outros provedores; o Gemini continua preservado. **Próximo passo:** o usuário aprova o texto da Emenda 2 em `docs/planning/PROPOSTA_EMENDA2_V4.md` (etapa 0) e lê os termos do SIWC. **Nenhum código** foi alterado; cada etapa do plano depende de autorização expressa.
+
 Leia junto: `docs/planning/RELATORIO_MIGRACAO_GEMINI.md` (relatório técnico), `docs/planning/ADR_009_gemini_api.md` (arquitetura), V4 §47 (`docs/rules/sys-executor_especificacao_consolidada_V4.md`) e D-10 (`docs/planning/REGISTRO_DUVIDAS_DECISOES.md`).
 
 ---

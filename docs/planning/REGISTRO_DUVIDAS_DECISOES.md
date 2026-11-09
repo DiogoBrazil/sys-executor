@@ -96,6 +96,43 @@
 - **Impacto:** remoção de `llama-server`, GGUF, gerenciador de modelos, hardware/GPU e tela Modelos; nova tela de configurações de IA; chave guardada com DPAPI (conta do usuário); `store=false` e nenhuma ferramenta em toda requisição; nova pergunta `envio-ia`; novos códigos de erro IA-*; ADR_009 substitui o ADR_003. Regras jurídicas, motor determinístico, validadores, perguntas e SEI inalterados.
 - **Pendência:** busca semântica da biblioteca (V4 §§40.4, 47.7) — decidir no início da Fase 5.
 
+### D-11 — ChatGPT (Sign in with ChatGPT), cadastro de peças, enquadramento manual e barreira de privacidade (09/11/2026)
+- **Contexto:** o usuário pediu: (1) um 2º provedor de IA, o ChatGPT, pelo fluxo oficial *Sign in with ChatGPT* (uso do plano Plus), implementado em Go; (2) entrada por peças cadastradas uma a uma, no lugar do PDF monolítico; (3) pseudonimização obrigatória com restauração local. O Gemini (D-10) é preservado. Plano aprovado: `PLANO_CHATGPT_PECAS_PRIVACIDADE.md`. As mudanças na V4 serão feitas pela **Emenda 2 (seção 48)**, cujo texto está em `PROPOSTA_EMENDA2_V4.md` e **aguarda aprovação**.
+- **Reabre parcialmente a D-10:** deixa de valer "Fora do escopo: OAuth… outros provedores". Continuam fora: Vertex AI, fallback automático entre provedores e retorno à IA local.
+- **Decisões do usuário nesta sessão:**
+  1. **Escopo (E1):** este trabalho vai até a análise: ChatGPT, entrada por peças, enquadramento, e pseudonimização/restauração em todas as saídas de IA que já existem. Biblioteca (F5), composição, DOCX/PDF, revisão e instalador (F6–F8) ficam fora, cada um com autorização própria. O contrato de restauração fica pronto para a F6/F7.
+  2. **SEI (E2):** o app lista os documentos do processo (título e nº SEI, só localmente). O usuário escolhe; o app gera o PDF pela opção "Apenas selecionados" (já permitida pela guarda) e o separa pelo carimbo SEI. Nenhuma ação nova na guarda.
+  3. **Rascunhos (E3):** **não há** rascunho persistente; a V4 §29 continua valendo.
+  4. **Pseudonimização (E4):** a política da §47.3 é mantida (nº SEI, nº de processo, datas dos fatos e posto/graduação ficam em claro). Somam-se uma **barreira obrigatória** antes do envio (identificador conhecido que sobrar bloqueia sem exceção) e uma **revisão item a item** dos nomes suspeitos não cadastrados.
+  5. **Imputações do assistente (E5):** servem para conferência. A IA continua extraindo do Memorando o fato/conduta e a data; o formulário de congelamento (PADS-ESC-001) continua sendo a fonte do que será julgado.
+  6. **Sem entrada monolítica (E6):** só peça por peça. A segmentação por carimbo fica apenas para o PDF que o próprio SEI gera com os documentos selecionados.
+  7. **Enquadramento manual (E7):** os dispositivos são escolhidos pelo usuário num catálogo curado:
+     - **RDPM** arts. 15 (leve), 16 (média) e 17 (grave), com natureza fixa;
+     - **Estatuto** (DL 09-A/1982) arts. 29 e 32, com natureza atribuída pelo usuário por semelhança de intensidade com o RDPM.
+     
+     Um **fato cometido** pode ter vários dispositivos, e **cada dispositivo é uma imputação** com natureza própria. Imputações do mesmo fato são candidatas a conexas: a principal é a mais grave e as demais viram agravantes; em empate, o usuário escolhe a que mais se amolda. É a regra já vigente (V4 §5) e já implementada (`engine.SugerirPrincipal`/`AplicarConexao`), **sem mudança no motor**.
+  8. **Divergência com o Memorando (E8):** dispositivo escolhido ≠ dispositivo citado no Memorando → o app mostra os dois lado a lado, com o trecho e a §22.1, e exige confirmação explícita. O app nunca sugere artigo.
+  9. **Momento do enquadramento (E9):** no assistente (etapa do Memorando), cruzado depois com os fatos extraídos pela IA no formulário de confirmação.
+- **Fontes oficiais consultadas (09/11/2026):** documentação *Sign in with ChatGPT — token sharing for open source* (developers.openai.com/siwc). Em resumo:
+  - OAuth com PKCE e registro dinâmico (`dynamic_agent_client`), retorno em loopback `127.0.0.1`;
+  - escopo obrigatório `chatgpt.tokens.use.direct`;
+  - Responses API com `store:false` e `stream:true`, sem `max_output_tokens`/`temperature`;
+  - sucesso só com `response.completed`;
+  - limite de 5 h do Plus compartilhado entre apps.
+  
+  Os termos (openai.com/policies/sign-in-with-chatgpt-terms) **não puderam ser lidos automaticamente** (HTTP 403): o usuário deve lê-los.
+- **Riscos registrados:**
+  - **elegibilidade:** a documentação diz "parceiros open source e clientes privados selecionados", e o repositório ainda não é público;
+  - **dados no modo SIWC:** retenção e uso para treinamento não estão documentados;
+  - **saída estruturada:** suporte a `text.format` json_schema não documentado (decidido na PoC).
+  
+  A confirmação do usuário não substitui autorização institucional para tratar dados da PMRO em serviço externo.
+- **Ficam para depois:**
+  - tipo próprio para o interrogatório do acusado no PADS;
+  - imagens como peça;
+  - uso de *function tool* (exigiria rever a §47.3);
+  - pendências específicas do Gemini.
+
 ## 2. Pendências reais (não bloqueiam o plano)
 
 | ID | Pendência | Origem | Tratamento | Prioridade |
