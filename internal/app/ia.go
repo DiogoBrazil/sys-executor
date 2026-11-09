@@ -24,6 +24,10 @@ const URLChavesAIStudio = "https://aistudio.google.com/api-keys"
 // tempoRede: limite das operações de configuração (listar, validar, testar).
 const tempoRede = 60 * time.Second
 
+// esperaConfig: espera máxima entre tentativas nessas operações; acima disso
+// (ex.: cota por minuto do nível gratuito), o erro aparece logo na tela.
+const esperaConfig = 5 * time.Second
+
 // FonteGemini implementa pipeline.FonteMotor com a chave guardada (DPAPI) e
 // o modelo escolhido nas preferências (TRV-IA-011).
 type FonteGemini struct {
@@ -298,7 +302,7 @@ func (s *IAService) SalvarChave(chave string) VisaoIA {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), tempoRede)
 	defer cancel()
-	ms, err := s.Fonte.listar()(ctx, inference.ConfigGemini{Chave: b})
+	ms, err := s.Fonte.listar()(ctx, inference.ConfigGemini{Chave: b, EsperaMax: esperaConfig})
 	if err == nil {
 		if e := s.Fonte.Credenciais.Guardar(b); e != nil {
 			err = erros.Com(erros.IACredencial, e)
@@ -338,7 +342,7 @@ func (s *IAService) Verificar() VisaoIA {
 	var ms []inference.ModeloGemini
 	if err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), tempoRede)
-		ms, err = s.Fonte.listar()(ctx, inference.ConfigGemini{Chave: chave})
+		ms, err = s.Fonte.listar()(ctx, inference.ConfigGemini{Chave: chave, EsperaMax: esperaConfig})
 		cancel()
 		credencial.Zerar(chave)
 	}
@@ -387,7 +391,7 @@ func (s *IAService) TestarModelo(id string) VisaoIA {
 	chave, err := s.Fonte.lerChave()
 	if err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), tempoRede)
-		err = s.Fonte.testar()(ctx, inference.ConfigGemini{Chave: chave, Modelo: id, Pensamento: s.Fonte.Pensamento})
+		err = s.Fonte.testar()(ctx, inference.ConfigGemini{Chave: chave, Modelo: id, Pensamento: s.Fonte.Pensamento, EsperaMax: esperaConfig})
 		cancel()
 		credencial.Zerar(chave)
 	}

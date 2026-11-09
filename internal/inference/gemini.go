@@ -49,6 +49,11 @@ type ConfigGemini struct {
 	// vazio = padrão do modelo (o suporte varia por modelo).
 	Pensamento string
 
+	// EsperaMax limita cada espera entre tentativas (0 = sem limite além do
+	// prazo do contexto). As operações da tela de configurações usam um valor
+	// curto: o usuário vê o erro em vez de esperar.
+	EsperaMax time.Duration
+
 	// Somente testes do pacote: servidor falso e espera instantânea.
 	baseURL string
 	espera  func(context.Context, time.Duration) error
@@ -114,6 +119,7 @@ type MotorGemini struct {
 	pensa      bool
 	pensamento string
 	espera     func(context.Context, time.Duration) error
+	esperaMax  time.Duration
 
 	mu  sync.Mutex
 	uso Uso
@@ -129,7 +135,7 @@ func NovoMotorGemini(ctx context.Context, c ConfigGemini) (*MotorGemini, error) 
 	if err != nil {
 		return nil, err
 	}
-	m := &MotorGemini{cli: cli, hc: hc, chave: string(c.Chave), modelo: c.Modelo, pensamento: c.Pensamento, espera: c.espera}
+	m := &MotorGemini{cli: cli, hc: hc, chave: string(c.Chave), modelo: c.Modelo, pensamento: c.Pensamento, espera: c.espera, esperaMax: c.EsperaMax}
 	if m.espera == nil {
 		m.espera = esperar
 	}
@@ -346,8 +352,17 @@ func (m *MotorGemini) repetir(ctx context.Context, f func(context.Context) error
 		if espera <= 0 {
 			espera = time.Second<<tentativa + time.Duration(rand.Int64N(int64(time.Second)))
 		}
+		if m.esperaMax > 0 && espera > m.esperaMax {
+			break // espera longa demais: o erro real vai ao usuário
+		}
+		if prazo, ok := ctx.Deadline(); ok && time.Until(prazo) < espera+time.Second {
+			break // a espera não cabe no prazo: não adianta começar
+		}
 		if err := m.espera(ctx, espera); err != nil {
-			return context.Canceled
+			if errors.Is(err, context.Canceled) {
+				return context.Canceled // cancelamento pelo usuário
+			}
+			break // prazo esgotado durante a espera: vale o erro da última tentativa
 		}
 	}
 	return ultimo.erro

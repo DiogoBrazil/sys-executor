@@ -261,6 +261,7 @@ func TestErrosDaAPI(t *testing.T) {
 		{"503 três vezes", []resp{erroAPI(503, "UNAVAILABLE", "overloaded", "")}, erros.IAIndisponivel, tentativasTransporte, false},
 		{"créditos pré-pagos esgotados", []resp{erroAPI(402, "RESOURCE_EXHAUSTED", "Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing.", "")}, erros.IASemCreditos, 1, false},
 		{"status sem código conhecido", []resp{erroAPI(499, "UNAVAILABLE", "try later", "")}, erros.IAIndisponivel, tentativasTransporte, false},
+		{"modelo fora da cota do nível", []resp{erroAPI(429, "RESOURCE_EXHAUSTED", "Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-3.8-flash", "")}, erros.IAModeloIndisponivel, 1, false},
 		{"400 do pedido é defeito interno", []resp{erroAPI(400, "INVALID_ARGUMENT", "schema too complex", "")}, erros.InternoInesperado, 1, false},
 	}
 	for _, c := range casos {
@@ -468,5 +469,38 @@ func TestContextoLimitadoPeloModelo(t *testing.T) {
 func TestEstimarTokens(t *testing.T) {
 	if EstimarTokens("") != 0 || EstimarTokens("abc") != 1 || EstimarTokens("ação") != 2 {
 		t.Fatal("estimativa")
+	}
+}
+
+// O prazo que acaba durante a espera devolve o erro real (cota), nunca
+// "cancelado"; espera maior que EsperaMax não é feita.
+func TestEsperaRespeitaPrazoELimite(t *testing.T) {
+	cota := erroAPI(429, "RESOURCE_EXHAUSTED", "quota", `[{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"30s"}]`)
+	f := novoFalso(t)
+	f.roteiro = []resp{cota}
+	c := f.cfg()
+	c.espera = esperar // espera real
+	c.EsperaMax = 5 * time.Second
+	m, err := NovoMotorGemini(context.Background(), c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ini := time.Now()
+	if _, err := m.Gerar(context.Background(), pedidoTeste); codigo(err) != erros.IACota || f.qtd() != 1 || time.Since(ini) > 3*time.Second {
+		t.Fatalf("EsperaMax: %v, %d chamadas, %s", err, f.qtd(), time.Since(ini))
+	}
+	f2 := novoFalso(t)
+	f2.roteiro = []resp{erroAPI(429, "RESOURCE_EXHAUSTED", "quota", `[{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"2s"}]`)}
+	c2 := f2.cfg()
+	c2.espera = esperar
+	m2, err := NovoMotorGemini(context.Background(), c2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	defer cancel()
+	_, err = m2.Gerar(ctx, pedidoTeste)
+	if errors.Is(err, context.Canceled) || codigo(err) != erros.IACota {
+		t.Fatalf("prazo curto deve devolver a cota, não cancelamento: %v", err)
 	}
 }

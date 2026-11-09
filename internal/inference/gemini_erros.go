@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -84,6 +85,10 @@ func classificarAPI(e genai.APIError, chave string) falhaGemini {
 		return falhaGemini{erro: erros.Com(erros.IAPermissaoNegada, causa)}
 	case e.Code == 404 || e.Status == "NOT_FOUND":
 		return falhaGemini{erro: erros.Com(erros.IAModeloIndisponivel, causa)}
+	case (e.Code == 429 || e.Status == "RESOURCE_EXHAUSTED") && cotaZero(e):
+		// "limit: 0": o modelo não faz parte da cota deste nível de conta
+		// (ex.: nível gratuito). Esperar não resolve.
+		return falhaGemini{erro: erros.Com(erros.IAModeloIndisponivel, causa)}
 	case e.Code == 429 || e.Status == "RESOURCE_EXHAUSTED":
 		espera, temEspera := retryInfo(e)
 		if cotaDiaria(e) || (temEspera && espera > esperaMaxRetryInfo) {
@@ -99,6 +104,11 @@ func classificarAPI(e genai.APIError, chave string) falhaGemini {
 	}
 	return falhaGemini{erro: erros.Com(erros.IAIndisponivel, causa)}
 }
+
+var reCotaZero = regexp.MustCompile(`(?i)\blimit:\s*0\b`)
+
+// cotaZero: a mensagem de cota informa limite zero para o modelo.
+func cotaZero(e genai.APIError) bool { return reCotaZero.MatchString(e.Message) }
 
 // semCreditos reconhece a recusa por falta de créditos ou de faturamento.
 func semCreditos(e genai.APIError, motivo string) bool {

@@ -45,7 +45,7 @@ func ListarModelos(ctx context.Context, c ConfigGemini) ([]ModeloGemini, error) 
 		return nil, err
 	}
 	defer hc.CloseIdleConnections()
-	m := &MotorGemini{chave: string(c.Chave), espera: c.espera}
+	m := &MotorGemini{chave: string(c.Chave), espera: c.espera, esperaMax: c.EsperaMax}
 	if m.espera == nil {
 		m.espera = esperar
 	}
