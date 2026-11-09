@@ -213,3 +213,24 @@ func TestINGCOB01OitocentasPaginas(t *testing.T) {
 		t.Log("progresso não amostrado (extração rápida); coberto em internal/ingest/autos")
 	}
 }
+
+// Sem Tesseract, um *Tesseract nulo dentro de ocr.Motor não pode chegar à
+// extração (o app caía com ponteiro nulo ao encontrar página digitalizada):
+// a tarefa para com OCR-001, sem pânico.
+func TestOCRAusenteNaoDerrubaOApp(t *testing.T) {
+	extOnce.Do(func() { ext = pdf.NovoExtrator() })
+	p := &Pipeline{Extrator: ext, DPI: 72, LocalizarOCR: func() (ocr.Motor, error) {
+		var tess *ocr.Tesseract
+		return tess, fmt.Errorf("tesseract ausente")
+	}}
+	g := workflow.Novo(workflow.Opcoes{Sessoes: session.NovoGerenciador(t.TempDir()), Etapas: p.Etapas()})
+	t.Cleanup(g.Encerrar)
+	enviar(t, g, workflow.TipoPADS, fixtureSEI(t))
+	v := esperar(t, g, func(v *workflow.Visao) bool {
+		return v.Parada || v.Terminal || v.Pergunta != nil || v.Estado == workflow.Delimitando
+	})
+	t.Logf("estado=%s erro=%+v aviso=%+v", v.Estado, v.Erro, v.Aviso)
+	if v.Erro != nil && v.Erro.Codigo != "OCR-001" && v.Erro.Codigo != "IA-001" {
+		t.Fatalf("esperado OCR-001 (ou seguir sem OCR), veio %+v", v.Erro)
+	}
+}

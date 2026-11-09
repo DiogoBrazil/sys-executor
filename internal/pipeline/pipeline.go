@@ -60,6 +60,9 @@ func (p *Pipeline) ocr() ocr.Motor {
 	p.once.Do(func() {
 		if p.LocalizarOCR != nil {
 			p.motor, p.errOCR = p.LocalizarOCR()
+			if p.errOCR != nil {
+				p.motor = nil // nunca usar um motor que falhou ao ser localizado
+			}
 		}
 	})
 	return p.motor

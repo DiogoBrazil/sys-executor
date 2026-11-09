@@ -86,7 +86,7 @@ func perguntaEnvio(modelo string, d *Dados, r pseudonimo.Resumo) workflow.Pergun
 	ctx := fmt.Sprintf("Para analisar os autos, o sys-executor enviará à Gemini API (Google), modelo %s, trechos do texto extraído "+
 		"das %d peça(s) identificadas (%d página(s)). Estimativa aproximada do envio: %d mil tokens de entrada no total, "+
 		"somadas as instruções de cada etapa. O arquivo PDF não é enviado.\n\n"+
-		"Antes do envio, %s serão substituídos por marcadores, e a resposta volta com os dados originais. "+
+		"Antes do envio, os dados pessoais reconhecidos (%s) serão trocados por marcadores, e a resposta volta com os dados originais. "+
 		"É um melhor esforço: nomes sem posto, papel processual ou rótulo podem não ser reconhecidos. "+
 		"Se quiser ocultar outros nomes ou números, informe-os abaixo, um por linha.\n\n"+
 		"Sem a sua autorização, nada é enviado. Esta confirmação não substitui eventual autorização institucional "+

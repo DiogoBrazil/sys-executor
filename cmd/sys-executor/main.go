@@ -63,8 +63,16 @@ func main() {
 		componentes = filepath.Join(filepath.Dir(exe), "componentes")
 	}
 	pipe := &pipeline.Pipeline{
-		Extrator:     extrator,
-		LocalizarOCR: func() (ocr.Motor, error) { return ocr.Localizar(componentes) },
+		Extrator: extrator,
+		LocalizarOCR: func() (ocr.Motor, error) {
+			// Sem Tesseract, devolver a interface nula de verdade: um
+			// *Tesseract nulo dentro de ocr.Motor não é nil e derrubava o app.
+			t, err := ocr.Localizar(componentes)
+			if err != nil {
+				return nil, err
+			}
+			return t, nil
+		},
 	}
 	// IA (V4 §47): Gemini API com a chave do usuário, cifrada com DPAPI em
 	// %LOCALAPPDATA%\sys-executor\credenciais, e o modelo das preferências.
