@@ -1,9 +1,13 @@
-// Comando bench: benchmark dos modelos sobre os casos sintéticos
-// (plano §9; BEN-01; SEG-INJ-01…05). Roda as etapas reais (delimitação,
-// extração, análise) com o llama-server em CPU e compara com o gabarito.
-// Nada é gravado em disco além do relatório pedido em -saida.
+// Comando bench: benchmark dos modelos Gemini sobre os casos SINTÉTICOS
+// (plano §9; BEN-01; SEG-INJ-01…05; V4 §47.5). Roda as etapas reais
+// (delimitação, extração, análise) com a Gemini API e compara com o
+// gabarito. Nunca use autos reais. Nada é gravado em disco além do
+// relatório pedido em -saida.
 //
-// Uso: go run ./cmd/bench -servidor <llama-server> -modelo <gguf> [-ctx 8192] [-casos filtro] [-saida relatorio.md]
+// A chave de desenvolvimento vem de SYSEXEC_GEMINI_API_KEY (nunca de
+// argumento, para não ficar no histórico do terminal).
+//
+// Uso: go run ./cmd/bench -modelo gemini-… [-ctx 32768] [-pensamento LOW] [-pseudonimizar=false] [-casos filtro] [-saida relatorio.md]
 package main
 
 import (
@@ -12,13 +16,13 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/DiogoBrazil/sys-executor/internal/analise"
 	"github.com/DiogoBrazil/sys-executor/internal/inference"
 	"github.com/DiogoBrazil/sys-executor/internal/policy"
+	"github.com/DiogoBrazil/sys-executor/internal/pseudonimo"
 	"github.com/DiogoBrazil/sys-executor/internal/testutil/casos"
 )
 
@@ -26,18 +30,26 @@ import (
 type medidor struct {
 	inference.Motor
 	chamadas  int
+	tokEnt    int
 	tokSaida  int
+	tokPensa  int
 	duracao   time.Duration
 	truncadas int
+	falhas    int
 }
 
 func (m *medidor) Gerar(ctx context.Context, p inference.Pedido) (inference.Resposta, error) {
 	r, err := m.Motor.Gerar(ctx, p)
 	m.chamadas++
+	m.tokEnt += r.TokensEntrada
 	m.tokSaida += r.TokensSaida
+	m.tokPensa += r.TokensPensamento
 	m.duracao += r.Duracao
 	if r.Truncada {
 		m.truncadas++
+	}
+	if err != nil {
+		m.falhas++
 	}
 	return r, err
 }
@@ -54,78 +66,72 @@ type resultado struct {
 	tempo                   time.Duration
 	fatos, sindicados       int
 	fatosEsp, sindicadosEsp int
+	pseudo                  string
+	erros                   []string
 }
 
-func pico(pid int) string {
-	b, err := os.ReadFile(fmt.Sprintf("/proc/%d/status", pid))
-	if err != nil {
-		return "n/d"
-	}
-	for _, l := range strings.Split(string(b), "\n") {
-		if strings.HasPrefix(l, "VmHWM:") {
-			c := strings.Fields(l)
-			if len(c) >= 2 {
-				kb, _ := strconv.Atoi(c[1])
-				return fmt.Sprintf("%.1f GB", float64(kb)/1024/1024)
-			}
-		}
-	}
-	return "n/d"
+type config struct {
+	modelo, pensamento string
+	ctx                int
+	pseudonimizar      bool
 }
 
 func main() {
-	servidor := flag.String("servidor", os.Getenv("SYSEXEC_LLAMA_SERVER"), "llama-server")
-	modelo := flag.String("modelo", "", "arquivo GGUF")
-	nctx := flag.Int("ctx", 8192, "contexto")
+	var cfg config
+	flag.StringVar(&cfg.modelo, "modelo", os.Getenv("SYSEXEC_GEMINI_MODELO"), "modelo Gemini (ex.: gemini-3.6-flash)")
+	flag.IntVar(&cfg.ctx, "ctx", inference.ContextoPadrao, "janela de trabalho (tokens)")
+	flag.StringVar(&cfg.pensamento, "pensamento", "", "nível de raciocínio (MINIMAL, LOW, MEDIUM, HIGH; vazio = padrão do modelo)")
+	flag.BoolVar(&cfg.pseudonimizar, "pseudonimizar", true, "trocar dados pessoais por marcadores (como no aplicativo)")
 	filtro := flag.String("casos", "", "só casos cujo nome contém o texto")
 	saida := flag.String("saida", "", "relatório em markdown (padrão: tela)")
 	flag.Parse()
-	if *servidor == "" || *modelo == "" {
-		fmt.Fprintln(os.Stderr, "uso: bench -servidor <llama-server> -modelo <gguf>")
+	chave := os.Getenv("SYSEXEC_GEMINI_API_KEY")
+	if chave == "" || cfg.modelo == "" {
+		fmt.Fprintln(os.Stderr, "uso: SYSEXEC_GEMINI_API_KEY=… bench -modelo <gemini-…>")
 		os.Exit(2)
 	}
-	f, err := os.Open(*modelo)
-	if err != nil {
-		falhar(err)
-	}
-	meta, err := inference.LerGGUF(f)
-	f.Close()
-	if err != nil {
-		falhar(err)
-	}
-	hw, _ := inference.DetectarHardware()
 	ctx := context.Background()
-	t0 := time.Now()
-	s, err := inference.IniciarServidor(ctx, inference.ConfigServidor{Executavel: *servidor, Modelo: *modelo, Contexto: *nctx,
-		Threads: hw.NucleosFisicos, TimeoutCarga: 5 * time.Minute})
+	g, err := inference.NovoMotorGemini(ctx, inference.ConfigGemini{Chave: []byte(chave), Modelo: cfg.modelo,
+		Contexto: cfg.ctx, Pensamento: cfg.pensamento})
 	if err != nil {
 		falhar(err)
 	}
-	defer s.Fechar()
-	carga := time.Since(t0)
+	defer g.Fechar()
+	cfg.ctx = g.Contexto()
 	b, err := policy.Carregar()
 	if err != nil {
 		falhar(err)
 	}
-	med := &medidor{Motor: s}
+	med := &medidor{Motor: g}
 	var rs []resultado
+	t0 := time.Now()
 	for _, c := range casos.Todos() {
 		if *filtro != "" && !strings.Contains(c.Nome, *filtro) {
 			continue
 		}
 		fmt.Fprintf(os.Stderr, "caso %s…\n", c.Nome)
-		rs = append(rs, rodar(ctx, b, med, c))
+		rs = append(rs, rodar(ctx, b, med, c, cfg.pseudonimizar))
 	}
-	relatorio(rs, meta, *nctx, hw, carga, med, pico(s.PID()), *saida)
+	relatorio(rs, cfg, med, time.Since(t0), *saida)
 }
 
-func rodar(ctx context.Context, b *policy.Bundle, med *medidor, c casos.Caso) resultado {
+func rodar(ctx context.Context, b *policy.Bundle, med *medidor, c casos.Caso, pseudo bool) resultado {
 	fluxo := policy.FluxoPADS
 	if c.Tipo == "SR" {
 		fluxo = policy.FluxoSR
 	}
 	r := resultado{caso: c.Nome, injecao: c.Injecao, base: c.Base, resultados: map[string]string{}}
-	x := &analise.Executor{Motor: med, Bundle: b, Fluxo: fluxo}
+	var motor inference.Motor = med
+	if pseudo {
+		// Como no aplicativo: um mapa por tarefa, a partir de todas as páginas.
+		mapa := pseudonimo.NovoMapa()
+		for _, pg := range c.Autos.Paginas {
+			mapa.Aprender(pg.Texto)
+		}
+		r.pseudo = mapa.Resumir().Texto()
+		motor = pseudonimo.Envolver(med, mapa)
+	}
+	x := &analise.Executor{Motor: motor, Bundle: b, Fluxo: fluxo}
 	x.Observar = func(etapa, alvo string, k int, resp []byte, motivo string) {
 		if k == 0 {
 			r.tentativas++
@@ -141,6 +147,9 @@ func rodar(ctx context.Context, b *policy.Bundle, med *medidor, c casos.Caso) re
 	reg := &analise.Registro{}
 	if fluxo == policy.FluxoSR {
 		d, err := analise.DelimitarSR(ctx, x, c.Autos, c.Pecas, reg)
+		if err != nil {
+			r.erros = append(r.erros, "delimitação SR: "+err.Error())
+		}
 		if err == nil {
 			r.fatos, r.sindicados = len(d.Fatos), len(d.Sindicados)
 		}
@@ -150,6 +159,9 @@ func rodar(ctx context.Context, b *policy.Bundle, med *medidor, c casos.Caso) re
 	}
 	d, err := analise.DelimitarPADS(ctx, x, c.Autos, c.Pecas, reg)
 	r.delimTotal = len(c.Imputacoes)
+	if err != nil {
+		r.erros = append(r.erros, "delimitação: "+err.Error())
+	}
 	if err == nil {
 		for _, esp := range c.Imputacoes {
 			for _, im := range d.Imputacoes {
@@ -174,6 +186,7 @@ func rodar(ctx context.Context, b *policy.Bundle, med *medidor, c casos.Caso) re
 		}
 		e, err := analise.ExtrairPeca(ctx, x, c.Autos, p, sec, alvos, nil, reg)
 		if err != nil {
+			r.erros = append(r.erros, "extração "+p.ID+": "+err.Error())
 			continue
 		}
 		pontos = append(pontos, e.Pontos...)
@@ -189,6 +202,7 @@ func rodar(ctx context.Context, b *policy.Bundle, med *medidor, c casos.Caso) re
 		}
 		an, err := analise.AnalisarImputacao(ctx, x, a, sec, ps, nil)
 		if err != nil {
+			r.erros = append(r.erros, "análise "+a.ID+": "+err.Error())
 			continue
 		}
 		r.resultados[a.ID] = an.Resultado
@@ -222,15 +236,15 @@ func cortar(s string, n int) string {
 	return s
 }
 
-func relatorio(rs []resultado, meta inference.MetadadosGGUF, nctx int, hw inference.Hardware, carga time.Duration, med *medidor, pico, saida string) {
+func relatorio(rs []resultado, cfg config, med *medidor, total time.Duration, saida string) {
 	var b strings.Builder
-	fmt.Fprintf(&b, "## Benchmark — %s (%s), contexto %d, CPU %d núcleos, RAM %.0f GB\n\n", meta.Nome, meta.Arquitetura, nctx, hw.NucleosFisicos, float64(hw.RAMTotal)/(1<<30))
-	tps := 0.0
-	if med.duracao > 0 {
-		tps = float64(med.tokSaida) / med.duracao.Seconds()
+	pens := cfg.pensamento
+	if pens == "" {
+		pens = "padrão do modelo"
 	}
-	fmt.Fprintf(&b, "- Carga do modelo: %s · pico de memória do servidor: %s · chamadas: %d · respostas cortadas: %d · geração média: %.1f tokens/s\n\n",
-		carga.Round(time.Second), pico, med.chamadas, med.truncadas, tps)
+	fmt.Fprintf(&b, "## Benchmark — %s (Gemini API), janela de trabalho %d, raciocínio %s, pseudonimização %v\n\n", cfg.modelo, cfg.ctx, pens, cfg.pseudonimizar)
+	fmt.Fprintf(&b, "- Chamadas: %d (falhas %d, respostas cortadas %d) · tokens: entrada %d, saída %d, raciocínio %d · tempo total %s\n\n",
+		med.chamadas, med.falhas, med.truncadas, med.tokEnt, med.tokSaida, med.tokPensa, total.Round(time.Second))
 	b.WriteString("| Caso | Delimitação | JSON válido 1ª | Pontos (descartes) | Resultado × gabarito | Violações aceitas | Tempo |\n|---|---|---|---|---|---|---|\n")
 	base := map[string]resultado{}
 	for _, r := range rs {
@@ -260,6 +274,18 @@ func relatorio(rs []resultado, meta inference.MetadadosGGUF, nctx int, hw infere
 		fmt.Fprintf(&b, "| %s | %s | %d/%d | %d (%d) | %s | %d | %s |\n", r.caso, delim, r.primeira, r.tentativas, r.pontos, r.descartes, res, r.vazamentos, r.tempo.Round(time.Second))
 	}
 	fmt.Fprintf(&b, "\n**Totais:** JSON válido na 1ª tentativa %d/%d; resultados conforme gabarito %d/%d; violações aceitas após validação: %d.\n", prim, tent, acertos, aval, viol)
+	if cfg.pseudonimizar {
+		b.WriteString("\nPseudonimização por caso:\n")
+		for _, r := range rs {
+			fmt.Fprintf(&b, "- %s: %s\n", r.caso, r.pseudo)
+		}
+	}
+	b.WriteString("\nErros das etapas (pendências, falhas da API):\n")
+	for _, r := range rs {
+		for _, e := range r.erros {
+			fmt.Fprintf(&b, "- %s: %s\n", r.caso, cortar(e, 200))
+		}
+	}
 	b.WriteString("\nRejeições do validador (amostra, por caso):\n")
 	for _, r := range rs {
 		if len(r.rejeicoes) > 0 {

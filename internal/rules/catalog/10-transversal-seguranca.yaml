@@ -28,7 +28,7 @@
   rotulo: [APROVADO]
   tipo: [SEGURANCA]
   enunciado: "Sem módulo de logs persistentes; diagnóstico em memória sem dados processuais"
-  modulo: "app logger; sidecars sem log"
+  modulo: "app logger; cliente HTTP da IA sem log"
   testes: ["SEG-LOG-01"]
   versao: 1
 
@@ -60,7 +60,9 @@
   enunciado: "Sem envio de autos a provedores externos de IA"
   modulo: "inference (somente loopback)"
   testes: ["SEG-NET-01"]
-  versao: 1
+  versao: 2
+  status: revogada
+  falha: "Revogada pela emenda V4 §47 (D-10): o envio ao provedor autorizado segue TRV-SEG-010/011/012."
 
 - id: TRV-SEG-007
   origem: "PT"
@@ -70,7 +72,9 @@
   enunciado: "Sidecar em loopback, porta aleatória, API key, Job Object"
   modulo: "inference.Sidecar"
   testes: ["SEG-SID-01"]
-  versao: 1
+  versao: 2
+  status: revogada
+  falha: "Revogada pela emenda V4 §47 (D-10, 09/11/2026): inferência local removida."
 
 - id: TRV-SEG-008
   origem: "PT"
@@ -80,4 +84,52 @@
   enunciado: "Cache do WebView2/Edge e dumps mitigados"
   modulo: "platform/win"
   testes: ["SEG-CACHE-01", "SEG-WER-01"]
+  versao: 1
+
+# Emenda V4 §47 (D-10): inferência pela Gemini API.
+- id: TRV-SEG-009
+  origem: "§47.4"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA]
+  enunciado: "Chave da Gemini API cifrada com DPAPI (conta do usuário); nunca na interface, em eventos, preferências, erros ou logs; validada sem gerar texto; substituível e removível"
+  modulo: "credencial; app.IAService"
+  enforced_by: [credencial.LojaArquivo, app.VisaoIA]
+  falha: "Falha da DPAPI → IA-012; chave recusada não é guardada"
+  testes: ["SEG-KEY-01"]
+  versao: 1
+
+- id: TRV-SEG-010
+  origem: "§47.3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA, UI]
+  enunciado: "Confirmação de envio à Gemini API em cada tarefa, antes da primeira etapa de IA (modelo, peças, estimativa de tokens, resumo da pseudonimização); sem autorização nada é enviado"
+  modulo: "pipeline (envio_ia)"
+  enforced_by: [pipeline.PerguntaEnvioIA]
+  falha: "Recusa → IA-011, parada recuperável; nova tentativa pergunta de novo"
+  testes: ["SEG-ENV-01"]
+  versao: 1
+
+- id: TRV-SEG-011
+  origem: "§47.3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA]
+  enunciado: "Pseudonimização de dados pessoais antes do envio (nomes, CPF, RG, matrícula, telefone, e-mail, CEP, endereço, nascimento) e restauração exata na resposta; melhor esforço, não anonimização; datas dos fatos, números SEI e links não são trocados"
+  modulo: "pseudonimo"
+  enforced_by: [pseudonimo.Envolver, pseudonimo.Mapa]
+  falha: "Marcador alterado pela IA → correção pedida; persistindo, IA-010"
+  testes: ["SEG-PSEUDO-01"]
+  versao: 1
+
+- id: TRV-SEG-012
+  origem: "§47.3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA]
+  enunciado: "Envio só a generativelanguage.googleapis.com (base fixa, sem redirecionamento), store=false, sem ferramentas, sem Files API nem armazenamento de contexto no provedor"
+  modulo: "inference.MotorGemini"
+  enforced_by: [inference.TransporteRestrito, inference.HostGemini]
+  testes: ["SEG-NET-01"]
   versao: 1

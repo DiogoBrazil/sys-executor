@@ -525,7 +525,7 @@ func TestPerguntasComCamposRevisaoERetomada(t *testing.T) {
 			falharUmaVez = false
 			mu.Unlock()
 			if f {
-				return Delimitando, erros.Novo(erros.ModeloAusente) // recuperável
+				return Delimitando, erros.Novo(erros.IAChaveAusente) // recuperável
 			}
 			if _, ok := c.RespostaCompleta("delim"); ok {
 				return Analisando, nil
@@ -555,9 +555,9 @@ func TestPerguntasComCamposRevisaoERetomada(t *testing.T) {
 	_, _ = g.EscolherEntrada(EntradaUpload)
 	_, _ = g.ReceberUpload(pdfMinimo)
 
-	// MOD-001 na etapa: parada recuperável, tarefa viva, "Tentar novamente".
+	// IA-001 na etapa: parada recuperável, tarefa viva, "Tentar novamente".
 	v := esperar(t, g, func(v *Visao) bool { return v.Parada })
-	if v.Estado != Delimitando || !v.Retomavel || v.Erro == nil || v.Erro.Codigo != "MOD-001" || v.Terminal {
+	if v.Estado != Delimitando || !v.Retomavel || v.Erro == nil || v.Erro.Codigo != "IA-001" || v.Terminal {
 		t.Fatalf("%+v", v)
 	}
 	_, _ = g.Retomar()

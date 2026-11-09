@@ -1,4 +1,4 @@
-# 11. Transversal — IA local, modelos, hardware
+# 11. Transversal — IA (Gemini API desde a emenda V4 §47; regras da IA local revogadas)
 # Semeado de docs/planning/MATRIZ_REQUISITOS_V4.md (Fase 3, F3-08).
 # O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
 
@@ -10,7 +10,9 @@
   enunciado: "IA local prioritária; GGUF; llama.cpp/llama-server como candidatos; sem acoplar regras ao modelo"
   modulo: "inference (porta InferenceEngine)"
   testes: ["F0-02"]
-  versao: 1
+  versao: 2
+  status: revogada
+  falha: "Revogada pela emenda V4 §47 (D-10, 09/11/2026): inferência local removida."
 
 - id: TRV-IA-002
   origem: "§36.5"
@@ -31,7 +33,9 @@
   enunciado: "Vários modelos instalados; um gerador por tarefa; embeddings separados"
   modulo: "inference.Gerenciador"
   testes: ["MOD-01"]
-  versao: 1
+  versao: 2
+  status: revogada
+  falha: "Revogada pela emenda V4 §47 (D-10, 09/11/2026): inferência local removida."
 
 - id: TRV-IA-004
   origem: "§37"
@@ -41,7 +45,9 @@
   enunciado: "Detecção de hardware e seleção automática entre modelos testados; seleção manual avançada"
   modulo: "inference.Hardware"
   testes: ["T14", "MOD-02"]
-  versao: 1
+  versao: 2
+  status: revogada
+  falha: "Revogada pela emenda V4 §47 (D-10, 09/11/2026): inferência local removida."
 
 - id: TRV-IA-005
   origem: "§37"
@@ -51,7 +57,9 @@
   enunciado: "Primeiro uso: download orientado + importação de GGUF; integridade; listar/remover"
   modulo: "inference.Gerenciador"
   testes: ["T27", "MOD-03", "MOD-04"]
-  versao: 1
+  versao: 2
+  status: revogada
+  falha: "Revogada pela emenda V4 §47 (D-10, 09/11/2026): inferência local removida."
 
 - id: TRV-IA-006
   origem: "§38.1"
@@ -61,7 +69,9 @@
   enunciado: "GPU priorizada; GPU incompatível → CPU se viável"
   modulo: "inference"
   testes: ["T14"]
-  versao: 1
+  versao: 2
+  status: revogada
+  falha: "Revogada pela emenda V4 §47 (D-10, 09/11/2026): inferência local removida."
 
 - id: TRV-IA-007
   origem: "§38.2"
@@ -71,7 +81,9 @@
   enunciado: "Q4_K_M como referência; nenhum modelo definitivo antes de teste"
   modulo: "catálogo de modelos"
   testes: ["BEN-01"]
-  versao: 1
+  versao: 2
+  status: revogada
+  falha: "Revogada pela emenda V4 §47 (D-10, 09/11/2026): inferência local removida."
 
 - id: TRV-IA-008
   origem: "§38.3"
@@ -81,7 +93,9 @@
   enunciado: "Contexto adaptativo pela memória disponível"
   modulo: "inference.Orcamento"
   testes: ["T16", "BEN-02"]
-  versao: 1
+  versao: 2
+  status: revogada
+  falha: "Revogada pela emenda V4 §47 (D-10, 09/11/2026): inferência local removida."
 
 - id: TRV-IA-009
   origem: "§38.4"
@@ -91,7 +105,9 @@
   enunciado: "Máquina insuficiente → mensagem amigável, alternativa ou impossibilidade; nunca degradar em silêncio"
   modulo: "inference"
   testes: ["T15"]
-  versao: 1
+  versao: 2
+  status: revogada
+  falha: "Revogada pela emenda V4 §47 (D-10, 09/11/2026): inferência local removida."
 
 - id: TRV-IA-010
   origem: "§§37, 31.1"
@@ -101,4 +117,39 @@
   enunciado: "Sem streaming na UI"
   modulo: "frontend"
   testes: ["T07"]
+  versao: 1
+
+# Emenda V4 §47 (D-10): inferência pela Gemini API.
+- id: TRV-IA-011
+  origem: "§§47.1, 47.5"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [ARQUITETURA, UI]
+  enunciado: "Inferência pela Gemini API (SDK oficial google.golang.org/genai, chave do usuário); nenhum modelo fixo no código: o usuário lista os modelos de texto da chave, testa e escolhe um; um modelo por tarefa; sem fallback local"
+  modulo: "inference.MotorGemini; app.IAService"
+  enforced_by: [inference.NovoMotorGemini, inference.ListarModelos]
+  falha: "Sem chave → IA-001; modelo indisponível → IA-004"
+  testes: ["T27", "IA-MOD-01"]
+  versao: 1
+
+- id: TRV-IA-012
+  origem: "§§47.6, 38.4"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA]
+  enunciado: "Resposta só vale se íntegra (fim normal com conteúdo); cortada, bloqueada ou vazia nunca vira resultado; falhas da API viram mensagem clara e parada recuperável, sem sucesso simulado"
+  modulo: "inference.MotorGemini"
+  enforced_by: [inference.MotorGemini]
+  falha: "IA-005…010 conforme a causa"
+  testes: ["T15", "IA-RESP-01"]
+  versao: 1
+
+- id: TRV-IA-013
+  origem: "§§47.2, 38"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [ARQUITETURA]
+  enunciado: "Nenhum modelo de linguagem roda no computador: sem requisitos de GPU, RAM ou contexto por memória para a IA; a janela de trabalho mantém o fatiamento (contexto maior não substitui recuperação estruturada)"
+  modulo: "inference"
+  testes: ["T14", "T16"]
   versao: 1

@@ -185,14 +185,14 @@
   versao: 1
 
 - id: TRV-INS-003
-  origem: "§34"
+  origem: "§§34, 47.2"
   fluxo: TRV
   rotulo: [APROVADO]
   tipo: [ARQUITETURA]
-  enunciado: "Instalador leve, sem GGUF"
+  enunciado: "Instalador leve: sem mecanismo de inferência, pesos de modelo nem chave de API"
   modulo: "build"
   testes: ["INS-03"]
-  versao: 1
+  versao: 2
 
 - id: TRV-INS-004
   origem: "§34"
@@ -212,14 +212,27 @@
   enunciado: "Upload + modelos + biblioteca instalados → tudo offline"
   modulo: "todos"
   testes: ["T18"]
-  versao: 1
+  versao: 2
+  status: revogada
+  falha: "Revogada pela emenda V4 §47 (D-10): a análise por IA exige internet; ver TRV-OFF-003."
 
 - id: TRV-OFF-002
-  origem: "§35"
+  origem: "§§35, 47.3"
   fluxo: TRV
   rotulo: [APROVADO]
   tipo: [SEGURANCA]
-  enunciado: "Sem consulta externa silenciosa se offline ou com web desligada"
-  modulo: "legal/web; inference"
+  enunciado: "Sem consulta externa silenciosa: pesquisa web desligada por padrão; IA (Gemini API) só após a confirmação de envio da tarefa"
+  modulo: "legal/web; pipeline (envio_ia)"
   testes: ["T19", "SEG-NET-01"]
+  versao: 2
+
+- id: TRV-OFF-003
+  origem: "§47.6"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [UI]
+  enunciado: "Sem internet (ou chave, cota, modelo) na etapa de IA: mensagem clara, parada recuperável com o estado preservado e nova tentativa; funções sem IA seguem offline"
+  modulo: "pipeline; workflow"
+  enforced_by: [erros.IASemConexao]
+  testes: ["T18", "OFF-IA-01"]
   versao: 1

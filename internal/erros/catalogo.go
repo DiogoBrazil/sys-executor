@@ -32,16 +32,21 @@ const (
 	ArquivoEscrita  Codigo = "ARQ-002"
 	ArquivoSemEspac Codigo = "ARQ-003"
 
-	// Modelo de IA
-	ModeloAusente       Codigo = "MOD-001"
-	ModeloIncompativel  Codigo = "MOD-002"
-	ModeloSemMemoria    Codigo = "MOD-003"
-	ModeloTravado       Codigo = "MOD-004"
-	ModeloGPUInstavel   Codigo = "MOD-005"
-	ModeloHardwareFraco Codigo = "MOD-006"
-	ModeloDownload      Codigo = "MOD-007"
-	ModeloIntegridade   Codigo = "MOD-008"
-	ModeloEmUso         Codigo = "MOD-009"
+	// Modelo de IA (Gemini API, emenda V4 §47). MOD-001…009 pertenciam à
+	// inferência local, removida (D-10): ficam reservados e nunca serão
+	// reutilizados.
+	IAChaveAusente       Codigo = "IA-001"
+	IAChaveInvalida      Codigo = "IA-002"
+	IAPermissaoNegada    Codigo = "IA-003"
+	IAModeloIndisponivel Codigo = "IA-004"
+	IACota               Codigo = "IA-005"
+	IAIndisponivel       Codigo = "IA-006"
+	IASemConexao         Codigo = "IA-007"
+	IATempoEsgotado      Codigo = "IA-008"
+	IARespostaBloqueada  Codigo = "IA-009"
+	IARespostaIncompleta Codigo = "IA-010"
+	IAEnvioNaoAutorizado Codigo = "IA-011"
+	IACredencial         Codigo = "IA-012"
 
 	// Biblioteca jurídica e referências
 	BibliotecaIndisponivel Codigo = "BIB-001"
@@ -147,33 +152,42 @@ func init() {
 		"Não há espaço livre suficiente no disco para continuar.",
 		"Libere espaço em disco e tente novamente.")
 
-	def(ModeloAusente, CatModelo, "Modelo de IA não instalado",
-		"Nenhum modelo de IA local está instalado.",
-		"Baixe ou importe um modelo na tela Modelos.")
-	def(ModeloIncompativel, CatModelo, "Modelo de IA incompatível",
-		"O arquivo de modelo não é compatível com este aplicativo.",
-		"Escolha um modelo da lista recomendada ou importe outro arquivo GGUF.")
-	def(ModeloSemMemoria, CatModelo, "Memória insuficiente para o modelo",
-		"O computador não tem memória livre suficiente para executar o modelo escolhido.",
-		"Feche outros programas ou escolha um modelo menor.")
-	def(ModeloTravado, CatModelo, "O modelo de IA parou de responder",
-		"O mecanismo de IA local parou de responder e foi encerrado.",
-		"Tente novamente. Se persistir, escolha um modelo menor.")
-	def(ModeloGPUInstavel, CatModelo, "Placa de vídeo instável",
-		"Uma tentativa anterior de usar a placa de vídeo não terminou bem; o aplicativo usará o processador.",
-		"Nenhuma ação é necessária. O uso da placa de vídeo pode ser reativado em Configurações avançadas.")
-	def(ModeloHardwareFraco, CatModelo, "Computador sem recursos suficientes",
-		"Nenhum modelo disponível cabe nos recursos deste computador.",
-		"Use um computador com mais memória ou feche outros programas.")
-	def(ModeloDownload, CatModelo, "Download do modelo interrompido",
-		"Não foi possível concluir o download do modelo de IA.",
-		"Verifique a conexão e tente de novo; o download continua de onde parou.")
-	def(ModeloIntegridade, CatModelo, "Arquivo de modelo diferente do esperado",
-		"O arquivo do modelo não confere com a assinatura (SHA-256) do catálogo e foi descartado.",
-		"Baixe o modelo novamente ou importe o arquivo original.")
-	def(ModeloEmUso, CatModelo, "Modelo em uso",
-		"Este modelo está sendo usado pela tarefa em andamento e não pode ser removido agora.",
-		"Conclua ou cancele a tarefa e tente novamente.")
+	def(IAChaveAusente, CatModelo, "Chave da Gemini API não cadastrada",
+		"A análise por IA usa a Gemini API, e ainda não há uma chave cadastrada neste computador.",
+		"Cadastre sua chave em Configurações de IA e tente novamente.")
+	def(IAChaveInvalida, CatModelo, "Chave da Gemini API não aceita",
+		"O Google não aceitou a chave cadastrada. Ela pode estar incorreta, revogada ou excluída.",
+		"Cadastre uma chave válida em Configurações de IA e tente novamente.")
+	def(IAPermissaoNegada, CatModelo, "Acesso negado pela Gemini API",
+		"A chave cadastrada não tem permissão para usar a Gemini API ou o modelo escolhido, ou o serviço não está liberado para a sua conta ou região.",
+		"Verifique a chave e o projeto no Google AI Studio, ou escolha outro modelo em Configurações de IA.")
+	def(IAModeloIndisponivel, CatModelo, "Modelo de IA indisponível",
+		"O modelo de IA escolhido não está disponível para a sua chave, ou nenhum modelo foi escolhido.",
+		"Escolha um modelo em Configurações de IA e tente novamente.")
+	def(IACota, CatModelo, "Limite de uso da Gemini API atingido",
+		"A cota de uso da sua chave foi atingida (por minuto ou por dia).",
+		"Aguarde alguns minutos e tente novamente. Se o limite for diário, ele é renovado no dia seguinte; os limites podem ser consultados no Google AI Studio.")
+	def(IAIndisponivel, CatModelo, "Gemini API indisponível",
+		"O serviço da Gemini API está temporariamente indisponível ou sobrecarregado.",
+		"Tente novamente em alguns minutos. O andamento da tarefa foi mantido.")
+	def(IASemConexao, CatModelo, "Sem conexão com a Gemini API",
+		"A análise por IA exige internet, e não foi possível se conectar ao serviço do Google.",
+		"Verifique a conexão (e o proxy da rede, se houver) e tente novamente. O andamento da tarefa foi mantido.")
+	def(IATempoEsgotado, CatModelo, "A Gemini API demorou demais para responder",
+		"A resposta da IA não chegou dentro do tempo limite.",
+		"Tente novamente. O andamento da tarefa foi mantido.")
+	def(IARespostaBloqueada, CatModelo, "Resposta recusada pelo provedor",
+		"O Google recusou processar este conteúdo dos autos pelas regras dele.",
+		"Tente novamente ou escolha outro modelo. Se persistir, esta etapa precisará ser feita manualmente.")
+	def(IARespostaIncompleta, CatModelo, "Resposta incompleta da IA",
+		"A resposta da Gemini API chegou incompleta ou vazia e foi descartada.",
+		"Tente novamente. Nenhum resultado incompleto foi aproveitado.")
+	def(IAEnvioNaoAutorizado, CatModelo, "Envio à Gemini API não autorizado",
+		"Você optou por não enviar o conteúdo dos autos à Gemini API; nada foi enviado.",
+		"Para continuar a análise por IA, use Tentar novamente e autorize o envio, ou cancele a tarefa.")
+	def(IACredencial, CatModelo, "Não foi possível guardar ou ler a chave",
+		"O Windows não conseguiu proteger ou abrir a chave da Gemini API desta conta.",
+		"Cadastre a chave novamente em Configurações de IA.")
 
 	def(BibliotecaIndisponivel, CatBiblioteca, "Biblioteca jurídica indisponível",
 		"A biblioteca jurídica local não pôde ser aberta.",

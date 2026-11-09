@@ -17,39 +17,38 @@ import (
 	"sync"
 )
 
-const versaoAtual = 1
-
-// EstadoGPU resume o que se sabe sobre o uso seguro da GPU (D-08, D-09.1).
-type EstadoGPU string
-
-const (
-	GPUDesconhecida EstadoGPU = "desconhecida" // nunca sondada: usar CPU
-	GPUEstavel      EstadoGPU = "estavel"      // sonda concluída
-	GPUInstavel     EstadoGPU = "instavel"     // sonda interrompida por queda: usar CPU
-	GPUDesativada   EstadoGPU = "desativada"   // usuário optou por CPU
-)
-
-// GPU é o estado da sonda segura de GPU.
-type GPU struct {
-	Estado           EstadoGPU `json:"estado"`
-	SondaEmAndamento bool      `json:"sonda_em_andamento"`
-}
+// versaoAtual 2: a inferência local saiu (D-10, V4 §47); entram o modelo
+// Gemini escolhido e saem o modelo local e o estado da GPU. A chave da Gemini
+// API NUNCA entra aqui (fica no pacote credencial, com DPAPI).
+const versaoAtual = 2
 
 // Preferencias é o conjunto completo e fechado de preferências.
 type Preferencias struct {
 	Versao        int    `json:"versao"`
 	PesquisaWeb   bool   `json:"pesquisa_web"`   // V4 §41: desligada na primeira instalação
 	PastaDownload string `json:"pasta_download"` // vazio = perguntar ao salvar
-	ModeloManual  string `json:"modelo_manual"`  // vazio = recomendação automática
-	GPU           GPU    `json:"gpu"`
+	ModeloGemini  string `json:"modelo_gemini"`  // vazio = nenhum escolhido (V4 §47.5)
+}
+
+// preferenciasV1 é o formato anterior (inferência local), lido só para
+// migrar o que continua valendo (pesquisa web e pasta de download).
+type preferenciasV1 struct {
+	Versao        int    `json:"versao"`
+	PesquisaWeb   bool   `json:"pesquisa_web"`
+	PastaDownload string `json:"pasta_download"`
+	ModeloManual  string `json:"modelo_manual"`
+	GPU           struct {
+		Estado           string `json:"estado"`
+		SondaEmAndamento bool   `json:"sonda_em_andamento"`
+	} `json:"gpu"`
 }
 
 // Padrao devolve as preferências da primeira instalação.
 func Padrao() Preferencias {
-	return Preferencias{Versao: versaoAtual, GPU: GPU{Estado: GPUDesconhecida}}
+	return Preferencias{Versao: versaoAtual}
 }
 
-var reModelo = regexp.MustCompile(`^[A-Za-z0-9._-]{0,120}$`)
+var reModelo = regexp.MustCompile(`^(gemini-[a-z0-9.-]{1,100})?$`)
 
 // Validar confere cada campo.
 func (p Preferencias) Validar() error {
@@ -59,13 +58,8 @@ func (p Preferencias) Validar() error {
 	if p.PastaDownload != "" && !filepath.IsAbs(p.PastaDownload) {
 		return errors.New("pasta de download deve ser um caminho absoluto")
 	}
-	if !reModelo.MatchString(p.ModeloManual) {
+	if !reModelo.MatchString(p.ModeloGemini) {
 		return errors.New("identificador de modelo inválido")
-	}
-	switch p.GPU.Estado {
-	case GPUDesconhecida, GPUEstavel, GPUInstavel, GPUDesativada:
-	default:
-		return fmt.Errorf("estado de GPU inválido: %q", p.GPU.Estado)
 	}
 	return nil
 }
@@ -78,9 +72,7 @@ type Loja struct {
 }
 
 // Abrir lê o arquivo. Ausente → padrão. Inválido → padrão (o arquivo ruim é
-// substituído na próxima gravação). Também aplica a sentinela da sonda de GPU:
-// se o app abriu com a sonda "em andamento", a última tentativa derrubou o
-// processo ou a máquina → a GPU é marcada instável (D-09.1).
+// substituído na próxima gravação). Um arquivo da versão 1 é migrado.
 func Abrir(caminho string) (*Loja, error) {
 	l := &Loja{caminho: caminho, atual: Padrao()}
 	b, err := os.ReadFile(caminho)
@@ -95,14 +87,32 @@ func Abrir(caminho string) (*Loja, error) {
 	dec.DisallowUnknownFields()
 	if dec.Decode(&p) == nil && p.Validar() == nil {
 		l.atual = p
+		return l, nil
 	}
-	if l.atual.GPU.SondaEmAndamento {
-		l.atual.GPU = GPU{Estado: GPUInstavel}
-		if err := l.gravar(l.atual); err != nil {
+	if m, ok := migrarV1(b); ok {
+		l.atual = m
+		if err := l.gravar(m); err != nil {
 			return l, err
 		}
 	}
 	return l, nil
+}
+
+// migrarV1 aproveita pesquisa web e pasta de download do formato anterior.
+func migrarV1(b []byte) (Preferencias, bool) {
+	var v1 preferenciasV1
+	dec := json.NewDecoder(bytes.NewReader(b))
+	dec.DisallowUnknownFields()
+	if dec.Decode(&v1) != nil || v1.Versao != 1 {
+		return Preferencias{}, false
+	}
+	p := Padrao()
+	p.PesquisaWeb = v1.PesquisaWeb
+	p.PastaDownload = v1.PastaDownload
+	if p.Validar() != nil {
+		return Preferencias{}, false
+	}
+	return p, true
 }
 
 // Obter devolve uma cópia das preferências atuais.

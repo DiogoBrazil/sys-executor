@@ -186,27 +186,34 @@
 |---|---|---|---|---|---|---|
 | TRV-SEG-001 | §§2.1, 33 | Credenciais solicitadas a cada tarefa, só em memória, nunca persistidas; limpeza como melhor esforço | AP | SEG | session.Credenciais | T13, SEG-CRED-01 |
 | TRV-SEG-002 | §§2.1, 13 | OTP/2FA e reautenticação legítimos; sem contorno | AP | SEG+UI | sei | SEG13-01, SEG13-02 |
-| TRV-SEG-003 | §§1.2, 33 | Sem módulo de logs persistentes; diagnóstico em memória sem dados processuais | AP | SEG | app logger; sidecars sem log | SEG-LOG-01 |
+| TRV-SEG-003 | §§1.2, 33 | Sem módulo de logs persistentes; diagnóstico em memória sem dados processuais | AP | SEG | app logger; cliente HTTP da IA sem log | SEG-LOG-01 |
 | TRV-SEG-004 | §33 | Erros abrangentes, claros e amigáveis; sem segredos; sem simular sucesso | AP | UI | catálogo de erros | ERR-01…15 |
 | TRV-SEG-005 | §§2.2, 33, 41 | Nada sigiloso em buscas públicas | AP | SEG | legal/web.Sanitizador | T20, SEG-WEB-01 |
-| TRV-SEG-006 | §36.2 | Sem envio de autos a provedores externos de IA | AP | SEG | inference (somente loopback) | SEG-NET-01 |
-| TRV-SEG-007 | PT | Sidecar em loopback, porta aleatória, API key, Job Object | PT | SEG | inference.Sidecar | SEG-SID-01 |
+| TRV-SEG-006 | §36.2 |  **REVOGADA (§47, D-10)** — Sem envio de autos a provedores externos de IA | AP | SEG | inference (somente loopback) | SEG-NET-01 |
+| TRV-SEG-007 | PT |  **REVOGADA (§47, D-10)** — Sidecar em loopback, porta aleatória, API key, Job Object | PT | SEG | inference.Sidecar | SEG-SID-01 |
 | TRV-SEG-008 | PT | Cache do WebView2/Edge e dumps mitigados | PT/AV | SEG | platform/win | SEG-CACHE-01, SEG-WER-01 |
+| TRV-SEG-009 | §47.4 | Chave da Gemini API cifrada com DPAPI; nunca na interface, eventos, preferências, erros ou logs; validada sem gerar texto; substituível e removível | AP | SEG | credencial; app.IAService | SEG-KEY-01 |
+| TRV-SEG-010 | §47.3 | Confirmação de envio à Gemini API em cada tarefa, antes da 1ª etapa de IA; sem autorização nada é enviado | AP | SEG+UI | pipeline (envio_ia) | SEG-ENV-01 |
+| TRV-SEG-011 | §47.3 | Pseudonimização de dados pessoais antes do envio e restauração exata (melhor esforço) | AP | SEG | pseudonimo | SEG-PSEUDO-01 |
+| TRV-SEG-012 | §47.3 | Envio só a generativelanguage.googleapis.com; store=false; sem ferramentas, Files API nem cache no provedor | AP | SEG | inference.MotorGemini | SEG-NET-01 |
 
-## 11. Transversal — IA local, modelos, hardware
+## 11. Transversal — IA (Gemini API desde a emenda §47; regras da IA local revogadas)
 
 | ID | Origem V4 | Requisito | Rót. | Tipo | Módulo / política | Testes |
 |---|---|---|---|---|---|---|
-| TRV-IA-001 | §36 | IA local prioritária; GGUF; llama.cpp/llama-server como candidatos; sem acoplar regras ao modelo | AP | PT | inference (porta InferenceEngine) | F0-02 |
+| TRV-IA-001 | §36 |  **REVOGADA (§47, D-10)** — IA local prioritária; GGUF; llama.cpp/llama-server como candidatos; sem acoplar regras ao modelo | AP | PT | inference (porta InferenceEngine) | F0-02 |
 | TRV-IA-002 | §36.5 | Motor determinístico em Go para regras formalizáveis | AP | DET | rules/engine | todos os DET |
-| TRV-IA-003 | §37 | Vários modelos instalados; um gerador por tarefa; embeddings separados | AP | DET | inference.Gerenciador | MOD-01 |
-| TRV-IA-004 | §37 | Detecção de hardware e seleção automática entre modelos testados; seleção manual avançada | AP | DET+UI | inference.Hardware | T14, MOD-02 |
-| TRV-IA-005 | §37 | Primeiro uso: download orientado + importação de GGUF; integridade; listar/remover | AP | DET+UI | inference.Gerenciador | T27, MOD-03/04 |
-| TRV-IA-006 | §38.1 | GPU priorizada; GPU incompatível → CPU se viável | AP/AV | DET | inference | T14 |
-| TRV-IA-007 | §38.2 | Q4_K_M como referência; nenhum modelo definitivo antes de teste | AP/AV | PT | catálogo de modelos | BEN-01 |
-| TRV-IA-008 | §38.3 | Contexto adaptativo pela memória **disponível** | AP/AV | DET | inference.Orcamento | T16, BEN-02 |
-| TRV-IA-009 | §38.4 | Máquina insuficiente → mensagem amigável, alternativa ou impossibilidade; nunca degradar em silêncio | AP | UI | inference | T15 |
+| TRV-IA-003 | §37 |  **REVOGADA (§47, D-10)** — Vários modelos instalados; um gerador por tarefa; embeddings separados | AP | DET | inference.Gerenciador | MOD-01 |
+| TRV-IA-004 | §37 |  **REVOGADA (§47, D-10)** — Detecção de hardware e seleção automática entre modelos testados; seleção manual avançada | AP | DET+UI | inference.Hardware | T14, MOD-02 |
+| TRV-IA-005 | §37 |  **REVOGADA (§47, D-10)** — Primeiro uso: download orientado + importação de GGUF; integridade; listar/remover | AP | DET+UI | inference.Gerenciador | T27, MOD-03/04 |
+| TRV-IA-006 | §38.1 |  **REVOGADA (§47, D-10)** — GPU priorizada; GPU incompatível → CPU se viável | AP/AV | DET | inference | T14 |
+| TRV-IA-007 | §38.2 |  **REVOGADA (§47, D-10)** — Q4_K_M como referência; nenhum modelo definitivo antes de teste | AP/AV | PT | catálogo de modelos | BEN-01 |
+| TRV-IA-008 | §38.3 |  **REVOGADA (§47, D-10)** — Contexto adaptativo pela memória **disponível** | AP/AV | DET | inference.Orcamento | T16, BEN-02 |
+| TRV-IA-009 | §38.4 |  **REVOGADA (§47, D-10)** — Máquina insuficiente → mensagem amigável, alternativa ou impossibilidade; nunca degradar em silêncio | AP | UI | inference | T15 |
 | TRV-IA-010 | §§37, 31.1 | Sem streaming na UI | AP | UI | frontend | T07 |
+| TRV-IA-011 | §§47.1, 47.5 | Gemini API (SDK oficial, chave do usuário); sem modelo fixo: o usuário lista, testa e escolhe; um modelo por tarefa; sem fallback local | AP | PT+UI | inference.MotorGemini; app.IAService | T27, IA-MOD-01 |
+| TRV-IA-012 | §§47.6, 38.4 | Resposta só vale íntegra; cortada, bloqueada ou vazia nunca vira resultado; falhas → parada recuperável | AP | DET | inference.MotorGemini | T15, IA-RESP-01 |
+| TRV-IA-013 | §§47.2, 38 | Nenhum modelo roda no computador; sem requisitos de GPU/RAM para a IA; janela de trabalho mantém o fatiamento | AP | PT | inference | T14, T16 |
 
 ## 12. Transversal — biblioteca jurídica e pesquisa web
 
@@ -247,10 +254,11 @@
 | TRV-EXP-005 | D-03 | DOCX (OOXML) e PDF (Typst) a partir do mesmo DocModel | AP | DET | export | EXP-EQ-01 |
 | TRV-INS-001 | §34 | Instaladores `.exe` e `.msi`; x64 (D-02) | AP | PT | build/windows | INS-01…06 |
 | TRV-INS-002 | §34 | Dependências instaladas automaticamente; intervenção manual só se indispensável | AP | PT | instalador + primeiro uso | INS-02 |
-| TRV-INS-003 | §34 | Instalador leve, sem GGUF | AP | PT | build | INS-03 |
+| TRV-INS-003 | §§34, 47.2 | Instalador leve: sem mecanismo de inferência, pesos de modelo nem chave de API | AP | PT | build | INS-03 |
 | TRV-INS-004 | §34 | Atualização só por novo instalador | AP | PT | — | T26 |
-| TRV-OFF-001 | §35 | Upload + modelos + biblioteca instalados → tudo offline | AP | DET | todos | T18 |
-| TRV-OFF-002 | §35 | Sem consulta externa silenciosa se offline ou com web desligada | AP | SEG | legal/web; inference | T19, SEG-NET-01 |
+| TRV-OFF-001 | §35 |  **REVOGADA (§47, D-10)** — Upload + modelos + biblioteca instalados → tudo offline | AP | DET | todos | T18 |
+| TRV-OFF-002 | §§35, 47.3 | Sem consulta externa silenciosa: pesquisa web desligada por padrão; IA só após a confirmação de envio da tarefa | AP | SEG | legal/web; pipeline (envio_ia) | T19, SEG-NET-01 |
+| TRV-OFF-003 | §47.6 | Sem internet/chave/cota/modelo na etapa de IA: mensagem clara, parada recuperável com estado preservado; funções sem IA offline | AP | UI | pipeline; workflow | T18, OFF-IA-01 |
 
 ## 14. Governança das regras
 

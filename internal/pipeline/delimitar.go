@@ -25,7 +25,7 @@ const (
 	maxExtras           = 1 // imputação/fato não identificado pela IA, informado pelo usuário
 )
 
-var errSemIA = erros.Com(erros.ModeloAusente, errors.New("IA local não configurada"))
+var errSemIA = erros.Com(erros.IAChaveAusente, errors.New("IA não configurada"))
 
 var opcoesNatureza = []workflow.OpcaoVisao{{ID: "LEVE", Rotulo: "Leve"}, {ID: "MEDIA", Rotulo: "Média"}, {ID: "GRAVE", Rotulo: "Grave"}}
 
@@ -51,7 +51,13 @@ func lerData(s string) civil.Data {
 // delimitar é a etapa 4: a IA extrai, o usuário confirma, o Go congela.
 func (p *Pipeline) delimitar(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
 	d := dados(c)
+	if aguardar, err := p.autorizarEnvio(c, d); err != nil {
+		return workflow.Delimitando, err
+	} else if aguardar {
+		return workflow.AguardandoEsclarecimento, nil
+	}
 	if err := p.garantirMotor(ctx, c, d); err != nil {
+		d.IA.motorFalhou(err)
 		return workflow.Delimitando, err
 	}
 	e := d.IA

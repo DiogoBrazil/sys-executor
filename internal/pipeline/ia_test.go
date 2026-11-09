@@ -33,7 +33,7 @@ type motorRoteiro struct {
 	mu      sync.Mutex
 	pedidos map[string]int
 	usuario map[string][]string
-	// morrerNa: nome do schema em que o motor "morre" uma vez (MOD-004).
+	// morrerNa: nome do schema em que a conexão cai uma vez (IA-007).
 	morrerNa string
 }
 
@@ -52,7 +52,7 @@ func (m *motorRoteiro) Gerar(_ context.Context, p inference.Pedido) (inference.R
 	if m.morrerNa != "" && m.morrerNa == p.NomeSchema {
 		m.morrerNa = ""
 		m.mu.Unlock()
-		return inference.Resposta{}, erros.Novo(erros.ModeloTravado)
+		return inference.Resposta{}, erros.Novo(erros.IASemConexao)
 	}
 	m.pedidos[p.NomeSchema]++
 	m.usuario[p.NomeSchema] = append(m.usuario[p.NomeSchema], p.Usuario)
@@ -118,12 +118,14 @@ type fonteFalsa struct {
 	fechado int
 }
 
+func (f *fonteFalsa) Modelo() (string, error) { return "gemini-teste", nil }
+
 func (f *fonteFalsa) Abrir(ctx context.Context, atividade func(string)) (inference.Motor, func(), error) {
 	if f.falhas > 0 {
 		f.falhas--
-		return nil, nil, erros.Novo(erros.ModeloAusente)
+		return nil, nil, erros.Novo(erros.IAChaveAusente)
 	}
-	atividade("Carregando o modelo de IA")
+	atividade("Conectando à Gemini API")
 	f.aberto++
 	return f.m, func() { f.fechado++ }, nil
 }
@@ -174,6 +176,12 @@ func responder(t *testing.T, g *workflow.Gerenciador, id, opcao string, vals map
 	return v
 }
 
+// autorizarEnvio responde à confirmação de envio à Gemini API (V4 §47.3).
+func autorizarEnvio(t *testing.T, g *workflow.Gerenciador) {
+	t.Helper()
+	responder(t, g, PerguntaEnvioIA, opcaoAutorizar, nil)
+}
+
 func perguntaAtual(t *testing.T, g *workflow.Gerenciador) *workflow.PerguntaVisao {
 	t.Helper()
 	return esperar(t, g, func(v *workflow.Visao) bool {
@@ -201,10 +209,11 @@ func TestFluxoPADSComIA(t *testing.T) {
 	_, _ = g.EscolherTipo(workflow.TipoPADS)
 	_, _ = g.EscolherEntrada(workflow.EntradaUpload)
 	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
+	autorizarEnvio(t, g)
 
-	// Sem modelo (MOD-001): pára sem perder a tarefa; "Tentar novamente".
+	// Sem chave (IA-001): pára sem perder a tarefa; "Tentar novamente".
 	v := esperar(t, g, func(v *workflow.Visao) bool { return v.Parada })
-	if v.Estado != workflow.Delimitando || !v.Retomavel || v.Erro.Codigo != "MOD-001" {
+	if v.Estado != workflow.Delimitando || !v.Retomavel || v.Erro.Codigo != "IA-001" {
 		t.Fatalf("%+v", v)
 	}
 	_, _ = g.Retomar()
@@ -262,7 +271,7 @@ func TestFluxoPADSComIA(t *testing.T) {
 	responder(t, g, perguntaServicos, "confirmar", map[string]string{"relevantes": "nao"})
 
 	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.ConsultandoFontes })
-	if v.Erro == nil || v.Erro.Codigo != "TAR-004" || len(v.Respostas) != 8 {
+	if v.Erro == nil || v.Erro.Codigo != "TAR-004" || len(v.Respostas) != 9 || v.Respostas[0].PerguntaID != PerguntaEnvioIA {
 		t.Fatalf("parada na Fase 5: %+v %+v", v.Erro, v.Respostas)
 	}
 	d := g.Dados().(*Dados)
@@ -382,6 +391,8 @@ func (m *motorSR) Gerar(_ context.Context, p inference.Pedido) (inference.Respos
 
 type fonteSR struct{ m *motorSR }
 
+func (f fonteSR) Modelo() (string, error) { return "gemini-teste", nil }
+
 func (f fonteSR) Abrir(context.Context, func(string)) (inference.Motor, func(), error) {
 	return f.m, func() {}, nil
 }
@@ -413,6 +424,7 @@ func TestFluxoSRComIA(t *testing.T) {
 	_, _ = g.EscolherTipo(workflow.TipoSR)
 	_, _ = g.EscolherEntrada(workflow.EntradaUpload)
 	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
+	autorizarEnvio(t, g)
 
 	pg := perguntaAtual(t, g)
 	if pg.ID != perguntaObjeto || campo(pg, "nome_S-1").Valor != "CB PM JOÃO SOUZA" {
@@ -448,9 +460,10 @@ func TestFluxoSRComIA(t *testing.T) {
 	}
 }
 
-// Motor que morre no meio da análise: parada recuperável e, ao tentar de
-// novo, um servidor novo é carregado (o morto é descartado).
-// Cobre: T15
+// Conexão perdida no meio da análise: parada recuperável e, ao tentar de
+// novo, um cliente novo é aberto (o anterior é descartado).
+// Cobre: T15, T18
+// Regra: TRV-OFF-003
 func TestMotorMortoRecarregaAoRetomar(t *testing.T) {
 	m := &motorRoteiro{pedidos: map[string]int{}, usuario: map[string][]string{}, morrerNa: "extracao"}
 	fonte := &fonteFalsa{m: m}
@@ -459,16 +472,61 @@ func TestMotorMortoRecarregaAoRetomar(t *testing.T) {
 	_, _ = g.EscolherTipo(workflow.TipoPADS)
 	_, _ = g.EscolherEntrada(workflow.EntradaUpload)
 	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
+	autorizarEnvio(t, g)
 	responder(t, g, perguntaDelimitacao, "confirmar", map[string]string{"acusado": "FULANO DE TAL", "incluir_IMP-1": "sim",
 		"conduta_IMP-1": "x", "dispositivo_IMP-1": "art. 16", "natureza_IMP-1": "MEDIA", "data_IMP-1": "07/11/2026",
 		"incluir_IMP-2": "nao", "incluir_IMP-X1": "nao"})
 	v := esperar(t, g, func(v *workflow.Visao) bool { return v.Parada })
-	if v.Estado != workflow.Analisando || !v.Retomavel || v.Erro.Codigo != "MOD-004" || fonte.fechado != 1 {
+	if v.Estado != workflow.Analisando || !v.Retomavel || v.Erro.Codigo != "IA-007" || fonte.fechado != 1 {
 		t.Fatalf("%+v %+v fechado=%d", v.Estado, v.Erro, fonte.fechado)
 	}
 	_, _ = g.Retomar()
 	perguntaAtual(t, g)
 	if fonte.aberto != 2 {
 		t.Fatalf("servidor deveria ser recarregado: %d", fonte.aberto)
+	}
+}
+
+// Confirmação de envio (V4 §47.3): recusar não envia nada e para de forma
+// recuperável; "Tentar novamente" pergunta de novo; autorizar oculta os
+// dados pessoais detectados e os informados pelo usuário.
+// Cobre: SEG-ENV-01
+// Regra: TRV-SEG-010, TRV-SEG-011
+func TestConfirmacaoDeEnvio(t *testing.T) {
+	m := &motorRoteiro{pedidos: map[string]int{}, usuario: map[string][]string{}}
+	fonte := &fonteFalsa{m: m}
+	g := gerenciadorIA(t, fonte)
+	_, _ = g.Iniciar()
+	_, _ = g.EscolherTipo(workflow.TipoPADS)
+	_, _ = g.EscolherEntrada(workflow.EntradaUpload)
+	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
+
+	p := perguntaAtual(t, g)
+	if p == nil || p.ID != PerguntaEnvioIA || !strings.Contains(p.Contexto, "gemini-teste") || !strings.Contains(p.Contexto, "pessoa") {
+		t.Fatalf("confirmação: %+v", p)
+	}
+	responder(t, g, PerguntaEnvioIA, opcaoNaoEnviar, nil)
+	v := esperar(t, g, func(v *workflow.Visao) bool { return v.Parada })
+	if v.Estado != workflow.Delimitando || !v.Retomavel || v.Erro.Codigo != "IA-011" {
+		t.Fatalf("recusa: %+v %+v", v.Estado, v.Erro)
+	}
+	if fonte.aberto != 0 || len(m.pedidos) != 0 {
+		t.Fatalf("nada pode ser enviado sem autorização: aberto=%d pedidos=%v", fonte.aberto, m.pedidos)
+	}
+	_, _ = g.Retomar()
+	responder(t, g, PerguntaEnvioIA, opcaoAutorizar, map[string]string{campoOcultar: "quartel\n"})
+	if p := perguntaAtual(t, g); p.ID != perguntaDelimitacao {
+		t.Fatalf("após autorizar: %+v", p)
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, us := range m.usuario {
+		for _, u := range us {
+			for _, s := range []string{"FULANO DE TAL", "CICLANO", "quartel"} {
+				if strings.Contains(u, s) {
+					t.Fatalf("%q foi enviado à IA", s)
+				}
+			}
+		}
 	}
 }

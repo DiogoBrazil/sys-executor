@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -17,25 +18,25 @@ func TestPadraoPrimeiraInstalacao(t *testing.T) {
 	if p.PesquisaWeb {
 		t.Fatal("T19: pesquisa web deve vir desligada na primeira instalação")
 	}
-	if p.GPU.Estado != GPUDesconhecida || p.GPU.SondaEmAndamento {
-		t.Fatalf("GPU deve começar desconhecida (CPU por padrão): %+v", p.GPU)
+	if p.ModeloGemini != "" {
+		t.Fatalf("nenhum modelo escolhido na primeira instalação: %q", p.ModeloGemini)
 	}
 }
 
 func TestAtualizarPersisteEValida(t *testing.T) {
 	arq := filepath.Join(t.TempDir(), "sub", "p.json")
 	l, _ := Abrir(arq)
-	if _, err := l.Atualizar(func(p *Preferencias) { p.PesquisaWeb = true; p.ModeloManual = "qwen3.5-4b-q4_k_m" }); err != nil {
+	if _, err := l.Atualizar(func(p *Preferencias) { p.PesquisaWeb = true; p.ModeloGemini = "gemini-3.6-flash" }); err != nil {
 		t.Fatal(err)
 	}
 	l2, _ := Abrir(arq)
-	if got := l2.Obter(); !got.PesquisaWeb || got.ModeloManual != "qwen3.5-4b-q4_k_m" {
+	if got := l2.Obter(); !got.PesquisaWeb || got.ModeloGemini != "gemini-3.6-flash" {
 		t.Fatalf("não persistiu: %+v", got)
 	}
 	for _, f := range []func(*Preferencias){
 		func(p *Preferencias) { p.PastaDownload = "relativa" },
-		func(p *Preferencias) { p.ModeloManual = "../../etc" },
-		func(p *Preferencias) { p.GPU.Estado = "turbo" },
+		func(p *Preferencias) { p.ModeloGemini = "../../etc" },
+		func(p *Preferencias) { p.ModeloGemini = "qwen3.5-4b" },
 	} {
 		antes := l.Obter()
 		if _, err := l.Atualizar(f); err == nil {
@@ -54,7 +55,9 @@ func TestAtualizarPersisteEValida(t *testing.T) {
 func TestChaveDesconhecidaOuCorrompidoViraPadrao(t *testing.T) {
 	dir := t.TempDir()
 	for nome, conteudo := range map[string]string{
-		"extra.json":    `{"versao":1,"pesquisa_web":true,"processo":"0021.000000/2026-00","gpu":{"estado":"estavel"}}`,
+		"extra.json":    `{"versao":2,"pesquisa_web":true,"processo":"0021.000000/2026-00"}`,
+		"extra-v1.json": `{"versao":1,"pesquisa_web":true,"processo":"0021.000000/2026-00","gpu":{"estado":"estavel"}}`,
+		"chave.json":    `{"versao":2,"modelo_gemini":"gemini-x","chave_api":"AIza..."}`,
 		"quebrado.json": `{"versao":1,`,
 		"versao.json":   `{"versao":99}`,
 	} {
@@ -72,7 +75,7 @@ func TestChaveDesconhecidaOuCorrompidoViraPadrao(t *testing.T) {
 
 // Nenhum campo livre além dos previstos (proteção contra uso indevido futuro).
 func TestCamposFechados(t *testing.T) {
-	permitidos := map[string]bool{"Versao": true, "PesquisaWeb": true, "PastaDownload": true, "ModeloManual": true, "GPU": true}
+	permitidos := map[string]bool{"Versao": true, "PesquisaWeb": true, "PastaDownload": true, "ModeloGemini": true}
 	tp := reflect.TypeOf(Preferencias{})
 	for i := 0; i < tp.NumField(); i++ {
 		if !permitidos[tp.Field(i).Name] {
@@ -81,23 +84,25 @@ func TestCamposFechados(t *testing.T) {
 	}
 }
 
-// D-09.1: sentinela da sonda de GPU presente na abertura → GPU instável.
-func TestSentinelaGPUMarcaInstavel(t *testing.T) {
+// D-10: o formato da versão 1 (inferência local) é migrado, preservando
+// pesquisa web e pasta de download e descartando modelo local e GPU.
+func TestMigraVersao1(t *testing.T) {
 	arq := filepath.Join(t.TempDir(), "p.json")
-	l, _ := Abrir(arq)
-	if _, err := l.Atualizar(func(p *Preferencias) { p.GPU.SondaEmAndamento = true }); err != nil {
+	pasta := filepath.Join(t.TempDir(), "downloads")
+	v1 := `{"versao":1,"pesquisa_web":true,"pasta_download":` + strconv.Quote(pasta) +
+		`,"modelo_manual":"qwen3.5-4b-q4km","gpu":{"estado":"instavel","sonda_em_andamento":false}}`
+	if err := os.WriteFile(arq, []byte(v1), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	// "queda" durante a sonda: o app reabre sem ter limpado a sentinela.
-	l2, err := Abrir(arq)
+	l, err := Abrir(arq)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if g := l2.Obter().GPU; g.Estado != GPUInstavel || g.SondaEmAndamento {
-		t.Fatalf("esperado instável sem sentinela, veio %+v", g)
+	if got := l.Obter(); got.Versao != 2 || !got.PesquisaWeb || got.PastaDownload != pasta || got.ModeloGemini != "" {
+		t.Fatalf("migração: %+v", got)
 	}
 	b, _ := os.ReadFile(arq)
-	if !strings.Contains(string(b), `"instavel"`) {
-		t.Fatal("estado instável deve ser persistido")
+	if strings.Contains(string(b), "gpu") || strings.Contains(string(b), "modelo_manual") {
+		t.Fatalf("campos da inferência local devem sumir do arquivo: %s", b)
 	}
 }

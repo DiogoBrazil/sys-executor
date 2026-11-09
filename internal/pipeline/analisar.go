@@ -30,6 +30,9 @@ var rotuloNatureza = map[string]string{"LEVE": "leve", "MEDIA": "média", "GRAVE
 func (p *Pipeline) analisar(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
 	d := dados(c)
 	if err := p.garantirMotor(ctx, c, d); err != nil {
+		if d.IA != nil {
+			d.IA.motorFalhou(err)
+		}
 		return workflow.Analisando, err
 	}
 	e := d.IA

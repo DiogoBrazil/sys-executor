@@ -11,13 +11,18 @@ import (
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
 	"github.com/DiogoBrazil/sys-executor/internal/inference"
 	"github.com/DiogoBrazil/sys-executor/internal/policy"
+	"github.com/DiogoBrazil/sys-executor/internal/pseudonimo"
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
 )
 
-// FonteMotor prepara o motor de IA da tarefa (escolhe o modelo e sobe o
-// sidecar). Erros do catálogo MOD-00x são recuperáveis: a tarefa pára com o
-// aviso e o usuário tenta de novo depois de instalar ou trocar o modelo.
+// FonteMotor prepara o motor de IA da tarefa (Gemini API com a chave e o
+// modelo configurados pelo usuário; V4 §47). Erros IA-0xx são recuperáveis:
+// a tarefa pára com o aviso e o usuário tenta de novo depois de corrigir a
+// configuração ou a conexão.
 type FonteMotor interface {
+	// Modelo confere a configuração sem rede (chave cadastrada e modelo
+	// escolhido) e devolve o modelo, para a confirmação de envio.
+	Modelo() (string, error)
 	Abrir(ctx context.Context, atividade func(string)) (inference.Motor, func(), error)
 }
 
@@ -48,6 +53,11 @@ type EstadoIA struct {
 	autorizacoesFeitas map[string]string // chave do achado → ID da autorização
 	midiasAplicadas    bool              // respostas sobre mídias já convertidas em evidência/ressalva
 	Pendencias         []string
+
+	// Envio à IA (V4 §47.3): autorização da tarefa e mapa da pseudonimização
+	// (só memória; descartado com a tarefa).
+	envioAutorizado bool
+	mapa            *pseudonimo.Mapa
 }
 
 func novoEstadoIA() *EstadoIA {
@@ -135,11 +145,12 @@ func semPendenciasDeMidia(ps []string) []string {
 	return out
 }
 
-// motorFalhou descarta o servidor depois de MOD-003/004 (morte, travamento,
-// memória): "Tentar novamente" sobe outro.
+// motorFalhou descarta o cliente depois de falha da Gemini API (chave,
+// permissão, modelo, rede, cota…): "Tentar novamente" relê a chave e o
+// modelo configurados e abre outro.
 func (e *EstadoIA) motorFalhou(err error) {
 	var x *erros.Erro
-	if errors.As(err, &x) && (x.Codigo == erros.ModeloTravado || x.Codigo == erros.ModeloSemMemoria) {
+	if errors.As(err, &x) && strings.HasPrefix(string(x.Codigo), "IA-") {
 		e.liberar()
 	}
 }
@@ -214,11 +225,15 @@ func (p *Pipeline) garantirMotor(ctx context.Context, c *workflow.Contexto, d *D
 		}
 		d.IA.bundle = b
 	}
+	if !d.IA.envioAutorizado || d.IA.mapa == nil {
+		// Defesa em profundidade: nunca abrir o motor sem a autorização da tarefa.
+		return erros.Novo(erros.IAEnvioNaoAutorizado)
+	}
 	m, fechar, err := p.IA.Abrir(ctx, c.Atividade)
 	if err != nil {
 		return err
 	}
-	d.IA.motor, d.IA.fecharMotor = m, fechar
+	d.IA.motor, d.IA.fecharMotor = pseudonimo.Envolver(m, d.IA.mapa), fechar
 	return nil
 }
 

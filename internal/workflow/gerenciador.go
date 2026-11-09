@@ -76,6 +76,17 @@ func (c *Contexto) RespostaCompleta(perguntaID string) (Resposta, bool) {
 	return r, ok
 }
 
+// Esquecer descarta a resposta dada a uma pergunta, para que a etapa a faça
+// de novo (ex.: o usuário recusou o envio à IA e depois usa "Tentar
+// novamente"; V4 §47.3).
+func (c *Contexto) Esquecer(perguntaID string) {
+	c.g.mu.Lock()
+	defer c.g.mu.Unlock()
+	delete(c.t.respostas, perguntaID)
+	delete(c.t.anteriores, perguntaID)
+	c.t.respondidas = semResposta(c.t.respondidas, perguntaID)
+}
+
 // Anterior devolve a resposta descartada por uma revisão (para preencher a
 // pergunta de novo com os valores que o usuário já tinha dado).
 func (c *Contexto) Anterior(perguntaID string) (Resposta, bool) {
@@ -540,8 +551,8 @@ func (g *Gerenciador) Revisar(perguntaID string) (*Visao, error) {
 	return g.emitirUnlock()
 }
 
-// Retomar repete a etapa parada por erro recuperável (ex.: modelo de IA
-// instalado depois do aviso MOD-001).
+// Retomar repete a etapa parada por erro recuperável (ex.: chave da Gemini
+// API cadastrada depois do aviso IA-001, conexão restabelecida).
 func (g *Gerenciador) Retomar() (*Visao, error) {
 	g.mu.Lock()
 	t := g.t

@@ -103,7 +103,7 @@ func (x *Executor) Chamar(ctx context.Context, ch Chamada, decodificar func([]by
 		x.Chamadas++
 		res, err := x.Motor.Gerar(ctx, ped)
 		if err != nil {
-			return err // falha do motor (MOD-00x) ou cancelamento
+			return err // falha do motor (IA-0xx) ou cancelamento
 		}
 		switch {
 		case res.Truncada:

@@ -18,7 +18,7 @@ import (
 
 	"github.com/DiogoBrazil/sys-executor/frontend"
 	"github.com/DiogoBrazil/sys-executor/internal/app"
-	"github.com/DiogoBrazil/sys-executor/internal/inference"
+	"github.com/DiogoBrazil/sys-executor/internal/credencial"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/ocr"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/pdf"
 	"github.com/DiogoBrazil/sys-executor/internal/pastas"
@@ -31,7 +31,7 @@ import (
 
 func init() {
 	application.RegisterEvent[*workflow.Visao](app.EventoVisao)
-	application.RegisterEvent[*app.VisaoModelos](app.EventoModelos)
+	application.RegisterEvent[*app.VisaoIA](app.EventoIA)
 }
 
 // faxina garante um único lançamento da limpeza do WebView2 por execução.
@@ -66,17 +66,11 @@ func main() {
 		Extrator:     extrator,
 		LocalizarOCR: func() (ocr.Motor, error) { return ocr.Localizar(componentes) },
 	}
-	// IA local (Fase 4): llama-server em <pasta do executável>\llama\cpu (e
-	// \llama\vulkan, opcional); modelos em %LOCALAPPDATA%\sys-executor\modelos.
-	modelos, err := inference.NovoGerenciadorModelos(p.Modelos())
-	if err != nil {
-		os.Exit(1)
-	}
-	motor := &app.MotorLocal{Modelos: modelos, Loja: loja, Exe: app.Executaveis{
-		CPU: inference.LocalizarServidor,
-		GPU: func() (string, error) { return localizarVulkan(componentesBase()) },
-	}}
-	pipe.IA = motor
+	// IA (V4 §47): Gemini API com a chave do usuário, cifrada com DPAPI em
+	// %LOCALAPPDATA%\sys-executor\credenciais, e o modelo das preferências.
+	// Sem inferência local e sem fallback local (D-10).
+	fonteIA := &app.FonteGemini{Credenciais: credencial.NovaLojaArquivo(p.Credenciais()), Loja: loja}
+	pipe.IA = fonteIA
 
 	// SEI/RO pelo Microsoft Edge instalado (Fase 2). Sem Edge, só o envio do PDF.
 	navegador, errNav := sei.LocalizarNavegador()
@@ -114,20 +108,14 @@ func main() {
 	}
 
 	fontes := app.NovaFontesService(ger)
-	servModelos := &app.ModelosService{Motor: motor,
-		Emitir: func(v *app.VisaoModelos) {
+	servIA := &app.IAService{Fonte: fonteIA,
+		Emitir: func(v *app.VisaoIA) {
 			if wapp != nil {
-				wapp.Event.Emit(app.EventoModelos, v)
+				wapp.Event.Emit(app.EventoIA, v)
 			}
 		},
-		Seletor: func() (string, error) {
-			d := wapp.Dialog.OpenFile().SetTitle("Selecione o arquivo do modelo (GGUF)").CanChooseFiles(true).
-				AddFilter("Modelo GGUF (*.gguf)", "*.gguf")
-			if janela != nil {
-				d = d.AttachToWindow(janela)
-			}
-			return d.PromptForSingleSelection()
-		}}
+		AbrirURL: func(u string) error { return wapp.Browser.OpenURL(u) },
+	}
 
 	dist, err := fs.Sub(frontend.Dist, "dist")
 	if err != nil {
@@ -144,7 +132,7 @@ func main() {
 			application.NewService(app.NovaTarefaService(ger, seletor)),
 			application.NewService(app.NovaPreferenciasService(loja)),
 			application.NewService(fontes),
-			application.NewService(servModelos),
+			application.NewService(servIA),
 		},
 		Assets: application.AssetOptions{
 			Handler:    application.AssetFileServerFS(dist),
@@ -188,27 +176,6 @@ func main() {
 	if err != nil {
 		os.Exit(1)
 	}
-}
-
-func componentesBase() string {
-	exe, err := os.Executable()
-	if err != nil {
-		return ""
-	}
-	return filepath.Dir(exe)
-}
-
-// localizarVulkan: SYSEXEC_LLAMA_VULKAN ou <pasta>\llama\vulkan\llama-server.exe.
-// Só é usado depois da sonda segura de GPU (D-08, D-09.1).
-func localizarVulkan(base string) (string, error) {
-	if v := os.Getenv("SYSEXEC_LLAMA_VULKAN"); v != "" {
-		return v, nil
-	}
-	c := filepath.Join(base, "llama", "vulkan", "llama-server.exe")
-	if _, err := os.Stat(c); err != nil {
-		return "", inference.ErrSemGPU
-	}
-	return c, nil
 }
 
 // configSEI monta a configuração do cliente SEI. SYSEXEC_SEI_URL permite
