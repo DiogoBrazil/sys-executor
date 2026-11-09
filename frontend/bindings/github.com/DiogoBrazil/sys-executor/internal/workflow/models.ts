@@ -6,6 +6,118 @@
 import { Create as $Create } from "@wailsio/runtime";
 
 /**
+ * Campo de formulário.
+ */
+export class Campo {
+    "id": string;
+    "rotulo": string;
+    "tipo": TipoCampo;
+    "opcoes": OpcaoVisao[];
+    "obrigatorio": boolean;
+
+    /**
+     * valor inicial (proposta da IA ou resposta anterior)
+     */
+    "valor": string;
+    "ajuda": string;
+    "grupo": string;
+    "min": number;
+    "max": number;
+    "fontes": Fonte[];
+    "mostrarSe": Condicao | null;
+
+    /** Creates a new Campo instance. */
+    constructor($$source: Partial<Campo> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("rotulo" in $$source)) {
+            this["rotulo"] = "";
+        }
+        if (!("tipo" in $$source)) {
+            this["tipo"] = TipoCampo.$zero;
+        }
+        if (!("opcoes" in $$source)) {
+            this["opcoes"] = [];
+        }
+        if (!("obrigatorio" in $$source)) {
+            this["obrigatorio"] = false;
+        }
+        if (!("valor" in $$source)) {
+            this["valor"] = "";
+        }
+        if (!("ajuda" in $$source)) {
+            this["ajuda"] = "";
+        }
+        if (!("grupo" in $$source)) {
+            this["grupo"] = "";
+        }
+        if (!("min" in $$source)) {
+            this["min"] = 0;
+        }
+        if (!("max" in $$source)) {
+            this["max"] = 0;
+        }
+        if (!("fontes" in $$source)) {
+            this["fontes"] = [];
+        }
+        if (!("mostrarSe" in $$source)) {
+            this["mostrarSe"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Campo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Campo {
+        const $$createField3_0 = $$createType1;
+        const $$createField10_0 = $$createType3;
+        const $$createField11_0 = $$createType5;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("opcoes" in $$parsedSource) {
+            $$parsedSource["opcoes"] = $$createField3_0($$parsedSource["opcoes"]);
+        }
+        if ("fontes" in $$parsedSource) {
+            $$parsedSource["fontes"] = $$createField10_0($$parsedSource["fontes"]);
+        }
+        if ("mostrarSe" in $$parsedSource) {
+            $$parsedSource["mostrarSe"] = $$createField11_0($$parsedSource["mostrarSe"]);
+        }
+        return new Campo($$parsedSource as Partial<Campo>);
+    }
+}
+
+/**
+ * Condicao de visibilidade: o campo só vale se outro campo tiver o valor.
+ */
+export class Condicao {
+    "campo": string;
+    "valor": string;
+
+    /** Creates a new Condicao instance. */
+    constructor($$source: Partial<Condicao> = {}) {
+        if (!("campo" in $$source)) {
+            this["campo"] = "";
+        }
+        if (!("valor" in $$source)) {
+            this["valor"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Condicao instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Condicao {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Condicao($$parsedSource as Partial<Condicao>);
+    }
+}
+
+/**
  * Entrada é a forma de obtenção dos autos (V4 §30.1, segunda escolha).
  */
 export enum Entrada {
@@ -111,6 +223,143 @@ export enum Estado {
 };
 
 /**
+ * Fonte aponta um trecho dos autos (abre o visualizador com realce).
+ */
+export class Fonte {
+    "rotulo": string;
+    "pagina": number;
+    "inicio": number;
+    "fim": number;
+    "trecho": string;
+
+    /** Creates a new Fonte instance. */
+    constructor($$source: Partial<Fonte> = {}) {
+        if (!("rotulo" in $$source)) {
+            this["rotulo"] = "";
+        }
+        if (!("pagina" in $$source)) {
+            this["pagina"] = 0;
+        }
+        if (!("inicio" in $$source)) {
+            this["inicio"] = 0;
+        }
+        if (!("fim" in $$source)) {
+            this["fim"] = 0;
+        }
+        if (!("trecho" in $$source)) {
+            this["trecho"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Fonte instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Fonte {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Fonte($$parsedSource as Partial<Fonte>);
+    }
+}
+
+/**
+ * GrupoCampos agrupa campos na tela (ex.: uma imputação), com o contexto e
+ * as fontes que o usuário precisa ver para decidir.
+ */
+export class GrupoCampos {
+    "id": string;
+    "titulo": string;
+    "descricao": string[];
+    "fontes": Fonte[];
+    "alertas": string[];
+
+    /** Creates a new GrupoCampos instance. */
+    constructor($$source: Partial<GrupoCampos> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("titulo" in $$source)) {
+            this["titulo"] = "";
+        }
+        if (!("descricao" in $$source)) {
+            this["descricao"] = [];
+        }
+        if (!("fontes" in $$source)) {
+            this["fontes"] = [];
+        }
+        if (!("alertas" in $$source)) {
+            this["alertas"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GrupoCampos instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GrupoCampos {
+        const $$createField2_0 = $$createType6;
+        const $$createField3_0 = $$createType3;
+        const $$createField4_0 = $$createType6;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("descricao" in $$parsedSource) {
+            $$parsedSource["descricao"] = $$createField2_0($$parsedSource["descricao"]);
+        }
+        if ("fontes" in $$parsedSource) {
+            $$parsedSource["fontes"] = $$createField3_0($$parsedSource["fontes"]);
+        }
+        if ("alertas" in $$parsedSource) {
+            $$parsedSource["alertas"] = $$createField4_0($$parsedSource["alertas"]);
+        }
+        return new GrupoCampos($$parsedSource as Partial<GrupoCampos>);
+    }
+}
+
+/**
+ * ItemPainel é uma linha do painel.
+ */
+export class ItemPainel {
+    "titulo": string;
+    "situacao": string;
+    "linhas": string[];
+    "fontes": Fonte[];
+
+    /** Creates a new ItemPainel instance. */
+    constructor($$source: Partial<ItemPainel> = {}) {
+        if (!("titulo" in $$source)) {
+            this["titulo"] = "";
+        }
+        if (!("situacao" in $$source)) {
+            this["situacao"] = "";
+        }
+        if (!("linhas" in $$source)) {
+            this["linhas"] = [];
+        }
+        if (!("fontes" in $$source)) {
+            this["fontes"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ItemPainel instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ItemPainel {
+        const $$createField2_0 = $$createType6;
+        const $$createField3_0 = $$createType3;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("linhas" in $$parsedSource) {
+            $$parsedSource["linhas"] = $$createField2_0($$parsedSource["linhas"]);
+        }
+        if ("fontes" in $$parsedSource) {
+            $$parsedSource["fontes"] = $$createField3_0($$parsedSource["fontes"]);
+        }
+        return new ItemPainel($$parsedSource as Partial<ItemPainel>);
+    }
+}
+
+/**
  * Marco é uma etapa da linha do tempo exibida no processamento.
  */
 export class Marco {
@@ -188,6 +437,7 @@ export class MidiaResumo {
 export class OpcaoVisao {
     "id": string;
     "rotulo": string;
+    "validar": boolean;
 
     /** Creates a new OpcaoVisao instance. */
     constructor($$source: Partial<OpcaoVisao> = {}) {
@@ -196,6 +446,9 @@ export class OpcaoVisao {
         }
         if (!("rotulo" in $$source)) {
             this["rotulo"] = "";
+        }
+        if (!("validar" in $$source)) {
+            this["validar"] = false;
         }
 
         Object.assign(this, $$source);
@@ -247,6 +500,35 @@ export class PaginaResumo {
     static createFrom($$source: any = {}): PaginaResumo {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new PaginaResumo($$parsedSource as Partial<PaginaResumo>);
+    }
+}
+
+/**
+ * PainelAnalise é a visão genérica do que a análise produziu (delimitação,
+ * pontos de prova, propostas), para o usuário acompanhar e conferir.
+ */
+export class PainelAnalise {
+    "secoes": SecaoPainel[];
+
+    /** Creates a new PainelAnalise instance. */
+    constructor($$source: Partial<PainelAnalise> = {}) {
+        if (!("secoes" in $$source)) {
+            this["secoes"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new PainelAnalise instance from a string or object.
+     */
+    static createFrom($$source: any = {}): PainelAnalise {
+        const $$createField0_0 = $$createType8;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("secoes" in $$parsedSource) {
+            $$parsedSource["secoes"] = $$createField0_0($$parsedSource["secoes"]);
+        }
+        return new PainelAnalise($$parsedSource as Partial<PainelAnalise>);
     }
 }
 
@@ -341,7 +623,7 @@ export class PedidoVisao {
      * Creates a new PedidoVisao instance from a string or object.
      */
     static createFrom($$source: any = {}): PedidoVisao {
-        const $$createField2_0 = $$createType1;
+        const $$createField2_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("alerta" in $$parsedSource) {
             $$parsedSource["alerta"] = $$createField2_0($$parsedSource["alerta"]);
@@ -358,6 +640,8 @@ export class PerguntaVisao {
     "titulo": string;
     "contexto": string;
     "opcoes": OpcaoVisao[];
+    "campos": Campo[];
+    "grupos": GrupoCampos[];
 
     /** Creates a new PerguntaVisao instance. */
     constructor($$source: Partial<PerguntaVisao> = {}) {
@@ -373,6 +657,12 @@ export class PerguntaVisao {
         if (!("opcoes" in $$source)) {
             this["opcoes"] = [];
         }
+        if (!("campos" in $$source)) {
+            this["campos"] = [];
+        }
+        if (!("grupos" in $$source)) {
+            this["grupos"] = [];
+        }
 
         Object.assign(this, $$source);
     }
@@ -381,10 +671,18 @@ export class PerguntaVisao {
      * Creates a new PerguntaVisao instance from a string or object.
      */
     static createFrom($$source: any = {}): PerguntaVisao {
-        const $$createField3_0 = $$createType3;
+        const $$createField3_0 = $$createType1;
+        const $$createField4_0 = $$createType12;
+        const $$createField5_0 = $$createType14;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("opcoes" in $$parsedSource) {
             $$parsedSource["opcoes"] = $$createField3_0($$parsedSource["opcoes"]);
+        }
+        if ("campos" in $$parsedSource) {
+            $$parsedSource["campos"] = $$createField4_0($$parsedSource["campos"]);
+        }
+        if ("grupos" in $$parsedSource) {
+            $$parsedSource["grupos"] = $$createField5_0($$parsedSource["grupos"]);
         }
         return new PerguntaVisao($$parsedSource as Partial<PerguntaVisao>);
     }
@@ -419,6 +717,42 @@ export class Progresso {
     static createFrom($$source: any = {}): Progresso {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new Progresso($$parsedSource as Partial<Progresso>);
+    }
+}
+
+/**
+ * RespostaVisao é uma resposta já dada, listada para revisão.
+ */
+export class RespostaVisao {
+    "perguntaId": string;
+    "titulo": string;
+    "resumo": string;
+    "revisavel": boolean;
+
+    /** Creates a new RespostaVisao instance. */
+    constructor($$source: Partial<RespostaVisao> = {}) {
+        if (!("perguntaId" in $$source)) {
+            this["perguntaId"] = "";
+        }
+        if (!("titulo" in $$source)) {
+            this["titulo"] = "";
+        }
+        if (!("resumo" in $$source)) {
+            this["resumo"] = "";
+        }
+        if (!("revisavel" in $$source)) {
+            this["revisavel"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RespostaVisao instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RespostaVisao {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new RespostaVisao($$parsedSource as Partial<RespostaVisao>);
     }
 }
 
@@ -462,9 +796,9 @@ export class ResumoAutos {
      * Creates a new ResumoAutos instance from a string or object.
      */
     static createFrom($$source: any = {}): ResumoAutos {
-        const $$createField1_0 = $$createType5;
-        const $$createField2_0 = $$createType7;
-        const $$createField3_0 = $$createType9;
+        const $$createField1_0 = $$createType16;
+        const $$createField2_0 = $$createType18;
+        const $$createField3_0 = $$createType20;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("paginas" in $$parsedSource) {
             $$parsedSource["paginas"] = $$createField1_0($$parsedSource["paginas"]);
@@ -476,6 +810,38 @@ export class ResumoAutos {
             $$parsedSource["midias"] = $$createField3_0($$parsedSource["midias"]);
         }
         return new ResumoAutos($$parsedSource as Partial<ResumoAutos>);
+    }
+}
+
+/**
+ * SecaoPainel agrupa itens.
+ */
+export class SecaoPainel {
+    "titulo": string;
+    "itens": ItemPainel[];
+
+    /** Creates a new SecaoPainel instance. */
+    constructor($$source: Partial<SecaoPainel> = {}) {
+        if (!("titulo" in $$source)) {
+            this["titulo"] = "";
+        }
+        if (!("itens" in $$source)) {
+            this["itens"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SecaoPainel instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SecaoPainel {
+        const $$createField1_0 = $$createType22;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("itens" in $$parsedSource) {
+            $$parsedSource["itens"] = $$createField1_0($$parsedSource["itens"]);
+        }
+        return new SecaoPainel($$parsedSource as Partial<SecaoPainel>);
     }
 }
 
@@ -508,6 +874,27 @@ export enum Tipo {
 };
 
 /**
+ * TipoCampo de formulário.
+ */
+export enum TipoCampo {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    CampoTexto = "TEXTO",
+    CampoTextoLongo = "TEXTO_LONGO",
+    CampoNumero = "NUMERO",
+
+    /**
+     * DD/MM/AAAA
+     */
+    CampoData = "DATA",
+    CampoEscolha = "ESCOLHA",
+    CampoSimNao = "SIM_NAO",
+};
+
+/**
  * TipoPedido identifica o que a etapa precisa que o usuário informe.
  */
 export enum TipoPedido {
@@ -533,9 +920,10 @@ export enum TipoPedido {
 };
 
 /**
- * Visao é o retrato da tarefa enviado à interface. Não contém texto gerado
- * pela IA nem conteúdo dos autos: só estado, etapas, progresso mensurável e
- * erro do catálogo (V4 §31.1; T07).
+ * Visao é o retrato da tarefa enviado à interface: estado, etapas,
+ * progresso mensurável e erro do catálogo (V4 §31.1; T07). Não há texto da
+ * IA em tempo real; as propostas da IA só aparecem já conferidas pelo Go,
+ * para confirmação do usuário (perguntas e painel da análise).
  */
 export class Visao {
     "id": string;
@@ -569,9 +957,17 @@ export class Visao {
     "autos": ResumoAutos | null;
 
     /**
-     * processamento parado aguardando versão futura (TAR-004)
+     * processamento parado (etapa futura TAR-004 ou erro recuperável)
      */
     "parada": boolean;
+
+    /**
+     * parada por erro recuperável: "Tentar novamente"
+     */
+    "retomavel": boolean;
+    "atividade": string;
+    "painel": PainelAnalise | null;
+    "respostas": RespostaVisao[];
 
     /** Creates a new Visao instance. */
     constructor($$source: Partial<Visao> = {}) {
@@ -617,6 +1013,18 @@ export class Visao {
         if (!("parada" in $$source)) {
             this["parada"] = false;
         }
+        if (!("retomavel" in $$source)) {
+            this["retomavel"] = false;
+        }
+        if (!("atividade" in $$source)) {
+            this["atividade"] = "";
+        }
+        if (!("painel" in $$source)) {
+            this["painel"] = null;
+        }
+        if (!("respostas" in $$source)) {
+            this["respostas"] = [];
+        }
 
         Object.assign(this, $$source);
     }
@@ -625,13 +1033,15 @@ export class Visao {
      * Creates a new Visao instance from a string or object.
      */
     static createFrom($$source: any = {}): Visao {
-        const $$createField6_0 = $$createType11;
-        const $$createField7_0 = $$createType13;
-        const $$createField8_0 = $$createType1;
-        const $$createField9_0 = $$createType1;
-        const $$createField10_0 = $$createType15;
-        const $$createField11_0 = $$createType17;
-        const $$createField12_0 = $$createType19;
+        const $$createField6_0 = $$createType24;
+        const $$createField7_0 = $$createType26;
+        const $$createField8_0 = $$createType10;
+        const $$createField9_0 = $$createType10;
+        const $$createField10_0 = $$createType28;
+        const $$createField11_0 = $$createType30;
+        const $$createField12_0 = $$createType32;
+        const $$createField16_0 = $$createType34;
+        const $$createField17_0 = $$createType36;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("etapas" in $$parsedSource) {
             $$parsedSource["etapas"] = $$createField6_0($$parsedSource["etapas"]);
@@ -654,28 +1064,51 @@ export class Visao {
         if ("autos" in $$parsedSource) {
             $$parsedSource["autos"] = $$createField12_0($$parsedSource["autos"]);
         }
+        if ("painel" in $$parsedSource) {
+            $$parsedSource["painel"] = $$createField16_0($$parsedSource["painel"]);
+        }
+        if ("respostas" in $$parsedSource) {
+            $$parsedSource["respostas"] = $$createField17_0($$parsedSource["respostas"]);
+        }
         return new Visao($$parsedSource as Partial<Visao>);
     }
 }
 
 // Private type creation functions
-const $$createType0 = ErroVisao.createFrom;
-const $$createType1 = $Create.Nullable($$createType0);
-const $$createType2 = OpcaoVisao.createFrom;
+const $$createType0 = OpcaoVisao.createFrom;
+const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = Fonte.createFrom;
 const $$createType3 = $Create.Array($$createType2);
-const $$createType4 = PaginaResumo.createFrom;
-const $$createType5 = $Create.Array($$createType4);
-const $$createType6 = PecaResumo.createFrom;
-const $$createType7 = $Create.Array($$createType6);
-const $$createType8 = MidiaResumo.createFrom;
-const $$createType9 = $Create.Array($$createType8);
-const $$createType10 = Marco.createFrom;
-const $$createType11 = $Create.Array($$createType10);
-const $$createType12 = Progresso.createFrom;
-const $$createType13 = $Create.Nullable($$createType12);
-const $$createType14 = PerguntaVisao.createFrom;
-const $$createType15 = $Create.Nullable($$createType14);
-const $$createType16 = PedidoVisao.createFrom;
-const $$createType17 = $Create.Nullable($$createType16);
-const $$createType18 = ResumoAutos.createFrom;
-const $$createType19 = $Create.Nullable($$createType18);
+const $$createType4 = Condicao.createFrom;
+const $$createType5 = $Create.Nullable($$createType4);
+const $$createType6 = $Create.Array($Create.Any);
+const $$createType7 = SecaoPainel.createFrom;
+const $$createType8 = $Create.Array($$createType7);
+const $$createType9 = ErroVisao.createFrom;
+const $$createType10 = $Create.Nullable($$createType9);
+const $$createType11 = Campo.createFrom;
+const $$createType12 = $Create.Array($$createType11);
+const $$createType13 = GrupoCampos.createFrom;
+const $$createType14 = $Create.Array($$createType13);
+const $$createType15 = PaginaResumo.createFrom;
+const $$createType16 = $Create.Array($$createType15);
+const $$createType17 = PecaResumo.createFrom;
+const $$createType18 = $Create.Array($$createType17);
+const $$createType19 = MidiaResumo.createFrom;
+const $$createType20 = $Create.Array($$createType19);
+const $$createType21 = ItemPainel.createFrom;
+const $$createType22 = $Create.Array($$createType21);
+const $$createType23 = Marco.createFrom;
+const $$createType24 = $Create.Array($$createType23);
+const $$createType25 = Progresso.createFrom;
+const $$createType26 = $Create.Nullable($$createType25);
+const $$createType27 = PerguntaVisao.createFrom;
+const $$createType28 = $Create.Nullable($$createType27);
+const $$createType29 = PedidoVisao.createFrom;
+const $$createType30 = $Create.Nullable($$createType29);
+const $$createType31 = ResumoAutos.createFrom;
+const $$createType32 = $Create.Nullable($$createType31);
+const $$createType33 = PainelAnalise.createFrom;
+const $$createType34 = $Create.Nullable($$createType33);
+const $$createType35 = RespostaVisao.createFrom;
+const $$createType36 = $Create.Array($$createType35);

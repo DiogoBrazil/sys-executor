@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { TIPOS } from "../tipos";
-import { escolherTipo, estado } from "../estado";
+import { abrirModelos, escolherTipo, estado } from "../estado";
 import AvisoErro from "../components/AvisoErro.vue";
 
 const opcoes = [TIPOS.PADS, TIPOS.SR];
@@ -34,13 +34,26 @@ const opcoes = [TIPOS.PADS, TIPOS.SR];
 
     <AvisoErro v-if="estado.erro" :erro="estado.erro" />
 
+    <div v-if="estado.modelos && !estado.modelos.pronto" class="primeiro-uso" role="status" data-teste="primeiro-uso">
+      <h2>Falta instalar um modelo de IA local</h2>
+      <p>
+        A leitura e a análise dos autos usam um modelo que roda neste computador, sem internet. Baixe o modelo
+        recomendado ou importe um arquivo que você já tenha. Isso é feito uma vez só.
+      </p>
+      <button class="botao primario" data-teste="instalar-modelo" @click="abrirModelos">Instalar modelo de IA</button>
+    </div>
+
     <p class="rodape">
       O aplicativo prepara minutas de apoio. A decisão e a revisão integral do texto são sempre suas.
+      <button class="botao discreto" data-teste="link-modelos" @click="abrirModelos">Modelos de IA</button>
     </p>
   </main>
 </template>
 
 <style scoped>
+.primeiro-uso { border: 2px solid var(--tinta); border-radius: var(--raio); background: var(--superficie); padding: 1.2rem 1.4rem; display: grid; gap: 0.7rem; justify-items: start; }
+.primeiro-uso h2 { font-size: var(--t-lg); }
+.primeiro-uso p { max-width: 68ch; color: var(--tinta-suave); }
 .inicio {
   max-width: 980px;
   margin: 0 auto;

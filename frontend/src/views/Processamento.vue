@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, ref } from "vue";
-import { cancelar, estado, voltarAoInicio } from "../estado";
+import { abrirModelos, cancelar, estado, retomar, revisar, voltarAoInicio } from "../estado";
 import AvisoErro from "../components/AvisoErro.vue";
 import CartaoPergunta from "../components/CartaoPergunta.vue";
+import PainelAnalise from "../components/PainelAnalise.vue";
 import PainelAutos from "../components/PainelAutos.vue";
 // O PDF.js só é carregado quando o usuário abre os autos.
 const VisualizadorFontes = defineAsyncComponent(() => import("../components/VisualizadorFontes.vue"));
@@ -13,6 +14,8 @@ const fonte = ref<{ pagina: number; inicio: number; fim: number } | null>(null);
 function abrir(pagina: number, inicio: number, fim: number) {
   fonte.value = { pagina, inicio, fim };
 }
+
+const erroDeModelo = computed(() => (v.value.erro?.codigo ?? "").startsWith("MOD-"));
 
 const percentual = computed(() => {
   const p = v.value.progresso;
@@ -42,18 +45,26 @@ async function confirmarCancelamento() {
       <h1 v-if="!v.terminal">Processando os autos</h1>
       <h1 v-else>{{ tituloFinal }}</h1>
 
-      <CartaoPergunta v-if="v.pergunta" :pergunta="v.pergunta" />
+      <CartaoPergunta v-if="v.pergunta" :pergunta="v.pergunta" @abrir="abrir" />
 
-      <div v-if="v.parada" class="aviso" role="status" data-teste="parada">
+      <div v-if="v.parada && v.retomavel" class="retomar" data-teste="parada-recuperavel">
+        <AvisoErro v-if="v.erro" :erro="v.erro" tipo="aviso" />
+        <div class="acoes">
+          <button class="botao primario" :disabled="estado.ocupado" data-teste="retomar" @click="retomar">Tentar novamente</button>
+          <button v-if="erroDeModelo" class="botao" data-teste="abrir-modelos" @click="abrirModelos">Abrir modelos de IA</button>
+        </div>
+      </div>
+      <div v-else-if="v.parada" class="aviso" role="status" data-teste="parada">
         <h3>As próximas etapas ainda não estão disponíveis</h3>
         <p>
-          A delimitação, a análise e a redação da minuta chegam nas próximas versões do aplicativo. Você pode
-          consultar os autos lidos e cancelar a tarefa quando terminar.
+          A consulta à biblioteca jurídica, o cálculo e a redação da minuta chegam nas próximas versões do aplicativo.
+          Você pode conferir a análise abaixo, alterar respostas, consultar os autos e cancelar a tarefa quando terminar.
         </p>
       </div>
 
       <div v-else-if="!v.terminal && !v.pergunta" class="agora" aria-live="polite" data-teste="estado-atual">
         <p class="descricao">{{ v.descricao }}</p>
+        <p v-if="v.atividade" class="sub" data-teste="atividade-texto">{{ v.atividade }}</p>
         <div v-if="percentual !== null" class="medida" data-teste="progresso">
           <div
             class="barra"
@@ -99,6 +110,25 @@ async function confirmarCancelamento() {
       <button v-if="v.autos && !v.terminal" class="botao" data-teste="consultar-autos" @click="abrir(1, 0, 0)">
         Consultar os autos
       </button>
+      <PainelAnalise v-if="v.painel && !v.terminal" :painel="v.painel" @abrir="abrir" />
+      <section v-if="v.respostas?.length && !v.terminal" class="respostas" aria-label="Respostas dadas" data-teste="respostas">
+        <h2>Suas respostas</h2>
+        <ul role="list">
+          <li v-for="r in v.respostas" :key="r.perguntaId">
+            <span class="t">{{ r.titulo }}</span>
+            <span class="r">{{ r.resumo }}</span>
+            <button
+              v-if="r.revisavel"
+              class="botao discreto"
+              :disabled="estado.ocupado"
+              :data-teste="'revisar-' + r.perguntaId"
+              @click="revisar(r.perguntaId)"
+            >
+              Alterar
+            </button>
+          </li>
+        </ul>
+      </section>
       <PainelAutos v-if="v.autos && !v.terminal" :autos="v.autos" @abrir="abrir" />
     </section>
 
@@ -138,6 +168,13 @@ async function confirmarCancelamento() {
   gap: 1rem;
 }
 .descricao { font-size: var(--t-lg); }
+.sub { color: var(--tinta-suave); }
+.retomar { display: grid; gap: 0.8rem; }
+.respostas { background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); padding: 0.9rem 1.2rem; display: grid; gap: 0.5rem; }
+.respostas h2 { font-size: var(--t-md); }
+.respostas ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.respostas li { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 0.8rem; align-items: center; font-size: var(--t-sm); }
+.respostas .r { color: var(--tinta-suave); }
 .barra { height: 8px; background: var(--linha); border-radius: 4px; overflow: hidden; }
 .barra span { display: block; height: 100%; background: var(--tinta); transition: width 300ms ease; }
 .conta { margin-top: 0.4rem; font-size: var(--t-sm); color: var(--tinta-suave); }

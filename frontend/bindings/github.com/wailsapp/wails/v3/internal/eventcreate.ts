@@ -8,16 +8,22 @@ import { Create as $Create } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as app$0 from "../../../../DiogoBrazil/sys-executor/internal/app/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as workflow$0 from "../../../../DiogoBrazil/sys-executor/internal/workflow/models.js";
 
 function configure() {
     Object.freeze(Object.assign($Create.Events, {
-        "tarefa:visao": $$createType1,
+        "modelos:visao": $$createType1,
+        "tarefa:visao": $$createType3,
     }));
 }
 
 // Private type creation functions
-const $$createType0 = workflow$0.Visao.createFrom;
+const $$createType0 = app$0.VisaoModelos.createFrom;
 const $$createType1 = $Create.Nullable($$createType0);
+const $$createType2 = workflow$0.Visao.createFrom;
+const $$createType3 = $Create.Nullable($$createType2);
 
 configure();

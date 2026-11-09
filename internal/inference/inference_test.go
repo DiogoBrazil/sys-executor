@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
+	"github.com/DiogoBrazil/sys-executor/internal/testutil/llamafalso"
 )
 
 func eCod(err error, c erros.Codigo) bool { return errors.Is(err, erros.Novo(c)) }
@@ -329,7 +330,7 @@ func TestImportacao(t *testing.T) {
 func servidorTeste(t *testing.T, modo string) (*Servidor, error) {
 	t.Helper()
 	exe, _ := os.Executable()
-	t.Setenv("SYSEXEC_LLAMA_FALSO", modo)
+	t.Setenv(llamafalso.Variavel, modo)
 	return IniciarServidor(context.Background(), ConfigServidor{
 		Executavel: exe, Modelo: "x.gguf", Contexto: 4096, Threads: 2,
 		TimeoutCarga: 20 * time.Second, TimeoutPedido: 10 * time.Second,
@@ -404,5 +405,13 @@ func TestHardwareDetectado(t *testing.T) {
 	}
 	if len(h.GPUs) != 0 {
 		t.Fatal("GPU sondada sem consentimento (D-08)")
+	}
+}
+
+func TestLerDispositivos(t *testing.T) {
+	saida := []byte("Available devices:\n  Vulkan0: AMD Radeon RX 6600 XT (8176 MiB, 7900 MiB free)\n  Vulkan1: Intel UHD (2048 MiB, 1900 MiB free)\nlixo\n")
+	gs := lerDispositivos(saida)
+	if len(gs) != 2 || gs[0].Backend != "Vulkan" || gs[0].Nome != "AMD Radeon RX 6600 XT" || gs[0].VRAMLivre != 7900*mib {
+		t.Fatalf("%+v", gs)
 	}
 }

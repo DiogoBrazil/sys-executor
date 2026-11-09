@@ -7,11 +7,15 @@ import type { Events } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import type * as app$0 from "../../../../DiogoBrazil/sys-executor/internal/app/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import type * as workflow$0 from "../../../../DiogoBrazil/sys-executor/internal/workflow/models.js";
 
 declare module "@wailsio/runtime" {
     namespace Events {
         interface CustomEvents {
+            "modelos:visao": app$0.VisaoModelos | null;
             "tarefa:visao": workflow$0.Visao | null;
         }
     }

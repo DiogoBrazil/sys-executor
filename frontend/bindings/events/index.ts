@@ -9,6 +9,11 @@ import type {} from "../github.com/wailsapp/wails/v3/internal/eventdata.js";
 import "../github.com/wailsapp/wails/v3/internal/eventcreate.js";
 
 /**
+ * Name of the custom event "modelos:visao".
+ */
+export const ModelosVisao = "modelos:visao";
+
+/**
  * Name of the custom event "tarefa:visao".
  */
 export const TarefaVisao = "tarefa:visao";

@@ -90,10 +90,29 @@ export function Iniciar(): $CancellablePromise<$models.Resposta> {
 }
 
 /**
- * Responder escolhe uma opção da pergunta pendente.
+ * Responder escolhe uma opção da pergunta pendente, com os valores dos
+ * campos do formulário (validados no Go).
  */
-export function Responder(perguntaID: string, opcaoID: string): $CancellablePromise<$models.Resposta> {
-    return $Call.ByID(1035478786, perguntaID, opcaoID).then(($result: any) => {
+export function Responder(perguntaID: string, opcaoID: string, valores: { [_ in string]?: string }): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(1035478786, perguntaID, opcaoID, valores).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * Retomar repete a etapa parada por erro recuperável.
+ */
+export function Retomar(): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(3238301820).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * Revisar reabre uma resposta já dada; o que depende dela é refeito.
+ */
+export function Revisar(perguntaID: string): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(2807847558, perguntaID).then(($result: any) => {
         return $$createType0($result);
     });
 }

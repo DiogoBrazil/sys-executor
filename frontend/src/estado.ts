@@ -1,7 +1,7 @@
 // Estado da interface: espelha a visão da tarefa enviada pelo Go.
 // Nada aqui é persistido (sem localStorage): a tarefa vive só na sessão.
 import { reactive } from "vue";
-import { api, credenciais, responder as responderApi, type Resposta, type Visao } from "./api";
+import { api, credenciais, modelos as modelosApi, responder as responderApi, tarefa, type Resposta, type Visao, type VisaoModelos } from "./api";
 
 export interface ErroTela {
   codigo: string;
@@ -15,6 +15,8 @@ export const estado = reactive({
   visao: null as Visao | null,
   erro: null as ErroTela | null, // erro do último comando (não encerra a tarefa)
   ocupado: false,
+  modelos: null as VisaoModelos | null,
+  verModelos: false, // tela Modelos aberta por cima da atual
 });
 
 function aplicar(r: Resposta) {
@@ -47,8 +49,42 @@ export async function carregar() {
   api.aoMudar((v) => {
     estado.visao = v;
   });
+  modelosApi.aoMudar((m) => {
+    estado.modelos = m;
+  });
   await executar(api.atual);
+  await atualizarModelos();
 }
+
+// ---- modelos de IA ----
+export async function atualizarModelos() {
+  try {
+    estado.modelos = await modelosApi.estado();
+  } catch {
+    estado.modelos = null;
+  }
+}
+async function comandoModelos(f: () => Promise<VisaoModelos>) {
+  try {
+    estado.modelos = await f();
+  } catch {
+    /* a visão anterior continua; o próximo evento atualiza */
+  }
+}
+export const abrirModelos = async () => {
+  estado.verModelos = true;
+  await atualizarModelos();
+};
+export const fecharModelos = () => {
+  estado.verModelos = false;
+};
+export const baixarModelo = (id: string) => comandoModelos(() => modelosApi.baixar(id));
+export const importarModelo = () => comandoModelos(modelosApi.importar);
+export const cancelarAndamento = () => comandoModelos(modelosApi.cancelar);
+export const removerModelo = (id: string) => comandoModelos(() => modelosApi.remover(id));
+export const selecionarModelo = (id: string) => comandoModelos(() => modelosApi.selecionar(id));
+export const testarGPU = () => comandoModelos(modelosApi.testarGPU);
+export const usarSoCPU = () => comandoModelos(modelosApi.usarSoCPU);
 
 export async function escolherTipo(tipo: "PADS" | "SR") {
   if (!estado.visao || estado.visao.terminal) {
@@ -65,7 +101,10 @@ export async function enviarPDF() {
   await executar(api.selecionarPDF);
 }
 
-export const responder = (perguntaID: string, opcaoID: string) => executar(() => responderApi(perguntaID, opcaoID));
+export const responder = (perguntaID: string, opcaoID: string, valores: Record<string, string> = {}) =>
+  executar(() => responderApi(perguntaID, opcaoID, valores));
+export const revisar = (perguntaID: string) => executar(() => tarefa.revisar(perguntaID));
+export const retomar = () => executar(tarefa.retomar);
 export const informarCredenciais = (id: string, usuario: string, senha: string, orgao: string, processo: string) =>
   executar(() => credenciais.informar(id, usuario, senha, orgao, processo));
 export const informarSegredo = (id: string, valor: string) => executar(() => credenciais.segredo(id, valor));
