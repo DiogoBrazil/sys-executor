@@ -139,8 +139,12 @@ func gerenciadorIA(t *testing.T, fonte *fonteFalsa) *workflow.Gerenciador {
 	t.Helper()
 	p := &Pipeline{IA: fonte}
 	et := p.Etapas()
-	et[workflow.Verificando] = func(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) { return workflow.Extraindo, nil }
-	et[workflow.Extraindo] = func(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) { return workflow.Classificando, nil }
+	et[workflow.Verificando] = func(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
+		return workflow.Extraindo, nil
+	}
+	et[workflow.Extraindo] = func(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
+		return workflow.Classificando, nil
+	}
 	et[workflow.Classificando] = func(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
 		a, ps := autosPADS()
 		d := dados(c)
@@ -325,8 +329,8 @@ func (m *motorSR) Gerar(_ context.Context, p inference.Pedido) (inference.Respos
 	case "delimitacao_sr":
 		out = js(map[string]any{"numero_portaria": "55/2026", "autoridade": "Corregedor", "dia": 10, "mes": 10, "ano": 2026,
 			"trecho_literal_portaria": "Porto Velho, 10/10/2026",
-			"fatos":      []map[string]any{{"descricao": "extravio de arma", "trecho_literal": "o extravio de uma arma de fogo da reserva da unidade"}},
-			"sindicados": []map[string]any{{"nome": "JOÃO SOUZA", "posto_graduacao": "CB PM", "matricula": "", "trecho_literal": "sendo sindicado o CB PM JOÃO SOUZA"}}})
+			"fatos":                   []map[string]any{{"descricao": "extravio de arma", "trecho_literal": "o extravio de uma arma de fogo da reserva da unidade"}},
+			"sindicados":              []map[string]any{{"nome": "JOÃO SOUZA", "posto_graduacao": "CB PM", "matricula": "", "trecho_literal": "sendo sindicado o CB PM JOÃO SOUZA"}}})
 	case "extracao":
 		r := map[string]any{"pontos": []any{}, "pessoas": []any{}, "midias": []any{}, "fora_do_objeto": []any{}, "pericias": []any{}}
 		if strings.Contains(p.Usuario, "TERMO DE INQUIRIÇÃO") {
@@ -365,7 +369,9 @@ func (m *motorSR) Gerar(_ context.Context, p inference.Pedido) (inference.Respos
 
 type fonteSR struct{ m *motorSR }
 
-func (f fonteSR) Abrir(context.Context, func(string)) (inference.Motor, func(), error) { return f.m, func() {}, nil }
+func (f fonteSR) Abrir(context.Context, func(string)) (inference.Motor, func(), error) {
+	return f.m, func() {}, nil
+}
 
 // Cobre: SR19, SR20, SR35, SR12
 // Regra: SR-ESC-001, SR-ESC-002, SR-SOL-003
@@ -373,8 +379,12 @@ func TestFluxoSRComIA(t *testing.T) {
 	m := &motorSR{motorRoteiro{pedidos: map[string]int{}, usuario: map[string][]string{}}}
 	p := &Pipeline{IA: fonteSR{m}}
 	et := p.Etapas()
-	et[workflow.Verificando] = func(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) { return workflow.Extraindo, nil }
-	et[workflow.Extraindo] = func(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) { return workflow.Classificando, nil }
+	et[workflow.Verificando] = func(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
+		return workflow.Extraindo, nil
+	}
+	et[workflow.Extraindo] = func(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
+		return workflow.Classificando, nil
+	}
 	et[workflow.Classificando] = func(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
 		d := dados(c)
 		d.Autos = &autos.Autos{Paginas: []autos.Pagina{{Numero: 1, Texto: tPortaria}, {Numero: 2, Texto: tDepo}}}

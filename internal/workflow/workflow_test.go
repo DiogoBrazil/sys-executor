@@ -484,7 +484,7 @@ func TestValidarCampos(t *testing.T) {
 		t.Fatalf("campo oculto não é validado nem guardado: %v %v", v, err)
 	}
 	for nome, vals := range map[string]map[string]string{
-		"obrigatório":  {"tem": "nao"},
+		"obrigatório":   {"tem": "nao"},
 		"fora da faixa": {"pts": "51", "tem": "nao"},
 		"data inválida": {"pts": "1", "tem": "sim", "data": "31/02/2026"},
 		"escolha":       {"pts": "1", "tem": "nao", "nat": "GRAVE"},
@@ -535,8 +535,8 @@ func TestPerguntasComCamposRevisaoERetomada(t *testing.T) {
 				valor = ant.Valor("imp") // reabre com o valor dado antes
 			}
 			c.Perguntar(Pergunta{ID: "delim", Titulo: "Confirme as imputações", Revisavel: true,
-				Campos: []Campo{{ID: "imp", Rotulo: "Imputação", Tipo: CampoTexto, Obrigatorio: true, Valor: valor}},
-				Opcoes: []Opcao{{ID: "ok", Rotulo: "Confirmar", Validar: true}},
+				Campos:  []Campo{{ID: "imp", Rotulo: "Imputação", Tipo: CampoTexto, Obrigatorio: true, Valor: valor}},
+				Opcoes:  []Opcao{{ID: "ok", Rotulo: "Confirmar", Validar: true}},
 				Resumir: func(r Resposta) string { return r.Valor("imp") }})
 			return AguardandoEsclarecimento, nil
 		},
