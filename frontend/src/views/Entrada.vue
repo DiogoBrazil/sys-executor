@@ -32,7 +32,7 @@ const noSEI = computed(() => !!estado.visao?.estado.startsWith("SEI_"));
           Use o PDF completo que você já gerou no SEI/RO ("Gerar Arquivo PDF do Processo", com todos os
           documentos). Não pede senha.
         </span>
-        <span class="req">Funciona sem internet</span>
+        <span class="req">A análise por IA requer internet</span>
       </button>
     </div>
 

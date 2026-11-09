@@ -7,9 +7,6 @@ import { Create as $Create } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as inference$0 from "../inference/models.js";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore: Unused imports
 import * as autos$0 from "../ingest/autos/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -17,46 +14,6 @@ import * as prefs$0 from "../prefs/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as workflow$0 from "../workflow/models.js";
-
-/**
- * AndamentoModelos é o progresso de download ou importação.
- */
-export class AndamentoModelos {
-    "modeloId": string;
-
-    /**
-     * baixando | importando
-     */
-    "acao": string;
-    "feito": number;
-    "total": number;
-
-    /** Creates a new AndamentoModelos instance. */
-    constructor($$source: Partial<AndamentoModelos> = {}) {
-        if (!("modeloId" in $$source)) {
-            this["modeloId"] = "";
-        }
-        if (!("acao" in $$source)) {
-            this["acao"] = "";
-        }
-        if (!("feito" in $$source)) {
-            this["feito"] = 0;
-        }
-        if (!("total" in $$source)) {
-            this["total"] = 0;
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new AndamentoModelos instance from a string or object.
-     */
-    static createFrom($$source: any = {}): AndamentoModelos {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new AndamentoModelos($$parsedSource as Partial<AndamentoModelos>);
-    }
-}
 
 /**
  * Caixa em pontos, origem no canto superior esquerdo.
@@ -95,74 +52,69 @@ export class Caixa {
 }
 
 /**
- * ModeloVisao é um modelo listado na interface.
+ * ModeloIA é um modelo na tela, com o resultado do último teste.
  */
-export class ModeloVisao {
+export class ModeloIA {
+    /**
+     * sem o prefixo "models/"
+     */
     "id": string;
     "nome": string;
-    "perfil": string;
-    "papel": string;
-    "tamanho": number;
-    "licenca": string;
-    "testado": boolean;
-    "nota": string;
-    "instalado": boolean;
-    "recomendado": boolean;
-    "selecionado": boolean;
-    "cabe": boolean;
-    "contexto": number;
+    "descricao": string;
+    "estagio": string;
+    "entradaMax": number;
+    "saidaMax": number;
+    "pensamento": boolean;
 
-    /** Creates a new ModeloVisao instance. */
-    constructor($$source: Partial<ModeloVisao> = {}) {
+    /**
+     * "", "ok", "falhou"
+     */
+    "teste": string;
+    "testeErro": workflow$0.ErroVisao | null;
+
+    /** Creates a new ModeloIA instance. */
+    constructor($$source: Partial<ModeloIA> = {}) {
         if (!("id" in $$source)) {
             this["id"] = "";
         }
         if (!("nome" in $$source)) {
             this["nome"] = "";
         }
-        if (!("perfil" in $$source)) {
-            this["perfil"] = "";
+        if (!("descricao" in $$source)) {
+            this["descricao"] = "";
         }
-        if (!("papel" in $$source)) {
-            this["papel"] = "";
+        if (!("estagio" in $$source)) {
+            this["estagio"] = "";
         }
-        if (!("tamanho" in $$source)) {
-            this["tamanho"] = 0;
+        if (!("entradaMax" in $$source)) {
+            this["entradaMax"] = 0;
         }
-        if (!("licenca" in $$source)) {
-            this["licenca"] = "";
+        if (!("saidaMax" in $$source)) {
+            this["saidaMax"] = 0;
         }
-        if (!("testado" in $$source)) {
-            this["testado"] = false;
+        if (!("pensamento" in $$source)) {
+            this["pensamento"] = false;
         }
-        if (!("nota" in $$source)) {
-            this["nota"] = "";
+        if (!("teste" in $$source)) {
+            this["teste"] = "";
         }
-        if (!("instalado" in $$source)) {
-            this["instalado"] = false;
-        }
-        if (!("recomendado" in $$source)) {
-            this["recomendado"] = false;
-        }
-        if (!("selecionado" in $$source)) {
-            this["selecionado"] = false;
-        }
-        if (!("cabe" in $$source)) {
-            this["cabe"] = false;
-        }
-        if (!("contexto" in $$source)) {
-            this["contexto"] = 0;
+        if (!("testeErro" in $$source)) {
+            this["testeErro"] = null;
         }
 
         Object.assign(this, $$source);
     }
 
     /**
-     * Creates a new ModeloVisao instance from a string or object.
+     * Creates a new ModeloIA instance from a string or object.
      */
-    static createFrom($$source: any = {}): ModeloVisao {
+    static createFrom($$source: any = {}): ModeloIA {
+        const $$createField8_0 = $$createType1;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new ModeloVisao($$parsedSource as Partial<ModeloVisao>);
+        if ("testeErro" in $$parsedSource) {
+            $$parsedSource["testeErro"] = $$createField8_0($$parsedSource["testeErro"]);
+        }
+        return new ModeloIA($$parsedSource as Partial<ModeloIA>);
     }
 }
 
@@ -189,8 +141,8 @@ export class Resposta {
      * Creates a new Resposta instance from a string or object.
      */
     static createFrom($$source: any = {}): Resposta {
-        const $$createField0_0 = $$createType1;
-        const $$createField1_0 = $$createType3;
+        const $$createField0_0 = $$createType3;
+        const $$createField1_0 = $$createType1;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("visao" in $$parsedSource) {
             $$parsedSource["visao"] = $$createField0_0($$parsedSource["visao"]);
@@ -226,7 +178,7 @@ export class RespostaBusca {
      */
     static createFrom($$source: any = {}): RespostaBusca {
         const $$createField0_0 = $$createType5;
-        const $$createField1_0 = $$createType3;
+        const $$createField1_0 = $$createType1;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("ocorrencias" in $$parsedSource) {
             $$parsedSource["ocorrencias"] = $$createField0_0($$parsedSource["ocorrencias"]);
@@ -274,7 +226,7 @@ export class RespostaDestaque {
      */
     static createFrom($$source: any = {}): RespostaDestaque {
         const $$createField3_0 = $$createType7;
-        const $$createField4_0 = $$createType3;
+        const $$createField4_0 = $$createType1;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("caixas" in $$parsedSource) {
             $$parsedSource["caixas"] = $$createField3_0($$parsedSource["caixas"]);
@@ -309,7 +261,7 @@ export class RespostaEndereco {
      * Creates a new RespostaEndereco instance from a string or object.
      */
     static createFrom($$source: any = {}): RespostaEndereco {
-        const $$createField1_0 = $$createType3;
+        const $$createField1_0 = $$createType1;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("erro" in $$parsedSource) {
             $$parsedSource["erro"] = $$createField1_0($$parsedSource["erro"]);
@@ -342,7 +294,7 @@ export class RespostaPreferencias {
      */
     static createFrom($$source: any = {}): RespostaPreferencias {
         const $$createField0_0 = $$createType8;
-        const $$createField1_0 = $$createType3;
+        const $$createField1_0 = $$createType1;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("preferencias" in $$parsedSource) {
             $$parsedSource["preferencias"] = $$createField0_0($$parsedSource["preferencias"]);
@@ -355,52 +307,93 @@ export class RespostaPreferencias {
 }
 
 /**
- * VisaoModelos é a tela Modelos.
+ * UsoIA resume o consumo da última tarefa (sem preço: não inventamos valores).
  */
-export class VisaoModelos {
-    "hardware": inference$0.Hardware;
-    "modelos": ModeloVisao[];
-    "avisos": string[];
-    "manual": string;
-    "gpu": string;
-    "gpus": inference$0.GPU[];
-    "andamento": AndamentoModelos | null;
+export class UsoIA {
+    "modelo": string;
+    "chamadas": number;
+    "falhas": number;
+    "tokensEntrada": number;
+    "tokensSaida": number;
+    "tokensPensamento": number;
+    "segundos": number;
+
+    /** Creates a new UsoIA instance. */
+    constructor($$source: Partial<UsoIA> = {}) {
+        if (!("modelo" in $$source)) {
+            this["modelo"] = "";
+        }
+        if (!("chamadas" in $$source)) {
+            this["chamadas"] = 0;
+        }
+        if (!("falhas" in $$source)) {
+            this["falhas"] = 0;
+        }
+        if (!("tokensEntrada" in $$source)) {
+            this["tokensEntrada"] = 0;
+        }
+        if (!("tokensSaida" in $$source)) {
+            this["tokensSaida"] = 0;
+        }
+        if (!("tokensPensamento" in $$source)) {
+            this["tokensPensamento"] = 0;
+        }
+        if (!("segundos" in $$source)) {
+            this["segundos"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
 
     /**
-     * há modelo instalado que cabe
+     * Creates a new UsoIA instance from a string or object.
      */
-    "pronto": boolean;
-    "servidor": boolean;
+    static createFrom($$source: any = {}): UsoIA {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new UsoIA($$parsedSource as Partial<UsoIA>);
+    }
+}
+
+/**
+ * VisaoIA é o que a tela de configurações de IA recebe. NUNCA contém a
+ * chave nem parte dela (TRV-SEG-009).
+ */
+export class VisaoIA {
+    "chaveCadastrada": boolean;
+    "status": string;
+    "modelos": ModeloIA[];
+    "modeloSelecionado": string;
+    "modeloForaDaLista": boolean;
+    "ocupado": boolean;
+    "uso": UsoIA | null;
+    "urlChaves": string;
     "erro": workflow$0.ErroVisao | null;
 
-    /** Creates a new VisaoModelos instance. */
-    constructor($$source: Partial<VisaoModelos> = {}) {
-        if (!("hardware" in $$source)) {
-            this["hardware"] = (new inference$0.Hardware());
+    /** Creates a new VisaoIA instance. */
+    constructor($$source: Partial<VisaoIA> = {}) {
+        if (!("chaveCadastrada" in $$source)) {
+            this["chaveCadastrada"] = false;
+        }
+        if (!("status" in $$source)) {
+            this["status"] = "";
         }
         if (!("modelos" in $$source)) {
             this["modelos"] = [];
         }
-        if (!("avisos" in $$source)) {
-            this["avisos"] = [];
+        if (!("modeloSelecionado" in $$source)) {
+            this["modeloSelecionado"] = "";
         }
-        if (!("manual" in $$source)) {
-            this["manual"] = "";
+        if (!("modeloForaDaLista" in $$source)) {
+            this["modeloForaDaLista"] = false;
         }
-        if (!("gpu" in $$source)) {
-            this["gpu"] = "";
+        if (!("ocupado" in $$source)) {
+            this["ocupado"] = false;
         }
-        if (!("gpus" in $$source)) {
-            this["gpus"] = [];
+        if (!("uso" in $$source)) {
+            this["uso"] = null;
         }
-        if (!("andamento" in $$source)) {
-            this["andamento"] = null;
-        }
-        if (!("pronto" in $$source)) {
-            this["pronto"] = false;
-        }
-        if (!("servidor" in $$source)) {
-            this["servidor"] = false;
+        if (!("urlChaves" in $$source)) {
+            this["urlChaves"] = "";
         }
         if (!("erro" in $$source)) {
             this["erro"] = null;
@@ -410,53 +403,37 @@ export class VisaoModelos {
     }
 
     /**
-     * Creates a new VisaoModelos instance from a string or object.
+     * Creates a new VisaoIA instance from a string or object.
      */
-    static createFrom($$source: any = {}): VisaoModelos {
-        const $$createField0_0 = $$createType9;
-        const $$createField1_0 = $$createType11;
-        const $$createField2_0 = $$createType12;
-        const $$createField5_0 = $$createType14;
-        const $$createField6_0 = $$createType16;
-        const $$createField9_0 = $$createType3;
+    static createFrom($$source: any = {}): VisaoIA {
+        const $$createField2_0 = $$createType10;
+        const $$createField6_0 = $$createType12;
+        const $$createField8_0 = $$createType1;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        if ("hardware" in $$parsedSource) {
-            $$parsedSource["hardware"] = $$createField0_0($$parsedSource["hardware"]);
-        }
         if ("modelos" in $$parsedSource) {
-            $$parsedSource["modelos"] = $$createField1_0($$parsedSource["modelos"]);
+            $$parsedSource["modelos"] = $$createField2_0($$parsedSource["modelos"]);
         }
-        if ("avisos" in $$parsedSource) {
-            $$parsedSource["avisos"] = $$createField2_0($$parsedSource["avisos"]);
-        }
-        if ("gpus" in $$parsedSource) {
-            $$parsedSource["gpus"] = $$createField5_0($$parsedSource["gpus"]);
-        }
-        if ("andamento" in $$parsedSource) {
-            $$parsedSource["andamento"] = $$createField6_0($$parsedSource["andamento"]);
+        if ("uso" in $$parsedSource) {
+            $$parsedSource["uso"] = $$createField6_0($$parsedSource["uso"]);
         }
         if ("erro" in $$parsedSource) {
-            $$parsedSource["erro"] = $$createField9_0($$parsedSource["erro"]);
+            $$parsedSource["erro"] = $$createField8_0($$parsedSource["erro"]);
         }
-        return new VisaoModelos($$parsedSource as Partial<VisaoModelos>);
+        return new VisaoIA($$parsedSource as Partial<VisaoIA>);
     }
 }
 
 // Private type creation functions
-const $$createType0 = workflow$0.Visao.createFrom;
+const $$createType0 = workflow$0.ErroVisao.createFrom;
 const $$createType1 = $Create.Nullable($$createType0);
-const $$createType2 = workflow$0.ErroVisao.createFrom;
+const $$createType2 = workflow$0.Visao.createFrom;
 const $$createType3 = $Create.Nullable($$createType2);
 const $$createType4 = autos$0.Ocorrencia.createFrom;
 const $$createType5 = $Create.Array($$createType4);
 const $$createType6 = Caixa.createFrom;
 const $$createType7 = $Create.Array($$createType6);
 const $$createType8 = prefs$0.Preferencias.createFrom;
-const $$createType9 = inference$0.Hardware.createFrom;
-const $$createType10 = ModeloVisao.createFrom;
-const $$createType11 = $Create.Array($$createType10);
-const $$createType12 = $Create.Array($Create.Any);
-const $$createType13 = inference$0.GPU.createFrom;
-const $$createType14 = $Create.Array($$createType13);
-const $$createType15 = AndamentoModelos.createFrom;
-const $$createType16 = $Create.Nullable($$createType15);
+const $$createType9 = ModeloIA.createFrom;
+const $$createType10 = $Create.Array($$createType9);
+const $$createType11 = UsoIA.createFrom;
+const $$createType12 = $Create.Nullable($$createType11);

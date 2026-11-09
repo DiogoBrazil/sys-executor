@@ -187,7 +187,7 @@ function rotuloFonte(f: Fonte) {
   gap: 0.9rem;
 }
 .pergunta h2 { font-size: var(--t-lg); }
-.contexto { max-width: 68ch; color: var(--tinta-suave); }
+.contexto { max-width: 68ch; color: var(--tinta-suave); white-space: pre-line; }
 .campo-solto:empty { display: none; }
 .grupo {
   border-top: 1px solid var(--linha);

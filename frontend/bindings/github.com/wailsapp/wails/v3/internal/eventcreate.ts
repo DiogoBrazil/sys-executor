@@ -15,13 +15,13 @@ import * as workflow$0 from "../../../../DiogoBrazil/sys-executor/internal/workf
 
 function configure() {
     Object.freeze(Object.assign($Create.Events, {
-        "modelos:visao": $$createType1,
+        "ia:visao": $$createType1,
         "tarefa:visao": $$createType3,
     }));
 }
 
 // Private type creation functions
-const $$createType0 = app$0.VisaoModelos.createFrom;
+const $$createType0 = app$0.VisaoIA.createFrom;
 const $$createType1 = $Create.Nullable($$createType0);
 const $$createType2 = workflow$0.Visao.createFrom;
 const $$createType3 = $Create.Nullable($$createType2);

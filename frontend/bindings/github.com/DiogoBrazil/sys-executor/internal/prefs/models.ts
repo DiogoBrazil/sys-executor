@@ -6,64 +6,6 @@
 import { Create as $Create } from "@wailsio/runtime";
 
 /**
- * EstadoGPU resume o que se sabe sobre o uso seguro da GPU (D-08, D-09.1).
- */
-export enum EstadoGPU {
-    /**
-     * The Go zero value for the underlying type of the enum.
-     */
-    $zero = "",
-
-    /**
-     * nunca sondada: usar CPU
-     */
-    GPUDesconhecida = "desconhecida",
-
-    /**
-     * sonda concluída
-     */
-    GPUEstavel = "estavel",
-
-    /**
-     * sonda interrompida por queda: usar CPU
-     */
-    GPUInstavel = "instavel",
-
-    /**
-     * usuário optou por CPU
-     */
-    GPUDesativada = "desativada",
-};
-
-/**
- * GPU é o estado da sonda segura de GPU.
- */
-export class GPU {
-    "estado": EstadoGPU;
-    "sonda_em_andamento": boolean;
-
-    /** Creates a new GPU instance. */
-    constructor($$source: Partial<GPU> = {}) {
-        if (!("estado" in $$source)) {
-            this["estado"] = EstadoGPU.$zero;
-        }
-        if (!("sonda_em_andamento" in $$source)) {
-            this["sonda_em_andamento"] = false;
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new GPU instance from a string or object.
-     */
-    static createFrom($$source: any = {}): GPU {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new GPU($$parsedSource as Partial<GPU>);
-    }
-}
-
-/**
  * Preferencias é o conjunto completo e fechado de preferências.
  */
 export class Preferencias {
@@ -80,10 +22,9 @@ export class Preferencias {
     "pasta_download": string;
 
     /**
-     * vazio = recomendação automática
+     * vazio = nenhum escolhido (V4 §47.5)
      */
-    "modelo_manual": string;
-    "gpu": GPU;
+    "modelo_gemini": string;
 
     /** Creates a new Preferencias instance. */
     constructor($$source: Partial<Preferencias> = {}) {
@@ -96,11 +37,8 @@ export class Preferencias {
         if (!("pasta_download" in $$source)) {
             this["pasta_download"] = "";
         }
-        if (!("modelo_manual" in $$source)) {
-            this["modelo_manual"] = "";
-        }
-        if (!("gpu" in $$source)) {
-            this["gpu"] = (new GPU());
+        if (!("modelo_gemini" in $$source)) {
+            this["modelo_gemini"] = "";
         }
 
         Object.assign(this, $$source);
@@ -110,14 +48,7 @@ export class Preferencias {
      * Creates a new Preferencias instance from a string or object.
      */
     static createFrom($$source: any = {}): Preferencias {
-        const $$createField4_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        if ("gpu" in $$parsedSource) {
-            $$parsedSource["gpu"] = $$createField4_0($$parsedSource["gpu"]);
-        }
         return new Preferencias($$parsedSource as Partial<Preferencias>);
     }
 }
-
-// Private type creation functions
-const $$createType0 = GPU.createFrom;

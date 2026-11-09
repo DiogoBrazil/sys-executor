@@ -40,23 +40,24 @@ export const tarefa = {
   retomar: (): Promise<Resposta> => Tarefa.Retomar(),
 };
 
-import * as Modelos from "../bindings/github.com/DiogoBrazil/sys-executor/internal/app/modelosservice";
-import type { VisaoModelos } from "../bindings/github.com/DiogoBrazil/sys-executor/internal/app/models";
-import { ModelosVisao } from "../bindings/events";
+import * as IA from "../bindings/github.com/DiogoBrazil/sys-executor/internal/app/iaservice";
+import type { VisaoIA } from "../bindings/github.com/DiogoBrazil/sys-executor/internal/app/models";
+import { IaVisao } from "../bindings/events";
 
-export type { VisaoModelos };
+export type { VisaoIA };
 
-export const modelos = {
-  estado: (): Promise<VisaoModelos> => Modelos.Estado(),
-  baixar: (id: string): Promise<VisaoModelos> => Modelos.Baixar(id),
-  importar: (): Promise<VisaoModelos> => Modelos.Importar(),
-  cancelar: (): Promise<VisaoModelos> => Modelos.CancelarAndamento(),
-  remover: (id: string): Promise<VisaoModelos> => Modelos.Remover(id),
-  selecionar: (id: string): Promise<VisaoModelos> => Modelos.Selecionar(id),
-  testarGPU: (): Promise<VisaoModelos> => Modelos.TestarGPU(),
-  usarSoCPU: (): Promise<VisaoModelos> => Modelos.UsarSoCPU(),
-  aoMudar(cb: (v: VisaoModelos) => void): () => void {
-    return Events.On(ModelosVisao, (ev) => cb(ev.data as VisaoModelos));
+// Configurações de IA (Gemini API). A chave só vai ao Go em salvarChave e
+// nunca volta: VisaoIA não a contém (V4 §47.4).
+export const ia = {
+  estado: (): Promise<VisaoIA> => IA.Estado(),
+  salvarChave: (chave: string): Promise<VisaoIA> => IA.SalvarChave(chave),
+  removerChave: (): Promise<VisaoIA> => IA.RemoverChave(),
+  verificar: (): Promise<VisaoIA> => IA.Verificar(),
+  selecionarModelo: (id: string): Promise<VisaoIA> => IA.SelecionarModelo(id),
+  testarModelo: (id: string): Promise<VisaoIA> => IA.TestarModelo(id),
+  abrirPaginaChaves: (): Promise<VisaoIA> => IA.AbrirPaginaChaves(),
+  aoMudar(cb: (v: VisaoIA) => void): () => void {
+    return Events.On(IaVisao, (ev) => cb(ev.data as VisaoIA));
   },
 };
 

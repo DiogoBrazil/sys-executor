@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, ref } from "vue";
-import { abrirModelos, cancelar, estado, retomar, revisar, voltarAoInicio } from "../estado";
+import { abrirConfigIA, cancelar, estado, retomar, revisar, voltarAoInicio } from "../estado";
 import AvisoErro from "../components/AvisoErro.vue";
 import CartaoPergunta from "../components/CartaoPergunta.vue";
 import PainelAnalise from "../components/PainelAnalise.vue";
@@ -15,7 +15,8 @@ function abrir(pagina: number, inicio: number, fim: number) {
   fonte.value = { pagina, inicio, fim };
 }
 
-const erroDeModelo = computed(() => (v.value.erro?.codigo ?? "").startsWith("MOD-"));
+// Falhas da Gemini API (chave, modelo, cota, conexão): atalho para as configurações.
+const erroDeIA = computed(() => (v.value.erro?.codigo ?? "").startsWith("IA-"));
 
 const percentual = computed(() => {
   const p = v.value.progresso;
@@ -51,7 +52,7 @@ async function confirmarCancelamento() {
         <AvisoErro v-if="v.erro" :erro="v.erro" tipo="aviso" />
         <div class="acoes">
           <button class="botao primario" :disabled="estado.ocupado" data-teste="retomar" @click="retomar">Tentar novamente</button>
-          <button v-if="erroDeModelo" class="botao" data-teste="abrir-modelos" @click="abrirModelos">Abrir modelos de IA</button>
+          <button v-if="erroDeIA" class="botao" data-teste="abrir-config-ia" @click="abrirConfigIA">Abrir configurações de IA</button>
         </div>
       </div>
       <div v-else-if="v.parada" class="aviso" role="status" data-teste="parada">

@@ -15,7 +15,7 @@ import type * as workflow$0 from "../../../../DiogoBrazil/sys-executor/internal/
 declare module "@wailsio/runtime" {
     namespace Events {
         interface CustomEvents {
-            "modelos:visao": app$0.VisaoModelos | null;
+            "ia:visao": app$0.VisaoIA | null;
             "tarefa:visao": workflow$0.Visao | null;
         }
     }

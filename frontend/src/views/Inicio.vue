@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { TIPOS } from "../tipos";
-import { abrirModelos, escolherTipo, estado } from "../estado";
+import { computed } from "vue";
+import { abrirConfigIA, escolherTipo, estado } from "../estado";
 import AvisoErro from "../components/AvisoErro.vue";
 
 const opcoes = [TIPOS.PADS, TIPOS.SR];
+// Primeiro uso: falta a chave ou o modelo da Gemini API.
+const faltaIA = computed(() => !!estado.ia && (!estado.ia.chaveCadastrada || !estado.ia.modeloSelecionado));
 </script>
 
 <template>
@@ -34,18 +37,18 @@ const opcoes = [TIPOS.PADS, TIPOS.SR];
 
     <AvisoErro v-if="estado.erro" :erro="estado.erro" />
 
-    <div v-if="estado.modelos && !estado.modelos.pronto" class="primeiro-uso" role="status" data-teste="primeiro-uso">
-      <h2>Falta instalar um modelo de IA local</h2>
+    <div v-if="faltaIA" class="primeiro-uso" role="status" data-teste="primeiro-uso">
+      <h2>Configure a IA (Gemini API)</h2>
       <p>
-        A leitura e a análise dos autos usam um modelo que roda neste computador, sem internet. Baixe o modelo
-        recomendado ou importe um arquivo que você já tenha. Isso é feito uma vez só.
+        A leitura e a análise dos autos usam a Gemini API, do Google, com a sua chave de API. Cadastre a chave e escolha
+        o modelo; isso é feito uma vez só. A análise por IA exige internet.
       </p>
-      <button class="botao primario" data-teste="instalar-modelo" @click="abrirModelos">Instalar modelo de IA</button>
+      <button class="botao primario" data-teste="configurar-ia" @click="abrirConfigIA">Configurar a IA</button>
     </div>
 
     <p class="rodape">
       O aplicativo prepara minutas de apoio. A decisão e a revisão integral do texto são sempre suas.
-      <button class="botao discreto" data-teste="link-modelos" @click="abrirModelos">Modelos de IA</button>
+      <button class="botao discreto" data-teste="link-config-ia" @click="abrirConfigIA">Configurações de IA</button>
     </p>
   </main>
 </template>

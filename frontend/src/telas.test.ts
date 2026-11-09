@@ -4,17 +4,17 @@ import { flushPromises, mount } from "@vue/test-utils";
 // Backend simulado: a FSM real é testada em Go; aqui só a interface.
 const chamadas: string[] = [];
 let visaoAtual: any = null;
-const { modelosBase } = vi.hoisted(() => ({
-  modelosBase: {
-    hardware: { nucleosFisicos: 6, nucleosLogicos: 12, avx2: true, ramTotal: 16 * 2 ** 30, ramLivre: 12 * 2 ** 30, gpus: [] },
-    modelos: [
-      { id: "qwen3.5-4b-q4km", nome: "Qwen3.5-4B (Q4_K_M)", perfil: "padrao", papel: "gerador", tamanho: 2.7 * 2 ** 30, licenca: "Apache-2.0", testado: true, nota: "", instalado: false, recomendado: true, selecionado: false, cabe: true, contexto: 16384 },
-      { id: "qwen3.5-2b-q4km", nome: "Qwen3.5-2B (Q4_K_M)", perfil: "basico", papel: "gerador", tamanho: 1.2 * 2 ** 30, licenca: "Apache-2.0", testado: true, nota: "", instalado: false, recomendado: false, selecionado: false, cabe: true, contexto: 16384 },
-    ],
-    avisos: [], manual: "", gpu: "desconhecida", gpus: [], andamento: null, pronto: false, servidor: true, erro: null,
+const { iaBase } = vi.hoisted(() => ({
+  iaBase: {
+    chaveCadastrada: false, status: "sem_chave", modelos: [], modeloSelecionado: "", modeloForaDaLista: false,
+    ocupado: false, uso: null, urlChaves: "https://aistudio.google.com/api-keys", erro: null,
   },
 }));
-let modelosAtual: any = modelosBase;
+const iaModelos = [
+  { id: "gemini-3.6-flash", nome: "Gemini 3.6 Flash", descricao: "", estagio: "estavel", entradaMax: 1048576, saidaMax: 65536, pensamento: true, teste: "", testeErro: null },
+  { id: "gemini-3.8-flash-preview", nome: "Gemini 3.8 Flash (prévia)", descricao: "", estagio: "previa", entradaMax: 1048576, saidaMax: 65536, pensamento: true, teste: "", testeErro: null },
+];
+let iaAtual: any = iaBase;
 
 function visao(estado: string, extra: Record<string, unknown> = {}) {
   return {
@@ -59,15 +59,22 @@ vi.mock("./api", () => ({
     revisar: (id: string) => { chamadas.push("revisar:" + id); return resp(visao("DELIMITANDO")); },
     retomar: () => { chamadas.push("retomar"); return resp(visao("DELIMITANDO")); },
   },
-  modelos: {
-    estado: () => { chamadas.push("modelos"); return Promise.resolve(modelosAtual); },
-    baixar: (id: string) => { chamadas.push("baixar:" + id); return Promise.resolve({ ...modelosAtual, andamento: { modeloId: id, acao: "baixando", feito: 2 ** 30, total: 2 * 2 ** 30 } }); },
-    importar: () => { chamadas.push("importar"); return Promise.resolve(modelosAtual); },
-    cancelar: () => Promise.resolve(modelosAtual),
-    remover: (id: string) => { chamadas.push("remover:" + id); return Promise.resolve(modelosAtual); },
-    selecionar: (id: string) => { chamadas.push("selecionar:" + id); return Promise.resolve(modelosAtual); },
-    testarGPU: () => { chamadas.push("testarGPU"); return Promise.resolve(modelosAtual); },
-    usarSoCPU: () => Promise.resolve(modelosAtual),
+  ia: {
+    estado: () => { chamadas.push("ia"); return Promise.resolve(iaAtual); },
+    salvarChave: (c: string) => {
+      chamadas.push("salvarChave:" + c.length);
+      iaAtual = { ...iaAtual, chaveCadastrada: true, status: "valida", modelos: iaModelos };
+      return Promise.resolve(iaAtual);
+    },
+    removerChave: () => { chamadas.push("removerChave"); iaAtual = { ...iaBase }; return Promise.resolve(iaAtual); },
+    verificar: () => { chamadas.push("verificar"); return Promise.resolve(iaAtual); },
+    selecionarModelo: (id: string) => { chamadas.push("selecionar:" + id); iaAtual = { ...iaAtual, modeloSelecionado: id }; return Promise.resolve(iaAtual); },
+    testarModelo: (id: string) => {
+      chamadas.push("testar:" + id);
+      iaAtual = { ...iaAtual, modelos: iaAtual.modelos.map((m: any) => (m.id === id ? { ...m, teste: "ok" } : m)) };
+      return Promise.resolve(iaAtual);
+    },
+    abrirPaginaChaves: () => { chamadas.push("abrirPaginaChaves"); return Promise.resolve(iaAtual); },
     aoMudar: () => () => {},
   },
   credenciais: {
@@ -93,12 +100,12 @@ import { estado } from "./estado";
 beforeEach(() => {
   chamadas.length = 0;
   visaoAtual = null;
-  modelosAtual = modelosBase;
+  iaAtual = iaBase;
   estado.visao = null;
   estado.erro = null;
   estado.ocupado = false;
-  estado.modelos = null;
-  estado.verModelos = false;
+  estado.ia = null;
+  estado.verConfigIA = false;
 });
 
 describe("T01 — ordem das escolhas", () => {
@@ -112,7 +119,7 @@ describe("T01 — ordem das escolhas", () => {
 
     await w.find('[data-teste="tipo-SR"]').trigger("click");
     await flushPromises();
-    expect(chamadas).toEqual(["atual", "modelos", "iniciar", "tipo:SR"]);
+    expect(chamadas).toEqual(["atual", "ia", "iniciar", "tipo:SR"]);
     expect(w.find('[data-teste="entrada-SEI"]').exists()).toBe(true);
     expect(w.find('[data-teste="entrada-UPLOAD"]').exists()).toBe(true);
     expect(w.find('[data-teste="faixa-tipo"]').text()).toContain("Relatório de Sindicância Regular");
@@ -137,7 +144,7 @@ describe("T02 — upload sem credencial", () => {
     expect(w.find('input[type="password"]').exists()).toBe(false);
     await w.find('[data-teste="entrada-UPLOAD"]').trigger("click");
     await flushPromises();
-    expect(chamadas).toEqual(["atual", "modelos", "entrada:UPLOAD", "pdf"]);
+    expect(chamadas).toEqual(["atual", "ia", "entrada:UPLOAD", "pdf"]);
     expect(w.find('input[type="password"]').exists()).toBe(false);
     expect(w.find('[data-teste="linha-do-tempo"]').exists()).toBe(true);
   });
@@ -362,15 +369,15 @@ describe("F4 — perguntas com campos (T08)", () => {
 });
 
 describe("F4 — revisão, retomada e painel", () => {
-  it("parada recuperável (MOD-001): tentar novamente e abrir modelos", async () => {
-    visaoAtual = visao("DELIMITANDO", { parada: true, retomavel: true, erro: { codigo: "MOD-001", titulo: "Modelo de IA não instalado", mensagem: "m", acao: "a" } });
+  it("parada recuperável (IA-007): tentar novamente e abrir configurações de IA", async () => {
+    visaoAtual = visao("DELIMITANDO", { parada: true, retomavel: true, erro: { codigo: "IA-007", titulo: "Sem conexão com a Gemini API", mensagem: "m", acao: "a" } });
     const w = mount(App);
     await flushPromises();
     expect(w.find('[data-teste="parada"]').exists()).toBe(false);
-    await w.find('[data-teste="abrir-modelos"]').trigger("click");
+    await w.find('[data-teste="abrir-config-ia"]').trigger("click");
     await flushPromises();
-    expect(w.find('[data-teste="tela-modelos"]').exists()).toBe(true);
-    await w.find('[data-teste="fechar-modelos"]').trigger("click");
+    expect(w.find('[data-teste="tela-config-ia"]').exists()).toBe(true);
+    await w.find('[data-teste="fechar-config-ia"]').trigger("click");
     await flushPromises();
     await w.find('[data-teste="retomar"]').trigger("click");
     await flushPromises();
@@ -393,35 +400,55 @@ describe("F4 — revisão, retomada e painel", () => {
   });
 });
 
-describe("T27 — modelos não instalados", () => {
-  it("primeiro uso oferece instalar o modelo recomendado", async () => {
+// T27 (emenda V4 §47): primeiro uso = cadastrar a chave da Gemini API e escolher o modelo.
+describe("T27 — configuração da Gemini API", () => {
+  it("primeiro uso leva às configurações de IA; a chave some do campo e nunca é exibida", async () => {
     const w = mount(App);
     await flushPromises();
-    expect(w.find('[data-teste="primeiro-uso"]').exists()).toBe(true);
-    await w.find('[data-teste="instalar-modelo"]').trigger("click");
+    expect(w.find('[data-teste="primeiro-uso"]').text()).toContain("Gemini API");
+    await w.find('[data-teste="configurar-ia"]').trigger("click");
     await flushPromises();
-    const tela = w.find('[data-teste="tela-modelos"]');
-    expect(tela.text()).toContain("Recomendado para este computador");
-    await w.find('[data-teste="baixar-qwen3.5-4b-q4km"]').trigger("click");
+    const tela = w.find('[data-teste="tela-config-ia"]');
+    expect(tela.find('[data-teste="situacao-chave"]').text()).toContain("Nenhuma chave");
+    const campo = w.find('[data-teste="campo-chave"]');
+    expect(campo.attributes("type")).toBe("password");
+    expect(campo.attributes("autocomplete")).toBe("off");
+    const chave = "AIzaSyCHAVE_DE_TESTE_SENTINELA_123456";
+    await campo.setValue(chave);
+    await w.find("form").trigger("submit");
     await flushPromises();
-    expect(chamadas).toContain("baixar:qwen3.5-4b-q4km");
-    expect(w.find('[data-teste="andamento"]').text()).toContain("1 de 2 GB");
+    expect(chamadas).toContain("salvarChave:" + chave.length);
+    expect((w.find('[data-teste="campo-chave"]').element as HTMLInputElement).value).toBe("");
+    expect(w.html()).not.toContain("SENTINELA");
+    expect(w.find('[data-teste="situacao-chave"]').text()).toContain("aceita pelo Google");
+    expect(w.find('[data-teste="modelo-gemini-3.8-flash-preview"]').text()).toContain("Prévia");
+    await w.find('[data-teste="usar-gemini-3.6-flash"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain("selecionar:gemini-3.6-flash");
+    expect(w.find('[data-teste="modelo-gemini-3.6-flash"]').text()).toContain("Em uso");
+    await w.find('[data-teste="testar-gemini-3.6-flash"]').trigger("click");
+    await flushPromises();
+    expect(w.find('[data-teste="teste-ok-gemini-3.6-flash"]').exists()).toBe(true);
+    await w.find('[data-teste="obter-chave"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain("abrirPaginaChaves");
   });
 
-  it("teste da placa de vídeo exige confirmação (D-08)", async () => {
+  it("remover a chave exige confirmação", async () => {
+    iaAtual = { ...iaBase, chaveCadastrada: true, status: "nao_verificada", modeloSelecionado: "gemini-3.6-flash" };
     const w = mount(App);
     await flushPromises();
-    await w.find('[data-teste="link-modelos"]').trigger("click");
+    await w.find('[data-teste="link-config-ia"]').trigger("click");
     await flushPromises();
-    await w.find('[data-teste="testar-gpu"]').trigger("click");
-    expect(chamadas).not.toContain("testarGPU");
-    await w.find('[data-teste="confirmar-gpu"]').trigger("click");
+    await w.find('[data-teste="remover-chave"]').trigger("click");
+    expect(chamadas).not.toContain("removerChave");
+    await w.find('[data-teste="confirmar-remover-chave"]').trigger("click");
     await flushPromises();
-    expect(chamadas).toContain("testarGPU");
+    expect(chamadas).toContain("removerChave");
   });
 
-  it("com modelo instalado não há aviso de primeiro uso", async () => {
-    modelosAtual = { ...modelosBase, pronto: true };
+  it("com chave e modelo configurados não há aviso de primeiro uso", async () => {
+    iaAtual = { ...iaBase, chaveCadastrada: true, status: "nao_verificada", modeloSelecionado: "gemini-3.6-flash" };
     const w = mount(App);
     await flushPromises();
     expect(w.find('[data-teste="primeiro-uso"]').exists()).toBe(false);
