@@ -1,0 +1,13 @@
+# Fim de linha LF em todas as plataformas: os packs de política, o catálogo
+# e os golden files entram no hash do policy_bundle e precisam ser idênticos
+# no Linux e no Windows (CI).
+* text=auto eol=lf
+*.pdf binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.gguf binary
+*.bat text eol=crlf

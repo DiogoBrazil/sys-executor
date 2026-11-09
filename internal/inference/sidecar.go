@@ -439,3 +439,11 @@ func (a *anel) limpar() {
 	a.buf = nil
 	a.mu.Unlock()
 }
+
+// PID do processo (benchmark: pico de memória pelo sistema).
+func (s *Servidor) PID() int {
+	if s.cmd == nil || s.cmd.Process == nil {
+		return 0
+	}
+	return s.cmd.Process.Pid
+}
