@@ -59,6 +59,7 @@ const (
 	BaseTitulo     Base = "TITULO"
 	BaseCronologia Base = "CRONOLOGIA" // A01/A02: "provável", ver Provavel
 	BaseNenhuma    Base = "NENHUMA"
+	BaseIA         Base = "IA" // classificação residual pela IA (TRV-ING-001), sempre "provável"
 )
 
 // Peca é um documento dos autos.

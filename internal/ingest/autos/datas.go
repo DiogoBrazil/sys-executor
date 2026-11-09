@@ -78,6 +78,12 @@ func (a *Autos) Datas() []DataMencionada {
 	return out
 }
 
+// DatasNoTexto extrai as datas de um texto avulso (ex.: o trecho literal
+// devolvido pela IA, D-09.4). Posições em runas do próprio texto.
+func DatasNoTexto(s string, origem Origem) []DataMencionada {
+	return datasDaPagina(Pagina{Texto: s, Origem: origem})
+}
+
 func datasDaPagina(p Pagina) []DataMencionada {
 	norm := string(texto.Alinhado(p.Texto))
 	// Alinhado preserva a contagem de runas; os índices de byte do regexp são
