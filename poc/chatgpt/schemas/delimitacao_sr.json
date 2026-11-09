@@ -1,0 +1,97 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "ano": {
+      "maximum": 2100,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "autoridade": {
+      "maxLength": 160,
+      "type": "string"
+    },
+    "dia": {
+      "maximum": 31,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "fatos": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "descricao": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "trecho_literal": {
+            "maxLength": 800,
+            "type": "string"
+          }
+        },
+        "required": [
+          "descricao",
+          "trecho_literal"
+        ],
+        "type": "object"
+      },
+      "maxItems": 15,
+      "type": "array"
+    },
+    "mes": {
+      "maximum": 12,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "numero_portaria": {
+      "maxLength": 60,
+      "type": "string"
+    },
+    "sindicados": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "matricula": {
+            "maxLength": 30,
+            "type": "string"
+          },
+          "nome": {
+            "maxLength": 120,
+            "type": "string"
+          },
+          "posto_graduacao": {
+            "maxLength": 60,
+            "type": "string"
+          },
+          "trecho_literal": {
+            "maxLength": 400,
+            "type": "string"
+          }
+        },
+        "required": [
+          "matricula",
+          "nome",
+          "posto_graduacao",
+          "trecho_literal"
+        ],
+        "type": "object"
+      },
+      "maxItems": 20,
+      "type": "array"
+    },
+    "trecho_literal_portaria": {
+      "maxLength": 400,
+      "type": "string"
+    }
+  },
+  "required": [
+    "ano",
+    "autoridade",
+    "dia",
+    "fatos",
+    "mes",
+    "numero_portaria",
+    "sindicados",
+    "trecho_literal_portaria"
+  ],
+  "type": "object"
+}

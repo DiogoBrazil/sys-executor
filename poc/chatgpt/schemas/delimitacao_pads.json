@@ -1,0 +1,113 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "acusados": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "matricula": {
+            "maxLength": 30,
+            "type": "string"
+          },
+          "nome": {
+            "maxLength": 120,
+            "type": "string"
+          },
+          "posto_graduacao": {
+            "maxLength": 60,
+            "type": "string"
+          },
+          "trecho_literal": {
+            "maxLength": 400,
+            "type": "string"
+          }
+        },
+        "required": [
+          "matricula",
+          "nome",
+          "posto_graduacao",
+          "trecho_literal"
+        ],
+        "type": "object"
+      },
+      "maxItems": 5,
+      "type": "array"
+    },
+    "imputacoes": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "alinea": {
+            "maxLength": 4,
+            "type": "string"
+          },
+          "ano": {
+            "maximum": 2100,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "artigo": {
+            "maximum": 999,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "conduta": {
+            "maxLength": 600,
+            "type": "string"
+          },
+          "dia": {
+            "maximum": 31,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "diploma": {
+            "maxLength": 80,
+            "type": "string"
+          },
+          "inciso": {
+            "maxLength": 12,
+            "type": "string"
+          },
+          "mes": {
+            "maximum": 12,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "natureza": {
+            "enum": [
+              "LEVE",
+              "MEDIA",
+              "GRAVE",
+              "NAO_INFORMADA"
+            ],
+            "type": "string"
+          },
+          "trecho_literal": {
+            "maxLength": 800,
+            "type": "string"
+          }
+        },
+        "required": [
+          "alinea",
+          "ano",
+          "artigo",
+          "conduta",
+          "dia",
+          "diploma",
+          "inciso",
+          "mes",
+          "natureza",
+          "trecho_literal"
+        ],
+        "type": "object"
+      },
+      "maxItems": 20,
+      "type": "array"
+    }
+  },
+  "required": [
+    "acusados",
+    "imputacoes"
+  ],
+  "type": "object"
+}

@@ -1,0 +1,157 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "fora_do_objeto": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "descricao": {
+            "maxLength": 300,
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "CONDUTA_DIVERSA"
+            ],
+            "type": "string"
+          },
+          "trecho_literal": {
+            "maxLength": 400,
+            "type": "string"
+          }
+        },
+        "required": [
+          "descricao",
+          "tipo",
+          "trecho_literal"
+        ],
+        "type": "object"
+      },
+      "maxItems": 10,
+      "type": "array"
+    },
+    "midias": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "descricao": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "trecho_literal": {
+            "maxLength": 300,
+            "type": "string"
+          }
+        },
+        "required": [
+          "descricao",
+          "trecho_literal"
+        ],
+        "type": "object"
+      },
+      "maxItems": 10,
+      "type": "array"
+    },
+    "pessoas": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "militar": {
+            "enum": [
+              "SIM",
+              "NAO",
+              "INCERTO"
+            ],
+            "type": "string"
+          },
+          "nome": {
+            "maxLength": 120,
+            "type": "string"
+          },
+          "papel": {
+            "enum": [
+              "ACUSADO",
+              "TESTEMUNHA",
+              "DECLARANTE",
+              "OFENDIDO",
+              "DEFENSOR",
+              "ENCARREGADO",
+              "PERITO",
+              "OUTRO"
+            ],
+            "type": "string"
+          },
+          "posto_graduacao": {
+            "maxLength": 60,
+            "type": "string"
+          },
+          "trecho_literal": {
+            "maxLength": 300,
+            "type": "string"
+          }
+        },
+        "required": [
+          "militar",
+          "nome",
+          "papel",
+          "posto_graduacao",
+          "trecho_literal"
+        ],
+        "type": "object"
+      },
+      "maxItems": 15,
+      "type": "array"
+    },
+    "pontos": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "alvo_id": {
+            "enum": [
+              "IMP-1",
+              "IMP-2"
+            ],
+            "type": "string"
+          },
+          "quem": {
+            "maxLength": 120,
+            "type": "string"
+          },
+          "resumo": {
+            "maxLength": 300,
+            "type": "string"
+          },
+          "sentido": {
+            "enum": [
+              "ACUSACAO",
+              "DEFESA",
+              "NEUTRO"
+            ],
+            "type": "string"
+          },
+          "trecho_literal": {
+            "maxLength": 500,
+            "type": "string"
+          }
+        },
+        "required": [
+          "alvo_id",
+          "quem",
+          "resumo",
+          "sentido",
+          "trecho_literal"
+        ],
+        "type": "object"
+      },
+      "maxItems": 25,
+      "type": "array"
+    }
+  },
+  "required": [
+    "fora_do_objeto",
+    "midias",
+    "pessoas",
+    "pontos"
+  ],
+  "type": "object"
+}

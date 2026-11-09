@@ -1,0 +1,22 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "funcao": {
+      "enum": [
+        "MEMORANDO_DISCIPLINAR",
+        "TERMO_INQUIRICAO",
+        "ANEXO"
+      ],
+      "type": "string"
+    },
+    "trecho_literal": {
+      "maxLength": 300,
+      "type": "string"
+    }
+  },
+  "required": [
+    "funcao",
+    "trecho_literal"
+  ],
+  "type": "object"
+}

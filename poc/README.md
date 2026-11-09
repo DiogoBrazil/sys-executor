@@ -12,5 +12,6 @@ Resultados e decisões: `docs/planning/RELATORIO_FASE0.md`. Artefatos pesados (m
 | `docmodel/` | F0-06 DocModel → DOCX + `.typ` | `go run . -out <dir>` e `typst compile <dir>/minuta.typ` |
 | `rag/` | F0-07 SQLite FTS5 + embeddings | `go run . index -lib docs/law_library -db lib.db -server <llama-server> -model <emb.gguf>`; `go run . eval -db lib.db … -queries consultas.json` |
 | `sei-mapa/` | F0-08 mapeamento SEI (usuário executa) | ver `sei-mapa/LEIA-ME.md` |
+| `chatgpt/` | Etapa 1 do plano D-11: Sign in with ChatGPT + Responses API | ver `chatgpt/LEIA-ME.md` |
 
 **GPU:** não rodar Vulkan/CUDA nesta máquina sem decisão do usuário (relatório §2).

@@ -1,0 +1,206 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "agravantes": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "alinea": {
+            "maxLength": 2,
+            "type": "string"
+          },
+          "evid_refs": {
+            "items": {
+              "enum": [
+                ""
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "type": "array"
+          },
+          "fundamento": {
+            "maxLength": 400,
+            "type": "string"
+          },
+          "inciso": {
+            "maximum": 20,
+            "minimum": 4,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "alinea",
+          "evid_refs",
+          "fundamento",
+          "inciso"
+        ],
+        "type": "object"
+      },
+      "maxItems": 6,
+      "type": "array"
+    },
+    "atenuantes": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "evid_refs": {
+            "items": {
+              "enum": [
+                ""
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "type": "array"
+          },
+          "fundamento": {
+            "maxLength": 400,
+            "type": "string"
+          },
+          "inciso": {
+            "maximum": 20,
+            "minimum": 3,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "evid_refs",
+          "fundamento",
+          "inciso"
+        ],
+        "type": "object"
+      },
+      "maxItems": 5,
+      "type": "array"
+    },
+    "fundamentos": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "evid_refs": {
+            "items": {
+              "enum": [
+                ""
+              ],
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array"
+          },
+          "texto": {
+            "maxLength": 700,
+            "type": "string"
+          }
+        },
+        "required": [
+          "evid_refs",
+          "texto"
+        ],
+        "type": "object"
+      },
+      "maxItems": 10,
+      "minItems": 1,
+      "type": "array"
+    },
+    "imputacao_id": {
+      "enum": [
+        "IMP-1"
+      ],
+      "type": "string"
+    },
+    "justificacoes": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "evid_refs": {
+            "items": {
+              "enum": [
+                ""
+              ],
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "type": "array"
+          },
+          "fundamento": {
+            "maxLength": 400,
+            "type": "string"
+          },
+          "inciso": {
+            "maximum": 20,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "evid_refs",
+          "fundamento",
+          "inciso"
+        ],
+        "type": "object"
+      },
+      "maxItems": 4,
+      "type": "array"
+    },
+    "lacunas": {
+      "items": {
+        "maxLength": 300,
+        "type": "string"
+      },
+      "maxItems": 6,
+      "type": "array"
+    },
+    "resultado_proposto": {
+      "enum": [
+        "PROCEDENTE",
+        "IMPROCEDENTE"
+      ],
+      "type": "string"
+    },
+    "teses_defesa": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "evid_refs": {
+            "items": {
+              "enum": [
+                ""
+              ],
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array"
+          },
+          "texto": {
+            "maxLength": 700,
+            "type": "string"
+          }
+        },
+        "required": [
+          "evid_refs",
+          "texto"
+        ],
+        "type": "object"
+      },
+      "maxItems": 6,
+      "type": "array"
+    }
+  },
+  "required": [
+    "agravantes",
+    "atenuantes",
+    "fundamentos",
+    "imputacao_id",
+    "justificacoes",
+    "lacunas",
+    "resultado_proposto",
+    "teses_defesa"
+  ],
+  "type": "object"
+}
