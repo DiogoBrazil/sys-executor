@@ -194,6 +194,7 @@ func delimitarBlocosPADS(ctx context.Context, x *Executor, a *autos.Autos, bloco
 					prop.Pendencias = append(prop.Pendencias, fmt.Sprintf("O art. %d não foi encontrado no memorando; confirme o dispositivo.", prop.Artigo))
 					prop.Artigo, prop.Inciso, prop.Alinea = 0, "", ""
 				}
+				conferirDispositivo(textoMemo, &prop)
 				if prop.Artigo == 0 {
 					prop.Pendencias = append(prop.Pendencias, "Dispositivo não identificado com segurança; informe-o.")
 				}
@@ -232,6 +233,41 @@ func delimitarBlocosPADS(ctx context.Context, x *Executor, a *autos.Autos, bloco
 		r.Acusados = mesclarPessoas(r.Acusados, acus)
 	}
 	return nil
+}
+
+var (
+	reRomano = regexp.MustCompile(`^[IVXLCDM]+$`)
+	reLetra  = regexp.MustCompile(`^[a-z]$`)
+	// Forma de diploma normativo (texto sem acentos, minúsculo).
+	reDiploma = regexp.MustCompile(`^(rdpm|rdpm/ro|regulamento\b|estatuto\b|lei\b|decreto\b|codigo\b|cpm\b|cp\b|lc\b|constituicao\b)`)
+)
+
+// conferirDispositivo mantém inciso, alínea e diploma só quando aparecem no
+// memorando (o modelo às vezes repete o inciso na alínea ou põe a natureza
+// no diploma).
+func conferirDispositivo(memo string, p *ImputacaoProposta) {
+	if p.Artigo == 0 {
+		p.Inciso, p.Alinea, p.Diploma = "", "", ""
+		return
+	}
+	p.Inciso = strings.ToUpper(strings.TrimSpace(p.Inciso))
+	if p.Inciso != "" {
+		re := regexp.MustCompile(`(?i)(\binc(iso)?\.?\s*` + regexp.QuoteMeta(p.Inciso) + `\b|\bart(igo)?\.?\s*` + strconv.Itoa(p.Artigo) + `\s*,\s*` + regexp.QuoteMeta(p.Inciso) + `\b)`)
+		if !reRomano.MatchString(p.Inciso) || !re.MatchString(memo) {
+			p.Pendencias = append(p.Pendencias, "Inciso não confirmado no memorando; confira o dispositivo.")
+			p.Inciso = ""
+		}
+	}
+	p.Alinea = strings.ToLower(strings.Trim(strings.TrimSpace(p.Alinea), `"'“”`))
+	if p.Alinea != "" {
+		re := regexp.MustCompile(`(?i)\bal[ií]nea\s*["'“]?` + regexp.QuoteMeta(p.Alinea) + `\b`)
+		if !reLetra.MatchString(p.Alinea) || !re.MatchString(memo) {
+			p.Alinea = ""
+		}
+	}
+	if d := strings.TrimSpace(p.Diploma); d != "" && (!reDiploma.MatchString(texto.SemAcentos(d)) || !strings.Contains(texto.SemAcentos(memo), texto.SemAcentos(d))) {
+		p.Diploma = ""
+	}
 }
 
 func artigoNoTexto(s string, art int) bool {

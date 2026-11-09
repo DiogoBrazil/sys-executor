@@ -131,7 +131,7 @@ type Ponto struct {
 // localizarNoBloco confere o trecho e devolve o ponto com página e posição.
 // O trecho guardado é o do documento (não o da IA).
 func localizarNoBloco(a *autos.Autos, b Bloco, trecho string) (Ponto, bool) {
-	ini, fim, ok := Localizar(b.Texto, trecho)
+	ini, fim, citado, ok := LocalizarComOmissao(b.Texto, trecho)
 	if !ok {
 		return Ponto{}, false
 	}
@@ -140,10 +140,9 @@ func localizarNoBloco(a *autos.Autos, b Bloco, trecho string) (Ponto, bool) {
 	if pagFim != pag {
 		offFim = len([]rune(a.Paginas[pag-1].Texto)) - 1
 	}
-	r := []rune(b.Texto)
 	p := Ponto{
 		Peca: b.Peca.ID, Titulo: b.Peca.Titulo, SEI: b.Peca.SEI, Pagina: pag, Inicio: off, Fim: offFim + 1,
-		Trecho: string(r[ini:fim]), OCR: a.Paginas[pag-1].Origem == autos.OrigemOCR,
+		Trecho: strings.ReplaceAll(citado, separadorPaginas, " "), OCR: a.Paginas[pag-1].Origem == autos.OrigemOCR,
 	}
 	return p, true
 }

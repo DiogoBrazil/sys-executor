@@ -107,6 +107,9 @@ func conferirFundamentos(campo string, fs []saidaFund, validos map[string]bool, 
 		if err := conferirTextoLivre(campo, f.Texto, fontes); err != nil {
 			return nil, err
 		}
+		if err := conferirCitacoesLegais(campo, f.Texto, fontes); err != nil {
+			return nil, err
+		}
 		out = append(out, Fundamento{Texto: strings.TrimSpace(f.Texto), Evid: dedup(f.Evid)})
 	}
 	return out, nil
@@ -124,6 +127,9 @@ func conferirCirc(campo string, artigo int, cs []saidaCirc, validos map[string]b
 			}
 		}
 		if err := conferirTextoLivre(campo, c.Fundamento, fontes); err != nil {
+			return nil, err
+		}
+		if err := conferirCitacoesLegais(campo, c.Fundamento, fontes); err != nil {
 			return nil, err
 		}
 		out = append(out, CircunstanciaProposta{Artigo: artigo, Inciso: c.Inciso, Alinea: strings.ToLower(strings.TrimSpace(c.Alinea)),
@@ -201,6 +207,7 @@ func AnalisarImputacao(ctx context.Context, x *Executor, imp AlvoExtracao, conge
 		for i, p := range sel {
 			evs[i], docs[i], fontes[i], validos[p.ID] = p.ID, p.Evidencia(), p.Trecho, true
 		}
+		fontes = append(fontes, imp.Descricao, fmt.Sprint(congeladas.Dados))
 		var res AnaliseImputacao
 		err := x.Chamar(ctx, Chamada{
 			Etapa: catalog.EtapaAnalise, Alvo: imp.ID, Flags: flags,
@@ -240,6 +247,9 @@ func AnalisarImputacao(ctx context.Context, x *Executor, imp AlvoExtracao, conge
 			}
 			for _, l := range s.Lacunas {
 				if err := conferirTextoLivre("lacuna", l, fontes); err != nil {
+					return err
+				}
+				if err := conferirCitacoesLegais("lacuna", l, fontes); err != nil {
 					return err
 				}
 				if t := strings.TrimSpace(l); t != "" {

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/DiogoBrazil/sys-executor/internal/inference"
@@ -47,6 +48,9 @@ type Executor struct {
 	Contador policy.Contador
 	// Chamadas conta as chamadas feitas (métrica do benchmark).
 	Chamadas int
+	// Observar recebe cada tentativa (benchmark e diagnóstico em memória;
+	// nunca grava em disco). motivo vazio = aceita.
+	Observar func(etapa, alvo string, tentativa int, resposta []byte, motivo string)
 }
 
 func (x *Executor) contador() policy.Contador {
@@ -67,6 +71,8 @@ type Chamada struct {
 	NomeSchema string
 	Schema     map[string]any
 	Reserva    int
+	// Reenvios máximos (0 = MaxReenvios).
+	Reenvios int
 }
 
 // Chamar monta, envia e valida. decodificar recebe o JSON e devolve erro de
@@ -89,7 +95,11 @@ func (x *Executor) Chamar(ctx context.Context, ch Chamada, decodificar func([]by
 		return err
 	}
 	var motivo string
-	for tentativa := 0; tentativa <= MaxReenvios; tentativa++ {
+	reenvios := MaxReenvios
+	if ch.Reenvios > 0 && ch.Reenvios < MaxReenvios {
+		reenvios = ch.Reenvios
+	}
+	for tentativa := 0; tentativa <= reenvios; tentativa++ {
 		x.Chamadas++
 		res, err := x.Motor.Gerar(ctx, ped)
 		if err != nil {
@@ -102,8 +112,14 @@ func (x *Executor) Chamar(ctx context.Context, ch Chamada, decodificar func([]by
 			if err := decodificar(res.Conteudo); err != nil {
 				motivo = err.Error()
 			} else {
-				return nil
+				motivo = ""
 			}
+		}
+		if x.Observar != nil {
+			x.Observar(ch.Etapa, ch.Alvo, tentativa, res.Conteudo, motivo)
+		}
+		if motivo == "" {
+			return nil
 		}
 		ped.Historico = []inference.Mensagem{
 			{Papel: "assistant", Conteudo: string(res.Conteudo)},
@@ -152,4 +168,36 @@ func conferirTextoLivre(campo, s string, fontes []string) error {
 		}
 	}
 	return nil
+}
+
+// Citação de dispositivo legal no texto livre (art. N, Lei nº N, Decreto…).
+var reCitacaoLegal = regexp.MustCompile(`(?i)\b(art(igo)?s?\.?\s*\d+[º°o]?|lei\s+(complementar\s+)?(n[º°o.]*\s*)?\d[\d.]*|decreto(-lei)?\s+(n[º°o.]*\s*)?\d[\d.]*|s[úu]mula\s+\d+)`)
+
+// conferirCitacoesLegais: na análise, nenhum dispositivo pode ser citado de
+// memória (TRV-PRV-007, SR-SOL-005). Só vale o que estiver nas evidências ou
+// no dispositivo das imputações; a fundamentação jurídica vem depois, com
+// as fontes da biblioteca (Fases 5–6).
+func conferirCitacoesLegais(campo, s string, permitidos []string) error {
+	for _, c := range reCitacaoLegal.FindAllString(s, -1) {
+		alvo := normalizarCitacao(c)
+		ok := false
+		for _, p := range permitidos {
+			if strings.Contains(normalizarCitacao(p), alvo) {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			return fmt.Errorf("o campo %s cita %q, que não está nas evidências nem nas imputações; não cite dispositivos de memória", campo, c)
+		}
+	}
+	return nil
+}
+
+func normalizarCitacao(s string) string {
+	s = strings.ToLower(s)
+	s = regexp.MustCompile(`artigos?|art\.|arts\.`).ReplaceAllString(s, "art")
+	s = regexp.MustCompile(`n[º°o.]+\s*`).ReplaceAllString(s, "")
+	s = strings.NewReplacer("º", "", "°", "", ".", "").Replace(s)
+	return strings.Join(strings.Fields(s), " ")
 }

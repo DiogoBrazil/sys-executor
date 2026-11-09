@@ -46,6 +46,9 @@ func normalizar(s string) normalizado {
 			}
 			continue
 		}
+		if r == '-' && i > 0 && i+1 < len(orig) && unicode.IsLetter(orig[i-1]) && unicode.IsLetter(orig[i+1]) {
+			continue // hífen entre letras é ignorado dos dois lados ("pre-viamente", "corregedor-geral")
+		}
 		if unicode.IsSpace(r) || r == ' ' {
 			if !espaco && len(n.runas) > 0 {
 				n.runas = append(n.runas, ' ')
@@ -75,10 +78,120 @@ func quebraAdiante(r []rune, i int) bool {
 	return tem && i < len(r) && unicode.IsLetter(r[i])
 }
 
+// JanelaOmissao: distância máxima (runas normalizadas) entre partes de um
+// trecho com omissão de frase.
+const JanelaOmissao = 400
+
 // Localizar acha o trecho na fonte e devolve o intervalo [ini, fim) em runas
 // da fonte original. Reticências ("…" ou "...") no meio do trecho separam
 // partes que precisam aparecer em ordem.
 func Localizar(fonte, trecho string) (ini, fim int, ok bool) {
+	ini, fim, _, ok = localizarPartes(fonte, trecho)
+	return
+}
+
+// LocalizarComOmissao também aceita frases inteiras omitidas entre frases
+// citadas (o modelo costuma pular uma linha intermediária): cada frase do
+// trecho precisa existir intacta, na ordem, a no máximo JanelaOmissao da
+// anterior. Palavras dentro de uma frase nunca podem faltar. Devolve o texto
+// do documento com "[…]" onde houve omissão.
+func LocalizarComOmissao(fonte, trecho string) (ini, fim int, citado string, ok bool) {
+	if i, f, partes, ok := localizarPartes(fonte, trecho); ok {
+		return i, f, juntarPartes(fonte, partes), true
+	}
+	frases := reFrase.Split(strings.TrimSpace(trecho), -1)
+	if len(frases) < 2 {
+		return 0, 0, "", false
+	}
+	return localizarFrases(fonte, frases)
+}
+
+var reFrase = regexp.MustCompile(`(?:[.;:!?]["'”’)]?\s+|\s*\n\s*)`)
+
+func juntarPartes(fonte string, partes [][2]int) string {
+	r := []rune(fonte)
+	var b strings.Builder
+	for k, p := range partes {
+		if k > 0 {
+			if partes[k-1][1] < p[0] && strings.TrimSpace(string(r[partes[k-1][1]:p[0]])) != "" {
+				b.WriteString(" […] ")
+			} else {
+				b.WriteString(string(r[partes[k-1][1]:p[0]]))
+			}
+		}
+		b.WriteString(string(r[p[0]:p[1]]))
+	}
+	return b.String()
+}
+
+func localizarFrases(fonte string, frases []string) (int, int, string, bool) {
+	f := normalizar(fonte)
+	orig := []rune(fonte)
+	pos, total := 0, 0
+	var partes [][2]int
+	for _, fr := range frases {
+		a := normalizar(strings.TrimSpace(fr)).runas
+		if len(a) == 0 {
+			continue
+		}
+		if len(a) < MinTrecho {
+			return 0, 0, "", false
+		}
+		lim := len(f.runas)
+		if len(partes) > 0 {
+			lim = min(len(f.runas), pos+JanelaOmissao+len(a))
+		}
+		k := indice(f.runas[pos:lim], a)
+		if k < 0 {
+			return 0, 0, "", false
+		}
+		k += pos
+		ini, fim := f.origem[k], f.origem[k+len(a)-1]+1
+		if !fronteiraAntes(orig, ini) || !fronteiraDepois(orig, fim) {
+			return 0, 0, "", false // frase truncada: omissão dentro da frase
+		}
+		partes = append(partes, [2]int{ini, fim})
+		pos = k + len(a)
+		total += len(a)
+	}
+	if len(partes) == 0 || total < MinTrecho {
+		return 0, 0, "", false
+	}
+	return partes[0][0], partes[len(partes)-1][1], juntarPartes(fonte, partes), true
+}
+
+func ehFimDeFrase(r rune) bool { return strings.ContainsRune(".;:!?\n\r", r) }
+
+// fronteiraAntes: a parte começa no início do texto ou depois de fim de frase.
+func fronteiraAntes(r []rune, i int) bool {
+	for i--; i >= 0; i-- {
+		if r[i] == '\n' || r[i] == '\r' {
+			return true
+		}
+		if !unicode.IsSpace(r[i]) && !strings.ContainsRune(`"'“”‘’(`, r[i]) {
+			return ehFimDeFrase(r[i])
+		}
+	}
+	return true
+}
+
+// fronteiraDepois: a parte termina no fim do texto ou antes de fim de frase.
+func fronteiraDepois(r []rune, i int) bool {
+	if i > 0 && ehFimDeFrase(r[i-1]) {
+		return true
+	}
+	for ; i < len(r); i++ {
+		if r[i] == '\n' || r[i] == '\r' {
+			return true
+		}
+		if !unicode.IsSpace(r[i]) && !strings.ContainsRune(`"'“”‘’)`, r[i]) {
+			return ehFimDeFrase(r[i])
+		}
+	}
+	return true
+}
+
+func localizarPartes(fonte, trecho string) (ini, fim int, partesOrig [][2]int, ok bool) {
 	partes := strings.FieldsFunc(strings.ReplaceAll(trecho, "...", "…"), func(r rune) bool { return r == '…' })
 	f := normalizar(fonte)
 	alvoTotal := 0
@@ -92,19 +205,20 @@ func Localizar(fonte, trecho string) (ini, fim int, ok bool) {
 		alvoTotal += len(a)
 		k := indice(f.runas[pos:], a)
 		if k < 0 {
-			return 0, 0, false
+			return 0, 0, nil, false
 		}
 		k += pos
 		if ini < 0 {
 			ini = f.origem[k]
 		}
 		fim = f.origem[k+len(a)-1] + 1
+		partesOrig = append(partesOrig, [2]int{f.origem[k], fim})
 		pos = k + len(a)
 	}
 	if ini < 0 || alvoTotal < MinTrecho {
-		return 0, 0, false
+		return 0, 0, nil, false
 	}
-	return ini, fim, true
+	return ini, fim, partesOrig, true
 }
 
 func indice(h, a []rune) int {

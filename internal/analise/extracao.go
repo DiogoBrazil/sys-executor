@@ -3,6 +3,7 @@ package analise
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/autos"
@@ -17,6 +18,9 @@ var semProva = map[segment.Funcao]bool{
 	segment.Capa: true, segment.Notificacao: true, segment.Ciencia: true, segment.TermoJuntada: true,
 	segment.TermoRemessa: true, segment.Procuracao: true, segment.MemorandoDisciplinar: true, segment.PortariaSR: true,
 }
+
+// Termos que caracterizam mídia (mesma família de segment.DetectarMidias).
+var reMidia = regexp.MustCompile(`\b(video|videos|audio|audios|gravac|gravad|imagem|imagens|foto|fotos|fotograf|camera|cameras|midia|midias|cd|dvd|pen ?drive|link|arquivo digital|whatsapp|mensagem de voz|filmag)`)
 
 // PecaComProva diz se a peça entra na extração de pontos (etapa 5).
 func PecaComProva(p segment.Peca) bool { return !semProva[p.Funcao] }
@@ -160,8 +164,19 @@ func extrairBlocos(ctx context.Context, x *Executor, a *autos.Autos, blocos []Bl
 		papeis, fora = papeisSR, []string{AchadoFatoNovo, AchadoMilitarNovo}
 	}
 	for _, b := range blocos {
+		// Itens que conferem em qualquer tentativa são acumulados; o reenvio
+		// pede só a correção dos demais.
 		var parcial Extracao
 		descartes := 0
+		vistos := map[string]bool{}
+		novo := func(tipo string, p Ponto) bool {
+			k := fmt.Sprintf("%s|%d|%d|%d", tipo, p.Pagina, p.Inicio, p.Fim)
+			if vistos[k] {
+				return false
+			}
+			vistos[k] = true
+			return true
+		}
 		err := x.Chamar(ctx, Chamada{
 			Etapa: catalog.EtapaExtracao, Alvo: fmt.Sprintf("%s (pág. %d)", b.Peca.Titulo, b.PaginaInicial()), Flags: flags,
 			Secoes: []policy.Secao{secao}, Evidencias: []policy.Evidencia{b.Evidencia()},
@@ -172,7 +187,7 @@ func extrairBlocos(ctx context.Context, x *Executor, a *autos.Autos, blocos []Bl
 			if err := decodificarEstrito(js, &s); err != nil {
 				return err
 			}
-			parcial, descartes = Extracao{}, 0
+			descartes = 0
 			var falhas []string
 			falha := func(f string, a ...any) {
 				descartes++
@@ -199,7 +214,9 @@ func extrairBlocos(ctx context.Context, x *Executor, a *autos.Autos, blocos []Bl
 					continue
 				}
 				p.Alvo, p.Quem, p.Resumo, p.Sentido, p.Pessoa = pt.Alvo, strings.TrimSpace(pt.Quem), strings.TrimSpace(pt.Resumo), pt.Sentido, strings.TrimSpace(pt.Pessoa)
-				parcial.Pontos = append(parcial.Pontos, p)
+				if novo("ponto"+p.Alvo, p) {
+					parcial.Pontos = append(parcial.Pontos, p)
+				}
 			}
 			for k, ps := range s.Pessoas {
 				p, ok := localizarNoBloco(a, b, ps.Trecho)
@@ -211,8 +228,10 @@ func extrairBlocos(ctx context.Context, x *Executor, a *autos.Autos, blocos []Bl
 					falha("a pessoa %d tem papel ou indicação de militar inválidos", k+1)
 					continue
 				}
-				parcial.Pessoas = append(parcial.Pessoas, PessoaNoAto{Nome: strings.TrimSpace(ps.Nome), Papel: ps.Papel,
-					Militar: ps.Militar, Posto: strings.TrimSpace(ps.Posto), Peca: b.Peca.ID, Ponto: p})
+				if novo("pessoa"+texto.SemAcentos(ps.Nome), Ponto{}) {
+					parcial.Pessoas = append(parcial.Pessoas, PessoaNoAto{Nome: strings.TrimSpace(ps.Nome), Papel: ps.Papel,
+						Militar: ps.Militar, Posto: strings.TrimSpace(ps.Posto), Peca: b.Peca.ID, Ponto: p})
+				}
 			}
 			for k, m := range s.Midias {
 				p, ok := localizarNoBloco(a, b, m.Trecho)
@@ -220,7 +239,13 @@ func extrairBlocos(ctx context.Context, x *Executor, a *autos.Autos, blocos []Bl
 					falha("a mídia %d não tem trecho literal no documento", k+1)
 					continue
 				}
-				parcial.Achados = append(parcial.Achados, Achado{Tipo: AchadoMidia, Descricao: strings.TrimSpace(m.Descricao), Ponto: p})
+				if !reMidia.MatchString(texto.SemAcentos(p.Trecho)) {
+					falha("o item %d de midias não menciona mídia (vídeo, áudio, gravação, imagem, link…); deixe a lista vazia se não houver", k+1)
+					continue
+				}
+				if novo(AchadoMidia, p) {
+					parcial.Achados = append(parcial.Achados, Achado{Tipo: AchadoMidia, Descricao: strings.TrimSpace(m.Descricao), Ponto: p})
+				}
 			}
 			for k, f := range s.ForaDoObjeto {
 				if !em(f.Tipo, fora...) {
@@ -232,7 +257,9 @@ func extrairBlocos(ctx context.Context, x *Executor, a *autos.Autos, blocos []Bl
 					falha("o item fora do objeto %d não tem trecho literal no documento", k+1)
 					continue
 				}
-				parcial.Achados = append(parcial.Achados, Achado{Tipo: f.Tipo, Descricao: strings.TrimSpace(f.Descricao), Ponto: p})
+				if novo(f.Tipo, p) {
+					parcial.Achados = append(parcial.Achados, Achado{Tipo: f.Tipo, Descricao: strings.TrimSpace(f.Descricao), Ponto: p})
+				}
 			}
 			for k, pe := range s.Pericias {
 				p, ok := localizarNoBloco(a, b, pe.Trecho)
@@ -240,10 +267,12 @@ func extrairBlocos(ctx context.Context, x *Executor, a *autos.Autos, blocos []Bl
 					falha("a perícia %d não tem trecho literal no documento", k+1)
 					continue
 				}
-				parcial.Achados = append(parcial.Achados, Achado{Tipo: AchadoPericia, Descricao: strings.TrimSpace(pe.Descricao), Extra: strings.TrimSpace(pe.Laudo), Ponto: p})
+				if novo(AchadoPericia, p) {
+					parcial.Achados = append(parcial.Achados, Achado{Tipo: AchadoPericia, Descricao: strings.TrimSpace(pe.Descricao), Extra: strings.TrimSpace(pe.Laudo), Ponto: p})
+				}
 			}
 			if len(falhas) > 0 {
-				return fmt.Errorf("%s", strings.Join(falhas, "; "))
+				return fmt.Errorf("%s (os demais itens já foram aceitos; corrija só estes)", strings.Join(falhas, "; "))
 			}
 			return nil
 		})
