@@ -63,7 +63,7 @@ func classificar(ctx context.Context, err error, chave string) falhaGemini {
 }
 
 func classificarAPI(e genai.APIError, chave string) falhaGemini {
-	causa := sanear(fmt.Errorf("gemini %d %s: %s", e.Code, e.Status, e.Message), chave)
+	causa := sanear(fmt.Errorf("gemini %d %s: %s%s", e.Code, e.Status, e.Message, violacoes(e)), chave)
 	motivo := razao(e)
 	// Créditos pré-pagos esgotados ou faturamento pendente: não adianta
 	// repetir nem esperar (o código HTTP varia; vale o texto e o status).
@@ -119,6 +119,28 @@ func semCreditos(e genai.APIError, motivo string) bool {
 		}
 	}
 	return strings.Contains(motivo, "BILLING")
+}
+
+// violacoes resume google.rpc.BadRequest.fieldViolations (qual campo do
+// pedido a API recusou), para o diagnóstico.
+func violacoes(e genai.APIError) string {
+	var out []string
+	for _, d := range e.Details {
+		if t, _ := d["@type"].(string); !strings.HasSuffix(t, "google.rpc.BadRequest") {
+			continue
+		}
+		vs, _ := d["fieldViolations"].([]any)
+		for _, v := range vs {
+			m, _ := v.(map[string]any)
+			campo, _ := m["field"].(string)
+			desc, _ := m["description"].(string)
+			out = append(out, strings.TrimSpace(campo+": "+desc))
+		}
+	}
+	if len(out) == 0 {
+		return ""
+	}
+	return " (campos: " + strings.Join(out, "; ") + ")"
 }
 
 // razao lê google.rpc.ErrorInfo.reason dos detalhes.

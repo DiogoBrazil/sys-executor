@@ -27,7 +27,10 @@ const (
 	// TimeoutPadrao por requisição (o cancelamento da tarefa interrompe antes).
 	TimeoutPadrao = 5 * time.Minute
 	// folgaPensamento: tokens de saída somados à reserva da resposta quando o
-	// modelo raciocina (o raciocínio consome a mesma cota de saída).
+	// modelo raciocina e o limite do modelo não é conhecido. Com o limite
+	// conhecido, usa-se o limite do modelo: o raciocínio consome a mesma
+	// cota e, esgotada, a resposta volta cortada e sem texto. Só os tokens
+	// efetivamente gerados são cobrados.
 	folgaPensamento = 24576
 	// tentativasTransporte: total de tentativas para falhas transitórias
 	// (429 por minuto, 5xx, rede). Distintas dos reenvios do validador.
@@ -206,6 +209,9 @@ func (m *MotorGemini) configuracao(p Pedido) (*genai.GenerateContentConfig, erro
 	}
 	if m.pensa {
 		saida += folgaPensamento
+		if m.saidaMax > saida {
+			saida = m.saidaMax
+		}
 		if m.pensamento != "" {
 			cfg.ThinkingConfig = &genai.ThinkingConfig{ThinkingLevel: genai.ThinkingLevel(m.pensamento)}
 		}
@@ -237,6 +243,10 @@ func segurancaDesligada() []*genai.SafetySetting {
 	return out
 }
 
+// respostaVazia substitui, no histórico do reenvio, uma resposta anterior sem
+// texto (ex.: cortada durante o raciocínio): a API recusa parte vazia (400).
+const respostaVazia = "(a resposta anterior veio vazia ou foi cortada antes do texto)"
+
 func conteudos(p Pedido) []*genai.Content {
 	cs := []*genai.Content{genai.NewContentFromText(p.Usuario, genai.RoleUser)}
 	for _, h := range p.Historico {
@@ -244,7 +254,11 @@ func conteudos(p Pedido) []*genai.Content {
 		if h.Papel == "assistant" || h.Papel == "model" {
 			papel = genai.RoleModel
 		}
-		cs = append(cs, genai.NewContentFromText(h.Conteudo, papel))
+		t := h.Conteudo
+		if strings.TrimSpace(t) == "" {
+			t = respostaVazia
+		}
+		cs = append(cs, genai.NewContentFromText(t, papel))
 	}
 	return cs
 }
@@ -270,7 +284,7 @@ func (m *MotorGemini) Gerar(ctx context.Context, p Pedido) (Resposta, error) {
 	dur := time.Since(ini)
 	if err != nil {
 		m.registrar(nil, dur, true)
-		return Resposta{}, err
+		return Resposta{}, anotar(err, p)
 	}
 	m.registrar(resp, dur, false)
 	return interpretar(resp, dur)
@@ -377,4 +391,22 @@ func esperar(ctx context.Context, d time.Duration) error {
 	case <-t.C:
 		return nil
 	}
+}
+
+// anotar acrescenta à causa técnica (só diagnóstico em memória) a etapa e o
+// formato do pedido; nenhum conteúdo dos autos entra.
+func anotar(err error, p Pedido) error {
+	var e *erros.Erro
+	if !errors.As(err, &e) || e.Causa == nil {
+		return err
+	}
+	vazios := 0
+	for _, h := range p.Historico {
+		if strings.TrimSpace(h.Conteudo) == "" {
+			vazios++
+		}
+	}
+	c := *e
+	c.Causa = fmt.Errorf("%w [schema=%s historico=%d vazios=%d schema_bytes=%d]", e.Causa, p.NomeSchema, len(p.Historico), vazios, len(p.Schema))
+	return &c
 }

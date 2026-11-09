@@ -172,7 +172,7 @@ func TestGerarMapeiaPedidoESemRetencao(t *testing.T) {
 	if _, tem := gc["temperature"]; tem {
 		t.Fatal("temperatura não deve ser enviada (padrão do modelo Gemini 3)")
 	}
-	if gc["maxOutputTokens"].(float64) != float64(500+folgaPensamento) {
+	if gc["maxOutputTokens"].(float64) != 65536 { // modelo que raciocina: limite do modelo
 		t.Fatalf("maxOutputTokens %v", gc["maxOutputTokens"])
 	}
 	conts, _ := c["contents"].([]any)
@@ -502,5 +502,43 @@ func TestEsperaRespeitaPrazoELimite(t *testing.T) {
 	_, err = m2.Gerar(ctx, pedidoTeste)
 	if errors.Is(err, context.Canceled) || codigo(err) != erros.IACota {
 		t.Fatalf("prazo curto deve devolver a cota, não cancelamento: %v", err)
+	}
+}
+
+// Resposta anterior vazia (cortada no raciocínio) não pode virar parte vazia
+// no reenvio: a API recusa com 400 INVALID_ARGUMENT.
+func TestHistoricoVazioNaoGeraParteVazia(t *testing.T) {
+	f := novoFalso(t)
+	f.roteiro = []resp{ok(`{"a":"b"}`)}
+	m, err := NovoMotorGemini(context.Background(), f.cfg())
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := pedidoTeste
+	p.Historico = []Mensagem{{Papel: "assistant", Conteudo: "  "}, {Papel: "user", Conteudo: "corrija"}}
+	if _, err := m.Gerar(context.Background(), p); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range f.corpo(0)["contents"].([]any) {
+		for _, pt := range c.(map[string]any)["parts"].([]any) {
+			if txt, _ := pt.(map[string]any)["text"].(string); strings.TrimSpace(txt) == "" {
+				t.Fatalf("parte vazia enviada: %v", f.corpo(0)["contents"])
+			}
+		}
+	}
+}
+
+func TestDiagnosticoDo400TrazCampoEEtapa(t *testing.T) {
+	f := novoFalso(t)
+	f.roteiro = []resp{erroAPI(400, "INVALID_ARGUMENT", "Request contains an invalid argument.",
+		`[{"@type":"type.googleapis.com/google.rpc.BadRequest","fieldViolations":[{"field":"contents[1].parts[0].data","description":"required oneof field 'data' must have one initialized field"}]}]`)}
+	m, _ := NovoMotorGemini(context.Background(), f.cfg())
+	_, err := m.Gerar(context.Background(), pedidoTeste)
+	var e *erros.Erro
+	if !errors.As(err, &e) || e.Codigo != erros.InternoInesperado {
+		t.Fatalf("%v", err)
+	}
+	if d := e.Causa.Error(); !strings.Contains(d, "contents[1].parts[0].data") || !strings.Contains(d, "schema=x") {
+		t.Fatalf("diagnóstico sem campo/etapa: %s", d)
 	}
 }
