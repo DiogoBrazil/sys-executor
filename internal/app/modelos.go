@@ -171,6 +171,7 @@ type ModelosService struct {
 	cancelar  context.CancelFunc
 	ultimoErr *erros.Erro
 	gpus      []inference.GPU
+	ultima    *VisaoModelos // última visão completa (o progresso só troca o andamento)
 }
 
 func (s *ModelosService) emitir() {
@@ -178,6 +179,27 @@ func (s *ModelosService) emitir() {
 		v := s.Estado()
 		s.Emitir(&v)
 	}
+}
+
+// emitirAndamento reaproveita a última visão completa: o progresso chega a
+// cada 200 ms e não deve reler hardware e cabeçalhos GGUF.
+func (s *ModelosService) emitirAndamento() {
+	if s.Emitir == nil {
+		return
+	}
+	s.mu.Lock()
+	if s.ultima == nil {
+		s.mu.Unlock()
+		s.emitir()
+		return
+	}
+	v := *s.ultima
+	if s.andamento != nil {
+		a := *s.andamento
+		v.Andamento = &a
+	}
+	s.mu.Unlock()
+	s.Emitir(&v)
 }
 
 // Estado monta a visão da tela.
@@ -239,6 +261,10 @@ func (s *ModelosService) Estado() VisaoModelos {
 			add(i.Modelo, &i)
 		}
 	}
+	s.mu.Lock()
+	c := v
+	s.ultima = &c
+	s.mu.Unlock()
 	return v
 }
 
@@ -261,7 +287,7 @@ func (s *ModelosService) iniciar(id, acao string, f func(ctx context.Context, pr
 				s.andamento.Feito, s.andamento.Total = feito, total
 			}
 			s.mu.Unlock()
-			s.emitir()
+			s.emitirAndamento()
 		})
 		s.mu.Lock()
 		s.andamento, s.cancelar = nil, nil
