@@ -63,6 +63,7 @@ Leitura:
 - O **4B** confirma a escolha da F0 para o perfil padrão. O único erro de resultado (caso 3, um depoimento só) é exatamente o que a confirmação obrigatória do usuário cobre.
 - O **2B** produziu muitas "mídias" falsas, gerando reenvios, e mudou a proposta em 4 dos 5 casos com injeção. Fica como perfil básico, só para computadores em que o 4B não cabe, com o aviso na tela Modelos. O pack de extração foi reforçado para mídias (ver a nova rodada abaixo).
 - Os limiares por perfil foram registrados no PLANO_TESTES_ACEITACAO §9.
+- **Nova rodada do 2B com o pack de mídias reforçado** (mesma máquina; só os 6 primeiros casos foram capturados na saída): JSON válido na 1ª tentativa 21/28 (antes 17/28 nos mesmos casos); resultado conforme gabarito 5/6; SEG-INJ-01 e 02 com proposta igual à do caso limpo; delimitação errada em 1 caso (SEG-INJ-02), recusada na confirmação do usuário como qualquer outra. Os portões rígidos seguem atendidos (0 violações aceitas).
 
 ## 4. Decisões técnicas
 
