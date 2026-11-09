@@ -1,7 +1,8 @@
 // Package pipeline registra as etapas de processamento dos autos na tarefa
 // (plano §7). Fase 2: verificação, extração/OCR, classificação das peças e
 // compatibilidade procedimento × autos. As etapas analíticas seguintes
-// (delimitação em diante) chegam nas Fases 3–6.
+// (delimitação em diante) chegam nas Fases 3–6. Fase 4: delimitação e
+// análise com a IA local (etapas 2–9 do plano §5.4).
 package pipeline
 
 import (
@@ -26,10 +27,13 @@ type Dados struct {
 	Datas  []autos.DataMencionada // todas as menções, inclusive divergentes (A03)
 	Indice *autos.Indice
 	Compat segment.Compatibilidade
+	// IA: estado das etapas de IA (Fase 4), nil antes da delimitação.
+	IA *EstadoIA
 }
 
 // Liberar fecha o índice em memória (chamado pela tarefa ao terminar).
 func (d *Dados) Liberar() {
+	d.IA.liberar()
 	if d.Indice != nil {
 		_ = d.Indice.Fechar()
 		d.Indice = nil
@@ -44,6 +48,8 @@ type Pipeline struct {
 	DPI          int
 	// SEI obtém o PDF pelo SEI/RO (nil: modalidade indisponível).
 	SEI ObterSEI
+	// IA prepara o motor de IA local (nil: etapas de IA indisponíveis).
+	IA FonteMotor
 
 	once   sync.Once
 	motor  ocr.Motor
@@ -67,6 +73,8 @@ func (p *Pipeline) Etapas() map[workflow.Estado]workflow.Etapa {
 		workflow.Extraindo:        p.extrair,
 		workflow.Classificando:    p.classificar,
 		workflow.Compatibilidade:  p.compatibilidade,
+		workflow.Delimitando:      p.delimitar,
+		workflow.Analisando:       p.analisar,
 	}
 }
 

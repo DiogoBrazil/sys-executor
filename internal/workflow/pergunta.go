@@ -25,6 +25,9 @@ type Pergunta struct {
 	Revisavel bool
 	// Resumo da resposta para a lista "Respostas dadas" (preenchido pela etapa).
 	Resumir func(Resposta) string
+	// Conferir valida o conjunto dos valores (ex.: ao menos uma imputação);
+	// o erro aparece ao usuário como TAR-006.
+	Conferir func(valores map[string]string) error
 }
 
 // Opcao de resposta.

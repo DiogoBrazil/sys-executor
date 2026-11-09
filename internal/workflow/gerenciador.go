@@ -453,6 +453,12 @@ func (g *Gerenciador) Responder(perguntaID, opcaoID string, valores map[string]s
 			g.mu.Unlock()
 			return nil, err
 		}
+		if t.pergunta.Conferir != nil {
+			if err := t.pergunta.Conferir(vs); err != nil {
+				g.mu.Unlock()
+				return nil, erros.Com(erros.TarefaRespostaInvalid, err)
+			}
+		}
 	}
 	r := Resposta{Opcao: opcaoID, Valores: vs, Versao: t.respostas[perguntaID].Versao + 1}
 	if ant, ok := t.anteriores[perguntaID]; ok && r.Versao <= ant.Versao {

@@ -337,3 +337,15 @@ func conjunto(xs []string) map[string]bool {
 	}
 	return m
 }
+
+// Fato devolve um fato registrado (original ou proposto).
+func (o *ObjetoSR) Fato(id string) (Fato, bool) {
+	f, ok := o.fatos[id]
+	return f, ok
+}
+
+// Pessoa devolve uma pessoa registrada.
+func (o *ObjetoSR) Pessoa(id string) (Pessoa, bool) {
+	p, ok := o.pessoas[id]
+	return p, ok
+}

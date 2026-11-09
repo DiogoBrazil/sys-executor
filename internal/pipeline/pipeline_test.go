@@ -86,12 +86,13 @@ func fixtureSEI(t *testing.T) []byte {
 }
 
 // PADS compatível: percorre verificação → extração → classificação →
-// compatibilidade e pára na delimitação (Fase 4), com o resumo publicado.
+// compatibilidade e chega à delimitação, com o resumo publicado. Sem IA
+// local configurada, pára com MOD-001 (recuperável: "Tentar novamente").
 func TestPADSFixtureAteDelimitacao(t *testing.T) {
 	g, _ := montar(t, 90)
 	enviar(t, g, workflow.TipoPADS, fixtureSEI(t))
 	v := esperar(t, g, func(v *workflow.Visao) bool { return v.Parada || v.Terminal })
-	if v.Estado != workflow.Delimitando || v.Erro == nil || v.Erro.Codigo != "TAR-004" {
+	if v.Estado != workflow.Delimitando || v.Erro == nil || v.Erro.Codigo != "MOD-001" || !v.Retomavel {
 		t.Fatalf("%+v", v)
 	}
 	a := v.Autos
