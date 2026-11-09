@@ -92,10 +92,19 @@ func (s *TarefaService) SelecionarPDF() Resposta {
 	return s.responder(s.g.ReceberUpload(dados))
 }
 
-// Responder escolhe uma opção da pergunta pendente.
-func (s *TarefaService) Responder(perguntaID, opcaoID string) Resposta {
-	return s.responder(s.g.Responder(perguntaID, opcaoID))
+// Responder escolhe uma opção da pergunta pendente, com os valores dos
+// campos do formulário (validados no Go).
+func (s *TarefaService) Responder(perguntaID, opcaoID string, valores map[string]string) Resposta {
+	return s.responder(s.g.Responder(perguntaID, opcaoID, valores))
 }
+
+// Revisar reabre uma resposta já dada; o que depende dela é refeito.
+func (s *TarefaService) Revisar(perguntaID string) Resposta {
+	return s.responder(s.g.Revisar(perguntaID))
+}
+
+// Retomar repete a etapa parada por erro recuperável.
+func (s *TarefaService) Retomar() Resposta { return s.responder(s.g.Retomar()) }
 
 // InformarCredenciais entrega usuário, senha, órgão e número do processo ao
 // login do SEI. A senha vira []byte e é zerada depois do uso (melhor esforço:

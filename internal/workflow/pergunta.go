@@ -1,13 +1,30 @@
 package workflow
 
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/DiogoBrazil/sys-executor/internal/erros"
+)
+
 // Pergunta pontual que pausa a tarefa (V4 §31.2). Cada opção leva a um
 // destino explícito: "" volta à etapa que perguntou (que lê a resposta),
-// RecebendoUpload pede outro PDF, Cancelada encerra a tarefa.
+// RecebendoUpload pede outro PDF, Cancelada encerra a tarefa. Campos (quando
+// houver) são validados pelo Go antes de a etapa continuar.
 type Pergunta struct {
 	ID       string
 	Titulo   string
 	Contexto string
 	Opcoes   []Opcao
+	Campos   []Campo
+	Grupos   []GrupoCampos
+	// Revisavel: a resposta pode ser alterada depois (a etapa dona refaz o
+	// que depende dela; F4-05).
+	Revisavel bool
+	// Resumo da resposta para a lista "Respostas dadas" (preenchido pela etapa).
+	Resumir func(Resposta) string
 }
 
 // Opcao de resposta.
@@ -15,31 +32,192 @@ type Opcao struct {
 	ID      string
 	Rotulo  string
 	Destino Estado
+	// Validar: a opção exige os campos preenchidos (ex.: "Confirmar").
+	Validar bool
 }
+
+// TipoCampo de formulário.
+type TipoCampo string
+
+const (
+	CampoTexto      TipoCampo = "TEXTO"
+	CampoTextoLongo TipoCampo = "TEXTO_LONGO"
+	CampoNumero     TipoCampo = "NUMERO"
+	CampoData       TipoCampo = "DATA" // DD/MM/AAAA
+	CampoEscolha    TipoCampo = "ESCOLHA"
+	CampoSimNao     TipoCampo = "SIM_NAO"
+)
+
+// Fonte aponta um trecho dos autos (abre o visualizador com realce).
+type Fonte struct {
+	Rotulo string `json:"rotulo"`
+	Pagina int    `json:"pagina"`
+	Inicio int    `json:"inicio"`
+	Fim    int    `json:"fim"`
+	Trecho string `json:"trecho"`
+}
+
+// Condicao de visibilidade: o campo só vale se outro campo tiver o valor.
+type Condicao struct {
+	Campo string `json:"campo"`
+	Valor string `json:"valor"`
+}
+
+// Campo de formulário.
+type Campo struct {
+	ID          string       `json:"id"`
+	Rotulo      string       `json:"rotulo"`
+	Tipo        TipoCampo    `json:"tipo"`
+	Opcoes      []OpcaoVisao `json:"opcoes"`
+	Obrigatorio bool         `json:"obrigatorio"`
+	Valor       string       `json:"valor"` // valor inicial (proposta da IA ou resposta anterior)
+	Ajuda       string       `json:"ajuda"`
+	Grupo       string       `json:"grupo"`
+	Min         int          `json:"min"`
+	Max         int          `json:"max"`
+	Fontes      []Fonte      `json:"fontes"`
+	MostrarSe   *Condicao    `json:"mostrarSe"`
+}
+
+// GrupoCampos agrupa campos na tela (ex.: uma imputação), com o contexto e
+// as fontes que o usuário precisa ver para decidir.
+type GrupoCampos struct {
+	ID        string   `json:"id"`
+	Titulo    string   `json:"titulo"`
+	Descricao []string `json:"descricao"`
+	Fontes    []Fonte  `json:"fontes"`
+	Alertas   []string `json:"alertas"`
+}
+
+// Resposta do usuário a uma pergunta (DecisaoUsuario do plano §6).
+type Resposta struct {
+	Opcao   string            `json:"opcao"`
+	Valores map[string]string `json:"valores"`
+	Versao  int               `json:"versao"`
+}
+
+// Valor devolve o valor de um campo.
+func (r Resposta) Valor(campo string) string { return r.Valores[campo] }
 
 // PerguntaVisao é a pergunta enviada à interface.
 type PerguntaVisao struct {
-	ID       string       `json:"id"`
-	Titulo   string       `json:"titulo"`
-	Contexto string       `json:"contexto"`
-	Opcoes   []OpcaoVisao `json:"opcoes"`
+	ID       string        `json:"id"`
+	Titulo   string        `json:"titulo"`
+	Contexto string        `json:"contexto"`
+	Opcoes   []OpcaoVisao  `json:"opcoes"`
+	Campos   []Campo       `json:"campos"`
+	Grupos   []GrupoCampos `json:"grupos"`
 }
 
 // OpcaoVisao é uma opção exibida.
 type OpcaoVisao struct {
-	ID     string `json:"id"`
-	Rotulo string `json:"rotulo"`
+	ID      string `json:"id"`
+	Rotulo  string `json:"rotulo"`
+	Validar bool   `json:"validar"`
 }
 
 func (p *Pergunta) visao() *PerguntaVisao {
 	if p == nil {
 		return nil
 	}
-	v := &PerguntaVisao{ID: p.ID, Titulo: p.Titulo, Contexto: p.Contexto}
+	v := &PerguntaVisao{ID: p.ID, Titulo: p.Titulo, Contexto: p.Contexto, Campos: p.Campos, Grupos: p.Grupos}
 	for _, o := range p.Opcoes {
-		v.Opcoes = append(v.Opcoes, OpcaoVisao{ID: o.ID, Rotulo: o.Rotulo})
+		v.Opcoes = append(v.Opcoes, OpcaoVisao{ID: o.ID, Rotulo: o.Rotulo, Validar: o.Validar})
 	}
 	return v
+}
+
+// visivel aplica MostrarSe.
+func visivel(c Campo, valores map[string]string) bool {
+	return c.MostrarSe == nil || valores[c.MostrarSe.Campo] == c.MostrarSe.Valor
+}
+
+// ValidarCampos confere obrigatoriedade e formato; devolve os valores
+// normalizados só dos campos visíveis (TAR-006 em caso de problema).
+func ValidarCampos(cs []Campo, valores map[string]string) (map[string]string, error) {
+	out := map[string]string{}
+	var problemas []string
+	for _, c := range cs {
+		if !visivel(c, valores) {
+			continue
+		}
+		v := strings.TrimSpace(valores[c.ID])
+		if v == "" {
+			if c.Obrigatorio {
+				problemas = append(problemas, c.Rotulo+": obrigatório")
+			}
+			continue
+		}
+		switch c.Tipo {
+		case CampoNumero:
+			n, err := strconv.Atoi(v)
+			if err != nil || (c.Min != 0 || c.Max != 0) && (n < c.Min || n > c.Max) {
+				problemas = append(problemas, fmt.Sprintf("%s: número entre %d e %d", c.Rotulo, c.Min, c.Max))
+				continue
+			}
+			v = strconv.Itoa(n)
+		case CampoData:
+			t, err := time.Parse("02/01/2006", v)
+			if err != nil || t.Year() < 1900 || t.Year() > 2100 {
+				problemas = append(problemas, c.Rotulo+": data no formato DD/MM/AAAA")
+				continue
+			}
+		case CampoEscolha, CampoSimNao:
+			ok := false
+			for _, o := range opcoesCampo(c) {
+				ok = ok || o.ID == v
+			}
+			if !ok {
+				problemas = append(problemas, c.Rotulo+": escolha uma das opções")
+				continue
+			}
+		case CampoTexto, CampoTextoLongo:
+			if len([]rune(v)) > 4000 {
+				problemas = append(problemas, c.Rotulo+": texto longo demais")
+				continue
+			}
+		}
+		out[c.ID] = v
+	}
+	if len(problemas) > 0 {
+		return nil, erros.Com(erros.TarefaRespostaInvalid, fmt.Errorf("%s", strings.Join(problemas, "; ")))
+	}
+	return out, nil
+}
+
+func opcoesCampo(c Campo) []OpcaoVisao {
+	if c.Tipo == CampoSimNao && len(c.Opcoes) == 0 {
+		return []OpcaoVisao{{ID: "sim", Rotulo: "Sim"}, {ID: "nao", Rotulo: "Não"}}
+	}
+	return c.Opcoes
+}
+
+// RespostaVisao é uma resposta já dada, listada para revisão.
+type RespostaVisao struct {
+	PerguntaID string `json:"perguntaId"`
+	Titulo     string `json:"titulo"`
+	Resumo     string `json:"resumo"`
+	Revisavel  bool   `json:"revisavel"`
+}
+
+// PainelAnalise é a visão genérica do que a análise produziu (delimitação,
+// pontos de prova, propostas), para o usuário acompanhar e conferir.
+type PainelAnalise struct {
+	Secoes []SecaoPainel `json:"secoes"`
+}
+
+// SecaoPainel agrupa itens.
+type SecaoPainel struct {
+	Titulo string       `json:"titulo"`
+	Itens  []ItemPainel `json:"itens"`
+}
+
+// ItemPainel é uma linha do painel.
+type ItemPainel struct {
+	Titulo   string   `json:"titulo"`
+	Situacao string   `json:"situacao"`
+	Linhas   []string `json:"linhas"`
+	Fontes   []Fonte  `json:"fontes"`
 }
 
 // ResumoAutos é o que a interface mostra sobre os autos lidos (cobertura,

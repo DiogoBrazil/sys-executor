@@ -123,7 +123,7 @@ func TestT04PerguntaSemTrocarTipo(t *testing.T) {
 	if v.Tipo != workflow.TipoSR || v.Pergunta == nil || !strings.Contains(v.Pergunta.Titulo, "Julgamento de PADS") {
 		t.Fatalf("%+v %+v", v, v.Pergunta)
 	}
-	_, _ = g.Responder(v.Pergunta.ID, "continuar")
+	_, _ = g.Responder(v.Pergunta.ID, "continuar", nil)
 	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada })
 	if v.Estado != workflow.Delimitando || v.Tipo != workflow.TipoSR {
 		t.Fatalf("%+v", v)

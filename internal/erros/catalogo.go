@@ -66,6 +66,7 @@ const (
 	TarefaSemTarefa       Codigo = "TAR-003"
 	TarefaEtapaIndisponiv Codigo = "TAR-004"
 	TarefaCancelada       Codigo = "TAR-005"
+	TarefaRespostaInvalid Codigo = "TAR-006"
 
 	// Interno
 	InternoInesperado Codigo = "INT-001"
@@ -220,6 +221,9 @@ func init() {
 	def(TarefaCancelada, CatTarefa, "Tarefa cancelada",
 		"A tarefa foi cancelada e os arquivos temporários foram descartados.",
 		"Inicie uma nova tarefa quando desejar.")
+	def(TarefaRespostaInvalid, CatTarefa, "Resposta incompleta",
+		"Há campos obrigatórios sem resposta ou com formato inválido.",
+		"Confira os campos destacados e envie de novo.")
 
 	def(InternoInesperado, CatInterno, "Erro inesperado",
 		"Ocorreu um erro inesperado no aplicativo.",

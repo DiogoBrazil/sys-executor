@@ -7,24 +7,29 @@ import (
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
 )
 
-// Visao é o retrato da tarefa enviado à interface. Não contém texto gerado
-// pela IA nem conteúdo dos autos: só estado, etapas, progresso mensurável e
-// erro do catálogo (V4 §31.1; T07).
+// Visao é o retrato da tarefa enviado à interface: estado, etapas,
+// progresso mensurável e erro do catálogo (V4 §31.1; T07). Não há texto da
+// IA em tempo real; as propostas da IA só aparecem já conferidas pelo Go,
+// para confirmação do usuário (perguntas e painel da análise).
 type Visao struct {
-	ID        string         `json:"id"`
-	Tipo      Tipo           `json:"tipo"`
-	Entrada   Entrada        `json:"entrada"`
-	Estado    Estado         `json:"estado"`
-	Descricao string         `json:"descricao"`
-	Terminal  bool           `json:"terminal"`
-	Etapas    []Marco        `json:"etapas"`
-	Progresso *Progresso     `json:"progresso"` // nil quando não há métrica real
-	Erro      *ErroVisao     `json:"erro"`      // terminal: motivo; ativa: alerta da última etapa
-	Aviso     *ErroVisao     `json:"aviso"`     // ex.: limpeza incompleta (SES-003)
-	Pergunta  *PerguntaVisao `json:"pergunta"`
-	Pedido    *PedidoVisao   `json:"pedido"` // dados que o usuário precisa informar (SEI)
-	Autos     *ResumoAutos   `json:"autos"`
-	Parada    bool           `json:"parada"` // processamento parado aguardando versão futura (TAR-004)
+	ID        string          `json:"id"`
+	Tipo      Tipo            `json:"tipo"`
+	Entrada   Entrada         `json:"entrada"`
+	Estado    Estado          `json:"estado"`
+	Descricao string          `json:"descricao"`
+	Terminal  bool            `json:"terminal"`
+	Etapas    []Marco         `json:"etapas"`
+	Progresso *Progresso      `json:"progresso"` // nil quando não há métrica real
+	Erro      *ErroVisao      `json:"erro"`      // terminal: motivo; ativa: alerta da última etapa
+	Aviso     *ErroVisao      `json:"aviso"`     // ex.: limpeza incompleta (SES-003)
+	Pergunta  *PerguntaVisao  `json:"pergunta"`
+	Pedido    *PedidoVisao    `json:"pedido"` // dados que o usuário precisa informar (SEI)
+	Autos     *ResumoAutos    `json:"autos"`
+	Parada    bool            `json:"parada"`    // processamento parado (etapa futura TAR-004 ou erro recuperável)
+	Retomavel bool            `json:"retomavel"` // parada por erro recuperável: "Tentar novamente"
+	Atividade string          `json:"atividade"`
+	Painel    *PainelAnalise  `json:"painel"`
+	Respostas []RespostaVisao `json:"respostas"`
 }
 
 // Situacao de uma etapa da linha do tempo.

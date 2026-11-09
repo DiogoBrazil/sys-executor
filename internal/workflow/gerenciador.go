@@ -64,10 +64,53 @@ func (c *Contexto) Perguntar(p Pergunta) {
 
 // Resposta devolve a opção escolhida para a pergunta (se já respondida).
 func (c *Contexto) Resposta(perguntaID string) (string, bool) {
+	r, ok := c.RespostaCompleta(perguntaID)
+	return r.Opcao, ok
+}
+
+// RespostaCompleta devolve opção e valores dos campos.
+func (c *Contexto) RespostaCompleta(perguntaID string) (Resposta, bool) {
 	c.g.mu.Lock()
 	defer c.g.mu.Unlock()
 	r, ok := c.t.respostas[perguntaID]
 	return r, ok
+}
+
+// Anterior devolve a resposta descartada por uma revisão (para preencher a
+// pergunta de novo com os valores que o usuário já tinha dado).
+func (c *Contexto) Anterior(perguntaID string) (Resposta, bool) {
+	c.g.mu.Lock()
+	defer c.g.mu.Unlock()
+	r, ok := c.t.anteriores[perguntaID]
+	return r, ok
+}
+
+// Atividade descreve o que a etapa está fazendo agora (ex.: "Carregando o
+// modelo de IA"); "" limpa.
+func (c *Contexto) Atividade(texto string) {
+	c.g.mu.Lock()
+	defer c.g.mu.Unlock()
+	if c.g.t == c.t && !c.t.estado.Terminal() {
+		c.t.atividade = texto
+		c.g.emitirLocked()
+	}
+}
+
+// PublicarPainel atualiza o painel da análise.
+func (c *Contexto) PublicarPainel(p *PainelAnalise) {
+	c.g.mu.Lock()
+	defer c.g.mu.Unlock()
+	if c.g.t == c.t {
+		c.t.painel = p
+		c.g.emitirLocked()
+	}
+}
+
+// Revisavel é implementado pelos dados do pipeline que sabem refazer o que
+// depende de uma resposta (DAG de invalidação, F4-05): devolve o estado onde
+// recomeçar e as respostas que deixam de valer.
+type Revisavel interface {
+	Revisar(perguntaID string) (reiniciarEm Estado, descartar []string, ok bool)
 }
 
 // Etapa executa o trabalho de um estado e devolve o próximo estado.
@@ -91,7 +134,11 @@ type tarefa struct {
 	erro           *erros.Erro
 	aviso          *erros.Erro
 	pergunta       *Pergunta
-	respostas      map[string]string
+	respostas      map[string]Resposta
+	anteriores     map[string]Resposta
+	respondidas    []respondida // ordem em que foram respondidas
+	atividade      string
+	painel         *PainelAnalise
 	pedido         *Pedido
 	respostaPedido chan RespostaPedido
 	rodando        bool // há uma goroutine de etapas em execução
@@ -101,6 +148,11 @@ type tarefa struct {
 	sessao         *session.Sessao
 	contexto       *Contexto
 	cancelar       context.CancelFunc
+}
+
+type respondida struct {
+	p Pergunta
+	r Resposta
 }
 
 // Gerenciador mantém a única tarefa da instância.
@@ -159,7 +211,22 @@ func (g *Gerenciador) visaoLocked() *Visao {
 		ID: t.id, Tipo: t.tipo, Entrada: t.entrada, Estado: t.estado,
 		Descricao: descricoes[t.estado], Terminal: t.estado.Terminal(),
 		Etapas: marcos(t.tipo, t.ref, t.estado), Erro: visaoErro(t.erro), Aviso: visaoErro(t.aviso),
-		Autos: t.autos, Parada: t.parada,
+		Autos: t.autos, Parada: t.parada, Atividade: t.atividade, Painel: t.painel,
+		Retomavel: t.parada && !t.rodando && t.erro != nil && t.erro.Codigo != erros.TarefaEtapaIndisponiv,
+	}
+	for _, rr := range t.respondidas {
+		resumo := ""
+		if rr.p.Resumir != nil {
+			resumo = rr.p.Resumir(rr.r)
+		} else {
+			for _, o := range rr.p.Opcoes {
+				if o.ID == rr.r.Opcao {
+					resumo = o.Rotulo
+				}
+			}
+		}
+		v.Respostas = append(v.Respostas, RespostaVisao{PerguntaID: rr.p.ID, Titulo: rr.p.Titulo, Resumo: resumo,
+			Revisavel: rr.p.Revisavel && !t.rodando && !t.estado.Terminal()})
 	}
 	if t.estado == AguardandoEsclarecimento {
 		v.Pergunta = t.pergunta.visao()
@@ -219,7 +286,8 @@ func (g *Gerenciador) Iniciar() (*Visao, error) {
 		g.mu.Unlock()
 		return nil, erros.De(err)
 	}
-	g.t = &tarefa{id: novoID(), estado: Nova, ref: Nova, historico: []Estado{Nova}, sessao: s, respostas: map[string]string{}}
+	g.t = &tarefa{id: novoID(), estado: Nova, ref: Nova, historico: []Estado{Nova}, sessao: s,
+		respostas: map[string]Resposta{}, anteriores: map[string]Resposta{}}
 	return g.emitirUnlock()
 }
 
@@ -335,8 +403,8 @@ func (g *Gerenciador) receberAutosLocked(dados []byte) (*Visao, error) {
 		return g.emitirUnlock()
 	}
 	// Autos novos: análise anterior (se houver) descartada.
-	t.autos, t.pergunta, t.erro, t.parada = nil, nil, nil, false
-	t.respostas = map[string]string{}
+	t.autos, t.pergunta, t.erro, t.parada, t.painel, t.atividade = nil, nil, nil, false, nil, ""
+	t.respostas, t.anteriores, t.respondidas = map[string]Resposta{}, map[string]Resposta{}, nil
 	liberarDados(t)
 	if err := g.mover(Verificando); err != nil {
 		g.mu.Unlock()
@@ -359,8 +427,9 @@ func conferirPDF(d []byte) error {
 	return nil
 }
 
-// Responder escolhe uma opção da pergunta pendente.
-func (g *Gerenciador) Responder(perguntaID, opcaoID string) (*Visao, error) {
+// Responder escolhe uma opção da pergunta pendente; valores são os campos
+// do formulário (validados quando a opção exige).
+func (g *Gerenciador) Responder(perguntaID, opcaoID string, valores map[string]string) (*Visao, error) {
 	g.mu.Lock()
 	t := g.t
 	if t == nil || t.estado != AguardandoEsclarecimento || t.pergunta == nil || t.pergunta.ID != perguntaID {
@@ -377,7 +446,21 @@ func (g *Gerenciador) Responder(perguntaID, opcaoID string) (*Visao, error) {
 		g.mu.Unlock()
 		return nil, erros.Novo(erros.TarefaOrdemInvalida)
 	}
-	t.respostas[perguntaID] = opcaoID
+	var vs map[string]string
+	if op.Validar {
+		var err error
+		if vs, err = ValidarCampos(t.pergunta.Campos, valores); err != nil {
+			g.mu.Unlock()
+			return nil, err
+		}
+	}
+	r := Resposta{Opcao: opcaoID, Valores: vs, Versao: t.respostas[perguntaID].Versao + 1}
+	if ant, ok := t.anteriores[perguntaID]; ok && r.Versao <= ant.Versao {
+		r.Versao = ant.Versao + 1
+	}
+	t.respostas[perguntaID] = r
+	delete(t.anteriores, perguntaID)
+	t.respondidas = append(semResposta(t.respondidas, perguntaID), respondida{p: *t.pergunta, r: r})
 	t.erro = nil
 	switch op.Destino {
 	case Cancelada:
@@ -399,6 +482,69 @@ func (g *Gerenciador) Responder(perguntaID, opcaoID string) (*Visao, error) {
 			g.iniciarProcessamentoLocked()
 		}
 	}
+	return g.emitirUnlock()
+}
+
+func semResposta(rs []respondida, id string) []respondida {
+	var out []respondida
+	for _, r := range rs {
+		if r.p.ID != id {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// Revisar descarta uma resposta (e o que depende dela) e refaz a partir da
+// etapa indicada pelo pipeline. Só com a tarefa parada ou aguardando.
+func (g *Gerenciador) Revisar(perguntaID string) (*Visao, error) {
+	g.mu.Lock()
+	t := g.t
+	if t == nil || t.estado.Terminal() || t.rodando || t.contexto == nil {
+		g.mu.Unlock()
+		return nil, erros.Novo(erros.TarefaOrdemInvalida)
+	}
+	var reg *respondida
+	for i := range t.respondidas {
+		if t.respondidas[i].p.ID == perguntaID {
+			reg = &t.respondidas[i]
+		}
+	}
+	rv, ok := t.contexto.Dados.(Revisavel)
+	if reg == nil || !reg.p.Revisavel || !ok {
+		g.mu.Unlock()
+		return nil, erros.Novo(erros.TarefaOrdemInvalida)
+	}
+	estado, descartar, ok := rv.Revisar(perguntaID)
+	if !ok || !analiticos[estado] {
+		g.mu.Unlock()
+		return nil, erros.Novo(erros.TarefaOrdemInvalida)
+	}
+	for _, id := range append([]string{perguntaID}, descartar...) {
+		if r, ok := t.respostas[id]; ok {
+			t.anteriores[id] = r
+			delete(t.respostas, id)
+		}
+		t.respondidas = semResposta(t.respondidas, id)
+	}
+	t.estado, t.ref, t.retorno = estado, estado, ""
+	t.historico = append(t.historico, estado)
+	t.pergunta, t.erro, t.parada = nil, nil, false
+	g.iniciarProcessamentoLocked()
+	return g.emitirUnlock()
+}
+
+// Retomar repete a etapa parada por erro recuperável (ex.: modelo de IA
+// instalado depois do aviso MOD-001).
+func (g *Gerenciador) Retomar() (*Visao, error) {
+	g.mu.Lock()
+	t := g.t
+	if t == nil || !t.parada || t.rodando || t.estado.Terminal() {
+		g.mu.Unlock()
+		return nil, erros.Novo(erros.TarefaOrdemInvalida)
+	}
+	t.erro = nil
+	g.iniciarProcessamentoLocked()
 	return g.emitirUnlock()
 }
 
@@ -503,7 +649,16 @@ func (g *Gerenciador) executar(ctx context.Context, t *tarefa, c *Contexto) {
 		}
 		atual = t.estado // a etapa pode ter avançado o estado (ex.: SEI)
 		t.progresso = nil
+		t.atividade = ""
 		switch {
+		case err != nil && prox == atual:
+			// Erro recuperável na própria etapa (ex.: modelo de IA ausente ou
+			// sem memória): pára sem destruir a tarefa; "Tentar novamente".
+			t.parada = true
+			t.erro = erros.De(err)
+			g.emitirLocked()
+			g.mu.Unlock()
+			return
 		case err != nil && prox != "" && Permitida(atual, prox):
 			// Erro recuperável: a tarefa segue para prox com o alerta.
 			_ = g.mover(prox)
@@ -589,6 +744,9 @@ func (g *Gerenciador) encerrarLocked(estado Estado, e *erros.Erro) {
 	t.progresso = nil
 	t.pergunta = nil
 	t.autos = nil
+	t.painel = nil
+	t.atividade = ""
+	t.respondidas, t.anteriores = nil, nil
 	t.parada = false
 	t.pedido, t.respostaPedido = nil, nil
 	liberarDados(t)

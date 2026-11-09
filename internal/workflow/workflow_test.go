@@ -408,14 +408,14 @@ func TestPerguntaRespostaEDestinos(t *testing.T) {
 	if v.Pergunta == nil || v.Pergunta.ID != "compat" || len(v.Pergunta.Opcoes) != 3 || v.Tipo != TipoPADS {
 		t.Fatalf("pergunta: %+v", v.Pergunta)
 	}
-	if _, err := g.Responder("compat", "inexistente"); codigo(err) != erros.TarefaOrdemInvalida {
+	if _, err := g.Responder("compat", "inexistente", nil); codigo(err) != erros.TarefaOrdemInvalida {
 		t.Fatal("opção inválida deve ser rejeitada")
 	}
-	if _, err := g.Responder("outra", "continuar"); codigo(err) != erros.TarefaOrdemInvalida {
+	if _, err := g.Responder("outra", "continuar", nil); codigo(err) != erros.TarefaOrdemInvalida {
 		t.Fatal("pergunta errada deve ser rejeitada")
 	}
 	// "Enviar outro PDF": volta ao upload, mantendo o tipo; dados liberados ao receber o novo PDF.
-	if v, _ = g.Responder("compat", "outro"); v.Estado != RecebendoUpload || v.Tipo != TipoPADS || v.Pergunta != nil {
+	if v, _ = g.Responder("compat", "outro", nil); v.Estado != RecebendoUpload || v.Tipo != TipoPADS || v.Pergunta != nil {
 		t.Fatalf("%+v", v)
 	}
 	_, _ = g.ReceberUpload(pdfMinimo)
@@ -424,7 +424,7 @@ func TestPerguntaRespostaEDestinos(t *testing.T) {
 	}
 	esperar(t, g, func(v *Visao) bool { return v.Estado == AguardandoEsclarecimento })
 	// "Continuar": a etapa que perguntou roda de novo e lê a resposta.
-	_, _ = g.Responder("compat", "continuar")
+	_, _ = g.Responder("compat", "continuar", nil)
 	v = esperar(t, g, func(v *Visao) bool { return v.Parada })
 	if v.Estado != Delimitando || execucoes != 3 {
 		t.Fatalf("%+v execucoes=%d", v, execucoes)
@@ -449,7 +449,7 @@ func TestPerguntaCancelar(t *testing.T) {
 	_, _ = g.EscolherEntrada(EntradaUpload)
 	_, _ = g.ReceberUpload(pdfMinimo)
 	esperar(t, g, func(v *Visao) bool { return v.Estado == AguardandoEsclarecimento })
-	if v, _ := g.Responder("p", "c"); v.Estado != Cancelada || pastasDeSessao(t, raiz) != 0 {
+	if v, _ := g.Responder("p", "c", nil); v.Estado != Cancelada || pastasDeSessao(t, raiz) != 0 {
 		t.Fatalf("%+v", v)
 	}
 }
@@ -469,5 +469,123 @@ func TestErroRecuperavelVoltaAoUpload(t *testing.T) {
 	v := esperar(t, g, func(v *Visao) bool { return v.Estado == RecebendoUpload })
 	if v.Terminal || v.Tipo != TipoSR || v.Erro == nil || v.Erro.Codigo != "PDF-004" {
 		t.Fatalf("%+v", v)
+	}
+}
+
+func TestValidarCampos(t *testing.T) {
+	cs := []Campo{
+		{ID: "pts", Rotulo: "Pontos", Tipo: CampoNumero, Obrigatorio: true, Min: 0, Max: 50},
+		{ID: "data", Rotulo: "Término", Tipo: CampoData, MostrarSe: &Condicao{"tem", "sim"}, Obrigatorio: true},
+		{ID: "tem", Rotulo: "Possui", Tipo: CampoSimNao, Obrigatorio: true},
+		{ID: "nat", Rotulo: "Natureza", Tipo: CampoEscolha, Opcoes: []OpcaoVisao{{ID: "LEVE"}, {ID: "MEDIA"}}},
+	}
+	v, err := ValidarCampos(cs, map[string]string{"pts": " 35 ", "tem": "nao", "data": "lixo"})
+	if err != nil || v["pts"] != "35" || v["data"] != "" {
+		t.Fatalf("campo oculto não é validado nem guardado: %v %v", v, err)
+	}
+	for nome, vals := range map[string]map[string]string{
+		"obrigatório":  {"tem": "nao"},
+		"fora da faixa": {"pts": "51", "tem": "nao"},
+		"data inválida": {"pts": "1", "tem": "sim", "data": "31/02/2026"},
+		"escolha":       {"pts": "1", "tem": "nao", "nat": "GRAVE"},
+		"sim/não":       {"pts": "1", "tem": "talvez"},
+	} {
+		if _, err := ValidarCampos(cs, vals); codigo(err) != erros.TarefaRespostaInvalid {
+			t.Errorf("%s: %v", nome, err)
+		}
+	}
+}
+
+// dadosRevisaveis simula o DAG do pipeline.
+type dadosRevisaveis struct{ revisoes []string }
+
+func (d *dadosRevisaveis) Revisar(id string) (Estado, []string, bool) {
+	d.revisoes = append(d.revisoes, id)
+	if id == "delim" {
+		return Delimitando, []string{"result"}, true
+	}
+	return Analisando, nil, true
+}
+
+// T08 + F4-05: pergunta com campos; a resposta pode ser revista e só o que
+// depende dela é refeito; erro recuperável pára e "Tentar novamente" repete.
+// Cobre: T08
+func TestPerguntasComCamposRevisaoERetomada(t *testing.T) {
+	var mu sync.Mutex
+	dados := &dadosRevisaveis{}
+	falharUmaVez := true
+	etapas := map[Estado]Etapa{
+		Verificando:     func(ctx context.Context, c *Contexto) (Estado, error) { return Extraindo, nil },
+		Extraindo:       func(ctx context.Context, c *Contexto) (Estado, error) { return Classificando, nil },
+		Classificando:   func(ctx context.Context, c *Contexto) (Estado, error) { c.Dados = dados; return Compatibilidade, nil },
+		Compatibilidade: func(ctx context.Context, c *Contexto) (Estado, error) { return Delimitando, nil },
+		Delimitando: func(ctx context.Context, c *Contexto) (Estado, error) {
+			mu.Lock()
+			f := falharUmaVez
+			falharUmaVez = false
+			mu.Unlock()
+			if f {
+				return Delimitando, erros.Novo(erros.ModeloAusente) // recuperável
+			}
+			if _, ok := c.RespostaCompleta("delim"); ok {
+				return Analisando, nil
+			}
+			valor := "IMP-1"
+			if ant, ok := c.Anterior("delim"); ok {
+				valor = ant.Valor("imp") // reabre com o valor dado antes
+			}
+			c.Perguntar(Pergunta{ID: "delim", Titulo: "Confirme as imputações", Revisavel: true,
+				Campos: []Campo{{ID: "imp", Rotulo: "Imputação", Tipo: CampoTexto, Obrigatorio: true, Valor: valor}},
+				Opcoes: []Opcao{{ID: "ok", Rotulo: "Confirmar", Validar: true}},
+				Resumir: func(r Resposta) string { return r.Valor("imp") }})
+			return AguardandoEsclarecimento, nil
+		},
+		Analisando: func(ctx context.Context, c *Contexto) (Estado, error) {
+			if _, ok := c.RespostaCompleta("result"); ok {
+				return ConsultandoFontes, nil
+			}
+			c.Perguntar(Pergunta{ID: "result", Titulo: "Resultado", Revisavel: true,
+				Opcoes: []Opcao{{ID: "proc", Rotulo: "Procedente"}}})
+			return AguardandoEsclarecimento, nil
+		},
+	}
+	g, _, _ := novo(t, etapas)
+	_, _ = g.Iniciar()
+	_, _ = g.EscolherTipo(TipoPADS)
+	_, _ = g.EscolherEntrada(EntradaUpload)
+	_, _ = g.ReceberUpload(pdfMinimo)
+
+	// MOD-001 na etapa: parada recuperável, tarefa viva, "Tentar novamente".
+	v := esperar(t, g, func(v *Visao) bool { return v.Parada })
+	if v.Estado != Delimitando || !v.Retomavel || v.Erro == nil || v.Erro.Codigo != "MOD-001" || v.Terminal {
+		t.Fatalf("%+v", v)
+	}
+	_, _ = g.Retomar()
+	v = esperar(t, g, func(v *Visao) bool { return v.Estado == AguardandoEsclarecimento })
+	if len(v.Pergunta.Campos) != 1 || v.Pergunta.Campos[0].Valor != "IMP-1" {
+		t.Fatalf("%+v", v.Pergunta)
+	}
+	if _, err := g.Responder("delim", "ok", map[string]string{"imp": " "}); codigo(err) != erros.TarefaRespostaInvalid {
+		t.Fatalf("campo obrigatório vazio: %v", err)
+	}
+	_, _ = g.Responder("delim", "ok", map[string]string{"imp": "IMP-1 e IMP-2"})
+	esperar(t, g, func(v *Visao) bool { return v.Pergunta != nil && v.Pergunta.ID == "result" })
+	_, _ = g.Responder("result", "proc", nil)
+	v = esperar(t, g, func(v *Visao) bool { return v.Parada && v.Estado == ConsultandoFontes })
+	if len(v.Respostas) != 2 || v.Respostas[0].Resumo != "IMP-1 e IMP-2" || !v.Respostas[0].Revisavel {
+		t.Fatalf("respostas: %+v", v.Respostas)
+	}
+	// Revisar a delimitação: descarta ela e o resultado; reabre com o valor anterior.
+	if _, err := g.Revisar("delim"); err != nil {
+		t.Fatal(err)
+	}
+	v = esperar(t, g, func(v *Visao) bool { return v.Pergunta != nil && v.Pergunta.ID == "delim" })
+	if v.Pergunta.Campos[0].Valor != "IMP-1 e IMP-2" || len(v.Respostas) != 0 || dados.revisoes[0] != "delim" {
+		t.Fatalf("revisão: %+v %+v", v.Pergunta, v.Respostas)
+	}
+	_, _ = g.Responder("delim", "ok", map[string]string{"imp": "IMP-1"})
+	v = esperar(t, g, func(v *Visao) bool { return v.Pergunta != nil && v.Pergunta.ID == "result" })
+	if _, err := g.Revisar("inexistente"); codigo(err) != erros.TarefaOrdemInvalida {
+		t.Fatal("revisar resposta inexistente")
 	}
 }
