@@ -39,6 +39,7 @@ func (p *Pipeline) analisar(ctx context.Context, c *workflow.Contexto) (workflow
 	}
 	x := e.executor(fluxo)
 	if err := p.extrairPecas(ctx, c, d, x); err != nil {
+		e.motorFalhou(err)
 		return workflow.Analisando, err
 	}
 	if c.Tipo == workflow.TipoSR {
@@ -46,6 +47,7 @@ func (p *Pipeline) analisar(ctx context.Context, c *workflow.Contexto) (workflow
 			return workflow.AguardandoEsclarecimento, nil
 		}
 		if err := p.extrairPecas(ctx, c, d, x); err != nil { // fatos novos autorizados
+			e.motorFalhou(err)
 			return workflow.Analisando, err
 		}
 	}
@@ -53,6 +55,7 @@ func (p *Pipeline) analisar(ctx context.Context, c *workflow.Contexto) (workflow
 		return workflow.AguardandoEsclarecimento, nil
 	}
 	if err := analisarAlvos(ctx, c, d, x); err != nil {
+		e.motorFalhou(err)
 		return workflow.Analisando, err
 	}
 	publicarPainel(c, d)
@@ -286,24 +289,16 @@ func midias(c *workflow.Contexto, d *Dados) bool {
 		c.Perguntar(pg)
 		return true
 	}
-	if !temDescricoesDoUsuario(e.Pontos) {
+	if !e.midiasAplicadas {
+		e.midiasAplicadas = true
 		for k, m := range ms {
 			desc := strings.TrimSpace(resp.Valor(fmt.Sprintf("midia_%d", k+1)))
 			if desc == "" {
-				e.Pendencias = append(e.Pendencias, fmt.Sprintf("Mídia mencionada em %s (pág. %d) sem descrição: a análise considera só a prova restante.", m.Titulo, m.Pagina))
+				e.Pendencias = append(e.Pendencias, fmt.Sprintf(prefixoPendMidia+"%s (pág. %d) sem descrição: a análise considera só a prova restante.", m.Titulo, m.Pagina))
 				continue
 			}
 			e.Pontos = append(e.Pontos, analise.Ponto{ID: e.reg.Novo(), Peca: m.Peca, Titulo: m.Titulo, Pagina: m.Pagina, Inicio: m.Inicio, Fim: m.Fim,
 				Quem: quemUsuario, Trecho: "Descrição fornecida pelo usuário: " + desc, Sentido: "NEUTRO"})
-		}
-	}
-	return false
-}
-
-func temDescricoesDoUsuario(ps []analise.Ponto) bool {
-	for _, p := range ps {
-		if p.Quem == quemUsuario {
-			return true
 		}
 	}
 	return false

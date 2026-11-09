@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
@@ -76,7 +77,13 @@ func publicarPainel(c *workflow.Contexto, d *Dados) {
 			prop.Itens = append(prop.Itens, it)
 		}
 	}
-	for k, an := range e.AnalisesSR {
+	chaves := make([]string, 0, len(e.AnalisesSR))
+	for k := range e.AnalisesSR {
+		chaves = append(chaves, k)
+	}
+	sort.Strings(chaves)
+	for _, k := range chaves {
+		an := e.AnalisesSR[k]
 		sit := "sem proposta"
 		if an.Conclusao != "" {
 			sit = "proposta: " + rotuloConclusao[an.Conclusao]

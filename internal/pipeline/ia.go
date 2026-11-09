@@ -2,11 +2,13 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/DiogoBrazil/sys-executor/internal/analise"
 	"github.com/DiogoBrazil/sys-executor/internal/domain/pads"
 	"github.com/DiogoBrazil/sys-executor/internal/domain/sr"
+	"github.com/DiogoBrazil/sys-executor/internal/erros"
 	"github.com/DiogoBrazil/sys-executor/internal/inference"
 	"github.com/DiogoBrazil/sys-executor/internal/policy"
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
@@ -44,6 +46,7 @@ type EstadoIA struct {
 	// Condutas diversas do PADS: só registro interno (I-05), nunca na minuta.
 	CondutasDiversas   []analise.Achado
 	autorizacoesFeitas map[string]string // chave do achado → ID da autorização
+	midiasAplicadas    bool              // respostas sobre mídias já convertidas em evidência/ressalva
 	Pendencias         []string
 }
 
@@ -91,7 +94,9 @@ func (d *Dados) Revisar(perguntaID string) (workflow.Estado, []string, bool) {
 	}
 	n := no(perguntaID)
 	afetados := append([]string{n}, e.dag.Descendentes(n)...)
-	var descartar []string
+	// Expande "resultado:*" etc. ANTES de limpar o estado (as perguntas
+	// concretas dependem do conjunto/objeto atual).
+	descartar := perguntasComPrefixo(d, afetados)
 	recomecar := workflow.Analisando
 	for _, a := range afetados {
 		switch {
@@ -102,18 +107,41 @@ func (d *Dados) Revisar(perguntaID string) (workflow.Estado, []string, bool) {
 		case a == "extracao":
 			e.Extracoes, e.Pontos, e.CondutasDiversas = map[string]analise.Extracao{}, nil, nil
 			e.autorizacoesFeitas = map[string]string{}
+			e.Pendencias = semPendenciasDeMidia(e.Pendencias)
+			e.midiasAplicadas = false
 		case a == "analise":
 			e.Analises, e.AnalisesSR = map[string]analise.AnaliseImputacao{}, map[string]analise.AnaliseFatoPessoa{}
 		case a == "midias":
 			e.Pontos = semDescricoesDoUsuario(e.Pontos)
+			e.Pendencias = semPendenciasDeMidia(e.Pendencias)
+			e.midiasAplicadas = false
 			descartar = append(descartar, a)
 		default:
 			descartar = append(descartar, a)
 		}
 	}
-	// Perguntas com prefixo (resultado:IMP-1…) entram por padrão.
-	descartar = append(descartar, perguntasComPrefixo(d, afetados)...)
 	return recomecar, descartar, true
+}
+
+const prefixoPendMidia = "Mídia mencionada em "
+
+func semPendenciasDeMidia(ps []string) []string {
+	var out []string
+	for _, p := range ps {
+		if !strings.HasPrefix(p, prefixoPendMidia) {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// motorFalhou descarta o servidor depois de MOD-003/004 (morte, travamento,
+// memória): "Tentar novamente" sobe outro.
+func (e *EstadoIA) motorFalhou(err error) {
+	var x *erros.Erro
+	if errors.As(err, &x) && (x.Codigo == erros.ModeloTravado || x.Codigo == erros.ModeloSemMemoria) {
+		e.liberar()
+	}
 }
 
 func semDescricoesDoUsuario(ps []analise.Ponto) []analise.Ponto {

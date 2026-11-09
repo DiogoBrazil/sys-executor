@@ -560,6 +560,8 @@ Cada tarefa vai receber, em `PLANO_IMPLEMENTACAO`, a lista de arquivos, os teste
 - F4-06 Fatiamento de autos longos.
 - F4-07 Injeção (testes).
 
+*Saída:* POL-*, MOD-*, SEG-INJ-*, T08, T14–T16, T27. **Implementada em 08/11/2026** (`RELATORIO_FASE4.md`); a tarefa vai do PDF às confirmações da etapa 9 e pára na Fase 5. Validação pelo usuário no Windows pendente; GPU real e máquina de 8 GB ficam para outro equipamento (D-08).
+
 **Fase 5 — Biblioteca:**
 - F5-01 Parser de normas.
 - F5-02 Bootstrap `docs/law_library` (OCR, duplicidade RDPM×Coletânea).

@@ -33,6 +33,8 @@ type motorRoteiro struct {
 	mu      sync.Mutex
 	pedidos map[string]int
 	usuario map[string][]string
+	// morrerNa: nome do schema em que o motor "morre" uma vez (MOD-004).
+	morrerNa string
 }
 
 func (m *motorRoteiro) Contexto() int { return 16384 }
@@ -47,6 +49,11 @@ func (m *motorRoteiro) conta(nome string) int {
 
 func (m *motorRoteiro) Gerar(_ context.Context, p inference.Pedido) (inference.Resposta, error) {
 	m.mu.Lock()
+	if m.morrerNa != "" && m.morrerNa == p.NomeSchema {
+		m.morrerNa = ""
+		m.mu.Unlock()
+		return inference.Resposta{}, erros.Novo(erros.ModeloTravado)
+	}
 	m.pedidos[p.NomeSchema]++
 	m.usuario[p.NomeSchema] = append(m.usuario[p.NomeSchema], p.Usuario)
 	m.mu.Unlock()
@@ -300,7 +307,13 @@ func TestFluxoPADSComIA(t *testing.T) {
 	}
 	base["incluir_IMP-2"] = "nao"
 	responder(t, g, perguntaDelimitacao, "confirmar", base)
-	perguntaAtual(t, g)
+	responder(t, g, perguntaMidias, "continuar", vals)
+	// Com o objeto novo, o resultado é perguntado de novo (a resposta antiga
+	// valia para o conjunto anterior).
+	p = perguntaAtual(t, g)
+	if p.ID != "resultado:IMP-1" {
+		t.Fatalf("resultado deveria ser perguntado de novo: %+v", p)
+	}
 	if m.conta("extracao") <= extracoes {
 		t.Fatal("extração deveria ser refeita com o novo objeto")
 	}
@@ -432,5 +445,30 @@ func TestFluxoSRComIA(t *testing.T) {
 	}
 	if m.conta("analise_fato_sindicado") != 2 {
 		t.Fatalf("uma análise por fato × sindicado: %d", m.conta("analise_fato_sindicado"))
+	}
+}
+
+// Motor que morre no meio da análise: parada recuperável e, ao tentar de
+// novo, um servidor novo é carregado (o morto é descartado).
+// Cobre: T15
+func TestMotorMortoRecarregaAoRetomar(t *testing.T) {
+	m := &motorRoteiro{pedidos: map[string]int{}, usuario: map[string][]string{}, morrerNa: "extracao"}
+	fonte := &fonteFalsa{m: m}
+	g := gerenciadorIA(t, fonte)
+	_, _ = g.Iniciar()
+	_, _ = g.EscolherTipo(workflow.TipoPADS)
+	_, _ = g.EscolherEntrada(workflow.EntradaUpload)
+	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
+	responder(t, g, perguntaDelimitacao, "confirmar", map[string]string{"acusado": "FULANO DE TAL", "incluir_IMP-1": "sim",
+		"conduta_IMP-1": "x", "dispositivo_IMP-1": "art. 16", "natureza_IMP-1": "MEDIA", "data_IMP-1": "07/11/2026",
+		"incluir_IMP-2": "nao", "incluir_IMP-X1": "nao"})
+	v := esperar(t, g, func(v *workflow.Visao) bool { return v.Parada })
+	if v.Estado != workflow.Analisando || !v.Retomavel || v.Erro.Codigo != "MOD-004" || fonte.fechado != 1 {
+		t.Fatalf("%+v %+v fechado=%d", v.Estado, v.Erro, fonte.fechado)
+	}
+	_, _ = g.Retomar()
+	perguntaAtual(t, g)
+	if fonte.aberto != 2 {
+		t.Fatalf("servidor deveria ser recarregado: %d", fonte.aberto)
 	}
 }

@@ -64,6 +64,7 @@ func (p *Pipeline) delimitar(ctx context.Context, c *workflow.Contexto) (workflo
 		c.Atividade("Identificando a função das peças sem título reconhecido")
 		pecas, pend, err := analise.ClassificarResiduais(ctx, x, d.Autos, d.Pecas, &e.reg)
 		if err != nil {
+			e.motorFalhou(err)
 			return workflow.Delimitando, err
 		}
 		d.Pecas, e.classificou = pecas, true
@@ -97,6 +98,7 @@ func (p *Pipeline) delimitarPADS(ctx context.Context, c *workflow.Contexto, d *D
 			if strings.Contains(err.Error(), "não identificado") {
 				return semPecaCentral(c, "o Memorando Disciplinar")
 			}
+			e.motorFalhou(err)
 			return workflow.Delimitando, err
 		}
 		e.DelimPADS = &r
@@ -248,6 +250,7 @@ func (p *Pipeline) delimitarSR(ctx context.Context, c *workflow.Contexto, d *Dad
 			if strings.Contains(err.Error(), "não identificada") {
 				return semPecaCentral(c, "a Portaria de instauração")
 			}
+			e.motorFalhou(err)
 			return workflow.Delimitando, err
 		}
 		e.DelimSR = &r

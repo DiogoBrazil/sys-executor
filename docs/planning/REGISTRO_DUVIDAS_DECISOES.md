@@ -131,6 +131,21 @@ Se o usuário discordar de alguma interpretação I-xx, ela será corrigida nest
 | PT-F3-04 | Reabrir o conjunto de imputações exige motivo, sobe a versão e invalida o julgamento da versão anterior | Versão auditável (PADS-ESC-001) | F3 |
 | PT-F3-05 | SR: indícios exigem enquadramento com fonte; ausência não tem; inconclusivo pode ter **[A VALIDAR na F6]** | SR-SOL-004/005 | F3 |
 | PT-F3-06 | Dependência `go.yaml.in/yaml/v3` v3.0.5 (MIT/Apache-2.0), já indireta | Leitura estrita do catálogo | F3 |
+| PT-F4-01 | Catálogo de modelos: Qwen3.5-4B Q4_K_M (padrão), Qwen3.5-2B Q4_K_M (básico) e Qwen3-Embedding-0.6B Q8_0; URL do Hugging Face fixada no commit e SHA-256 conferido | Reprodutibilidade e integridade; Qwen3-4B-Instruct-2507 fora (sem vantagem na F0) | F4 |
+| PT-F4-02 | Orçamento = pesos + pico privado medido (KV ajustado ao contexto, lido do GGUF, inclusive atenção híbrida) + 1,5 GB de margem; contexto = o maior da faixa da V4 §38.3 que cabe na memória livre, reduzido até 4.096; limite do Job = memória livre − pesos | D-09.2; V4 §38.3 (memória efetivamente disponível) | F4 |
+| PT-F4-03 | Trecho citado pela IA é conferido literalmente no documento (normaliza caixa, acentos, aspas, travessões, espaços e hifenização); omissão aceita só de frases inteiras, em ordem e próximas, marcada com "[…]" | Teste com o modelo real: o modelo pula a linha intermediária e mantém hífen de quebra; omitir palavra dentro da frase nunca é aceito | F4 |
+| PT-F4-04 | Itens que conferem são acumulados entre os reenvios; os demais são descartados, com a limitação visível | Reenvio em CPU custa ~1 min; nunca se aceita trecho não verificado | F4 |
+| PT-F4-05 | Na análise, a IA não pode citar dispositivo legal que não esteja nas evidências ou nas imputações | O modelo citou "art. 37 da Lei 8.112/90" no teste real; a fundamentação jurídica vem com a biblioteca (Fases 5–6) | F4 |
+| PT-F4-06 | Dispositivo da imputação conferido no memorando: artigo e inciso (romano) presentes, alínea só se escrita como alínea, diploma só com forma de diploma | O modelo repetiu o inciso na alínea e pôs a natureza no diploma no teste real | F4 |
+| PT-F4-07 | Natureza só é aceita se estiver escrita no memorando; data do fato só pelo trecho literal (D-09.4) e nunca de página OCR; faltando, o campo fica vazio e obrigatório (T08) | Não inventar; o usuário informa | F4 |
+| PT-F4-08 | Perguntas com campos validados no Go; respostas versionadas e revisáveis; o DAG de invalidação refaz só o que depende da resposta e reabre com os valores anteriores; autorização de fato/militar novo (SR) não é revisável nesta fase | F4-05; decisão de autorização é definitiva no domínio | F4 |
+| PT-F4-09 | Erro do motor de IA (MOD-00x) pára a etapa sem destruir a tarefa; "Tentar novamente" e "Abrir modelos de IA" | O usuário instala/troca o modelo sem perder a leitura dos autos | F4 |
+| PT-F4-10 | GPU nunca é usada sem a sonda manual (em "avançado", com confirmação e sentinela); com a sonda aprovada, a GPU é priorizada e falha de carga volta à CPU | D-08, D-09.1, T14; validação real da GPU fica para outra máquina | F4 |
+| PT-F4-11 | GGUF importado: com hash do catálogo é reconhecido como modelo testado; fora do catálogo, só por seleção manual | V4 §37 (recomendação só entre perfis testados) | F4 |
+| PT-F4-12 | Fim de linha LF fixado no repositório (`.gitattributes`) | Packs, catálogo e golden entram no hash do policy_bundle; CRLF no Windows mudava o hash | F4 |
+| PT-F4-13 | Um servidor de IA por tarefa, carregado na primeira etapa de IA, mantido enquanto a tarefa aguarda respostas e reservado contra remoção do modelo | V4 §37 (um gerador por tarefa); evita recarregar 2,7 GB a cada pergunta | F4 |
+| PT-F4-14 | Condutas diversas do PADS ficam só em registro interno da tarefa; não aparecem no painel nem viram pergunta | I-05; PADS-E05 | F4 |
+| PT-F4-15 | Peças de trâmite (capa, notificação, ciência, juntada, remessa, procuração) não são lidas pela IA; a peça central é lida na delimitação | Tempo de CPU; nenhuma prova nelas | F4 |
 
 ## 4. Histórico
 - 08/11/2026: criado o registro e respondidas D-01…D-07 durante o planejamento. Plano aprovado como planejamento, sem autorização de código.
