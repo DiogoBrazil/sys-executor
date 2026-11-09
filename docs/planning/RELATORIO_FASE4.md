@@ -75,4 +75,4 @@ PT-F4-01 a PT-F4-15 no `REGISTRO_DUVIDAS_DECISOES.md` §3-A.
 2. **GPU:** a validação real da sonda e da priorização (T14) precisa de outra máquina (D-08).
 3. **8 GB (T16):** validar numa máquina de 8 GB quando houver.
 
-Pendência herdada **não implementada nesta fase:** comparar a árvore de documentos do SEI com as peças do PDF, para apontar mídias e arquivos fora do PDF (registrada no RELATORIO_FASE2 §4 para a F4). Fica para a F5/F6, com aval do usuário; ver `docs/ESTADO_E_CONTINUIDADE.md` §5.2.
+Pendência herdada **não implementada nesta fase:** comparar a árvore de documentos do SEI com as peças do PDF, para apontar mídias e arquivos fora do PDF (registrada no RELATORIO_FASE2 §4 para a F4). Fica para a F5/F6, com aval do usuário; registrada também no relatório da migração para a Gemini API (`RELATORIO_MIGRACAO_GEMINI.md`).

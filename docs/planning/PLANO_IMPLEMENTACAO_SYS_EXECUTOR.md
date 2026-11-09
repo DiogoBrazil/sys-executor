@@ -342,6 +342,8 @@ assets/institucional/ (D-04)   build/windows/{nsis,wix}   testdata/ (sintético)
 
 ## 9. IA local e hardware
 
+> **[Emenda V4 §47 — 09/11/2026]** Esta seção foi **substituída** pela inferência via Gemini API (ADR 009, D-10). Mantida para histórico.
+
 **Motor:** `llama-server` (llama.cpp, MIT) como sidecar [PROPOSTA TÉCNICA; A VALIDAR].
 - Builds oficiais Windows x64 **CPU** e **Vulkan** (cobre AMD, NVIDIA e Intel) no instalador. **CUDA** como componente opcional baixado (grande). Versão `bNNNNN` fixada e SHA-256 no manifesto. Verificado: release b12207 de 08/11/2026 publica CPU/Vulkan/CUDA/ROCm x64.
 - Execução: `127.0.0.1`, porta aleatória, `--api-key` aleatória por processo, web UI desligada (`--no-webui`, **confirmado na b12207**), sem arquivo de log (stdout/err drenados em buffer de memória e descartados).

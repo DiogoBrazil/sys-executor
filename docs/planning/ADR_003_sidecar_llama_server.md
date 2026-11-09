@@ -1,6 +1,6 @@
 # ADR 003 — Inferência local com sidecar llama-server
 
-- **Status:** Aceita (08/11/2026), confirmada na F0-02 em CPU (`--no-webui`, `--api-key`, Job Object, `json_schema`). GPU apenas após sonda segura (D-08, D-09.1); limite de memória do Job aborta com `0xC0000409` e o orçamento soma o GGUF mapeado (D-09.2).
+- **Status:** **Substituída pelo ADR 009 (09/11/2026; emenda V4 §47, D-10).** Era: Aceita (08/11/2026), confirmada na F0-02 em CPU (`--no-webui`, `--api-key`, Job Object, `json_schema`). GPU apenas após sonda segura (D-08, D-09.1); limite de memória do Job aborta com `0xC0000409` e o orçamento soma o GGUF mapeado (D-09.2).
 - **Contexto:** V4 §§2, 36–43 e o plano `PLANO_IMPLEMENTACAO_SYS_EXECUTOR.md`.
 
 ## Decisão

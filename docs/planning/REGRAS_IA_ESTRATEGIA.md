@@ -62,6 +62,8 @@ policies/
 - Teste `POL-COMP-*`: para cada (fluxo, etapa, combinação de flags), o prompt compilado contém 100% das regras obrigatórias.
 
 ### 2.4 Saídas estruturadas
+
+> **[Emenda V4 §47]** Desde 09/11/2026 o schema é imposto pela Gemini API (`responseJsonSchema`), não pela gramática do `llama-server`; enums dinâmicos, decodificação estrita e reenvios continuam iguais (ADR 009).
 - Um JSON Schema por etapa, imposto pela gramática do `llama-server` (`response_format: {type: json_schema}`). Não combinar com `grammar` na mesma requisição.
 - **Enums dinâmicos:** IDs de imputações, fatos, pessoas, evidências e passagens jurídicas válidos na tarefa são injetados no schema da chamada. Exemplo: `imputacao_id ∈ {IMP-1, IMP-2}`; o modelo não consegue emitir `IMP-3`.
 - **Frases citáveis:** a redação de slots devolve `frases[{texto, evid_refs[], legal_refs[]}]`, com `minItems: 1` em `evid_refs` para frases factuais.

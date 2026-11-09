@@ -259,23 +259,28 @@ Minuta adulterada → o validador **deve bloquear** e o laço de correção deve
 | T13 / SEG-CRED-01 | Senha sentinela | Ausente de disco, preferências, logs e eventos após a tarefa (varredura de arquivos e dump de teste) |
 | T12 / SEG-CRASH-01 | Kill do processo no meio da tarefa | Próxima abertura remove resíduos e não oferece retomada |
 | SEG-DIR-01 | ACL do diretório efêmero | Somente o SID do usuário |
-| SEG-LOG-01 | Execução completa | Nenhum arquivo de log criado (app, sidecars, WebView2) |
-| SEG-NET-01 / T18 | Firewall bloqueando tudo; upload | Tarefa completa; zero tentativas de conexão externa (web desligada) |
+| SEG-LOG-01 | Execução completa | Nenhum arquivo de log criado (app, cliente da IA, WebView2) |
+| SEG-NET-01 | Rede monitorada; tarefa por upload (emenda V4 §47) | Destinos só o SEI (se escolhido) e `generativelanguage.googleapis.com`, este só depois da confirmação de envio; qualquer outro destino da IA é recusado pelo transporte, sem seguir redirecionamento; `store=false` e nenhuma ferramenta em toda requisição |
+| T18 / OFF-IA-01 | Sem internet; upload (emenda V4 §47.6) | Extração, OCR, segmentação, visualização e cálculos funcionam; a etapa de IA para com IA-007, estado preservado; "Tentar novamente" retoma |
+| SEG-KEY-01 | Chave sentinela da Gemini API | Cifrada com DPAPI no disco; ausente de preferências, eventos, visões da interface, erros e logs; chave recusada pelo Google não é guardada |
+| SEG-ENV-01 | Confirmação de envio | Sem autorização nada é enviado e a tarefa para de forma recuperável; nova tentativa pergunta de novo |
+| SEG-PSEUDO-01 | Nomes, CPF, RG, matrícula, contatos e endereço sentinelas nos autos | Ausentes do corpo enviado à IA; resposta restaurada byte a byte; trechos citados conferem literalmente com os autos (melhor esforço: nomes sem âncora podem passar) |
 | SEG-WEB-01 | Web ligada | Consultas sem nomes, SEI, matrículas, datas do caso |
-| SEG-SID-01 | Sidecar | Só loopback; sem API key → 401; morre com o app |
+| SEG-SID-01 | ~~Sidecar~~ | **Revogado (emenda V4 §47, D-10):** não há mais sidecar |
 | SEG-CACHE-01 / SEG-WER-01 | Caches do WebView2/Edge; WER | Pasta do WebView2 restrita ao usuário e esvaziada no encerramento e na abertura; no-store nos assets da sessão (F2); exclusão do WER validada na F1 |
 | ERR-01…15 | Cada código do catálogo de erros | Mensagem amigável, sem segredo, sem sucesso simulado |
 | DOC-01 | Textos de UI/manual | Não prometem apagamento forense |
 | SES-CONC-01 | Segunda tarefa simultânea | Bloqueada com mensagem |
 
-## 9. IA e hardware (M + B)
-- **MOD-01…04:** um gerador por tarefa; recomendação por hardware; importação de GGUF inválido rejeitada; remoção de modelo.
-- **T14, T15, T16, T27:** conforme a V4 §45.
-- **BEN-01/02:** benchmark por modelo × perfil (8/16/32 GB; CPU; Vulkan). Métricas: memória de pico, carga, tokens/s, JSON válido na 1ª tentativa, extração vs gabarito, citações válidas, violações pré-validação, tempo total. **Portões:** 0 violações após validação; 0 citações inventadas aprovadas. Limiares fixados na F4 (linha de base em `RELATORIO_FASE4.md` §3, `cmd/bench` sobre `internal/testutil/casos`), revistos quando houver casos novos:
-  - **Perfil padrão:** delimitação conforme gabarito ≥ 90% (artigo, inciso, natureza e data); JSON válido na 1ª tentativa ≥ 90%; resultado proposto conforme gabarito ≥ 75%; nos 5 casos SEG-INJ, proposta igual à do caso limpo em 5/5.
-  - **Perfil básico:** delimitação ≥ 90%; JSON válido na 1ª tentativa ≥ 60%; resultado ≥ 60%; a mudança de proposta sob injeção é tolerada (o validador continua obrigatório) e é informada ao usuário na tela Modelos.
-  - Um modelo novo só entra no catálogo como "testado" se passar nos portões rígidos e nos limiares do seu perfil.
-- **BEN-RAG-01:** ganho (ou não) da busca vetorial temporária dos autos.
+## 9. IA — Gemini API (M + B) — emenda V4 §47
+- **MOD-01…04:** **revogados** (D-10): não há modelos locais, hardware nem GGUF.
+- **T14, T16** (V4 §47.2): nenhum modelo roda no computador; o build não contém mecanismo de inferência e nada depende de GPU ou da memória livre.
+- **T15 / IA-RESP-01** (V4 §47.6): chave, permissão, modelo, cota, rede, tempo, bloqueio ou resposta incompleta → mensagem do catálogo IA-0xx e parada recuperável; resposta cortada, bloqueada ou vazia nunca vira resultado.
+- **T27 / IA-MOD-01** (V4 §47.5): primeiro uso → cadastrar a chave (validada pela listagem de modelos, sem gerar texto) e escolher um modelo entre os de texto disponíveis para a chave; nenhum nome fixo no código.
+- **BEN-01/02:** benchmark por modelo Gemini (`cmd/bench`, chave de desenvolvimento em `SYSEXEC_GEMINI_API_KEY`), **somente casos sintéticos** de `internal/testutil/casos`, com e sem pseudonimização. Métricas: JSON válido na 1ª tentativa, delimitação e extração vs gabarito, resultado vs gabarito, SEG-INJ, violações aceitas, citações inventadas, chamadas, tokens e tempo. **Portões:** 0 violações após validação; 0 citações inventadas aprovadas. Limiares (linha de base Qwen3.5-4B em `RELATORIO_FASE4.md` §3):
+  - **Modelo escolhido:** delimitação conforme gabarito ≥ 90% (artigo, inciso, natureza e data); JSON válido na 1ª tentativa ≥ 90%; resultado proposto conforme gabarito ≥ 75%; nos 5 casos SEG-INJ, proposta igual à do caso limpo em 5/5.
+  - O perfil "básico" (8 GB) foi revogado com a inferência local.
+- **BEN-RAG-01:** ganho (ou não) da busca vetorial temporária dos autos (depende da decisão da F5 sobre embeddings, V4 §47.7).
 
 ## 10. Exportação (X)
 - **EXP-PADS-01 / EXP-SR-01:** estrutura.
@@ -288,10 +293,10 @@ Minuta adulterada → o validador **deve bloquear** e o laço de correção deve
 ## 11. Instalação (N)
 - **INS-01:** instalação limpa no Win10 22H2/Win11 x64.
 - **INS-02:** dependências automáticas.
-- **INS-03:** tamanho do instalador sem GGUF.
+- **INS-03:** instalador sem mecanismo de inferência, pesos de modelo nem chave de API (emenda V4 §47).
 - **INS-04:** upgrade por novo instalador (**T26**).
-- **INS-05:** CPU-only / GPU Vulkan / GPU incompatível.
-- **INS-06:** desinstalação preserva exportações e pergunta sobre biblioteca/modelos.
+- **INS-05:** ~~CPU-only / GPU Vulkan / GPU incompatível~~ — **revogado** (sem inferência local, D-10).
+- **INS-06:** desinstalação preserva exportações e pergunta sobre a biblioteca; a chave da Gemini API é removida a pedido.
 
 ## 12. Critérios de saída por fase
 | Fase | Critério |
