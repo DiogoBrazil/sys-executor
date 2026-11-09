@@ -401,6 +401,9 @@ func TestListarModelosFiltraEClassifica(t *testing.T) {
 	 {"name":"models/gemini-embedding-001","supportedGenerationMethods":["embedContent"]},
 	 {"name":"models/gemini-3-tts","supportedGenerationMethods":["generateContent"]},
 	 {"name":"models/gemma-3-27b-it","supportedGenerationMethods":["generateContent"]},
+	 {"name":"models/gemini-nano-banana-2.1","displayName":"Nano Banana 2.1","supportedGenerationMethods":["generateContent"],"thinking":true},
+	 {"name":"models/gemini-3.5-transcribe","displayName":"Gemini 3.5 Transcribe","supportedGenerationMethods":["generateContent"]},
+	 {"name":"models/gemini-3.8-flash","displayName":"Gemini 3.8 Flash","description":"Multimodal model: text, image and audio understanding, transcription","inputTokenLimit":1048576,"outputTokenLimit":65536,"supportedGenerationMethods":["generateContent"],"thinking":true},
 	 {"name":"models/imagen-4","supportedGenerationMethods":["predict"]}
 	]}`
 	ms, err := ListarModelos(context.Background(), f.cfg())
@@ -413,7 +416,7 @@ func TestListarModelosFiltraEClassifica(t *testing.T) {
 		ids = append(ids, m.ID)
 		est[m.ID] = m.Estagio
 	}
-	if strings.Join(ids, ",") != "gemini-3.6-flash,gemini-flash-latest,gemini-3.8-flash-preview,gemini-2.0-flash-exp" {
+	if strings.Join(ids, ",") != "gemini-3.8-flash,gemini-3.6-flash,gemini-flash-latest,gemini-3.8-flash-preview,gemini-2.0-flash-exp" {
 		t.Fatalf("lista: %v", ids)
 	}
 	if est["gemini-3.6-flash"] != EstagioEstavel || est["gemini-flash-latest"] != EstagioApelido ||

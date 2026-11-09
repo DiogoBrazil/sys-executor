@@ -28,9 +28,13 @@ type ModeloGemini struct {
 }
 
 // variantesExcluidas: modelos que não servem para redigir julgamentos
-// (imagem, áudio, voz em tempo real, embeddings, robótica, uso de computador).
-var variantesExcluidas = []string{"image", "imagen", "tts", "audio", "live", "embedding",
-	"robotics", "computer-use", "veo", "aqa", "omni"}
+// (imagem, áudio, transcrição, voz em tempo real, música, vídeo, embeddings,
+// robótica, uso de computador). Os nomes comerciais nem sempre dizem a
+// modalidade ("nano-banana" gera imagens). A descrição não é usada: modelos
+// de texto multimodais citam imagem e áudio entre as capacidades, e esconder
+// o modelo certo seria pior do que mostrar um a mais.
+var variantesExcluidas = []string{"image", "imagen", "nano-banana", "banana", "tts", "audio", "speech",
+	"transcri", "live", "embedding", "robotics", "computer-use", "veo", "lyria", "music", "aqa", "omni"}
 
 // ListarModelos devolve os modelos Gemini de texto que a chave enxerga e que
 // aceitam generateContent. Também serve para validar a chave sem gerar
