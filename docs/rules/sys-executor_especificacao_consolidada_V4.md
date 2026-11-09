@@ -5,6 +5,7 @@
 > **Finalidade deste arquivo:** transferir integralmente para uma nova conversa o contexto, as decisões, os critérios jurídicos e técnicos, as dúvidas e as próximas etapas do projeto, evitando recomeçar a discussão.  
 > **Hierarquia de decisões:** as regras posteriores incluídas nesta versão substituem explicitamente disposições anteriores incompatíveis. As seções 15–20 detalham o PADS; as seções 21–27 consolidam as regras de SR, as diferenças entre os procedimentos e a revisão humana; **as seções 28–46 (V4) consolidam as decisões transversais e de IA e prevalecem sobre trechos das seções 1–27 que ainda tratavam esses assuntos como pendentes**. Os pontos das seções 1–27 alcançados por essas decisões estão sinalizados com **[Atualização V4]**, mantido o texto original para histórico. Preservar o restante.  
 > **Emenda 1 (09/11/2026) — seção 47:** a inferência por modelos locais foi substituída pela **Gemini API** (Google), por decisão expressa do usuário. A seção 47 prevalece sobre as seções 28–46 **somente** quanto ao mecanismo de inferência, à conectividade exigida pela IA, aos modelos e à guarda da chave de API; os pontos alcançados estão sinalizados com **[Emenda §47]**, mantido o texto original para histórico. **Nenhuma regra jurídica, de cálculo, de perguntas, de validação, de revisão ou do SEI foi alterada.**  
+> **Emenda 2 (09/11/2026) — seção 48:** por decisão expressa do usuário, o **ChatGPT** (*Sign in with ChatGPT*, plano do usuário) é admitido como segundo provedor de inferência, ao lado da Gemini API, à escolha explícita do usuário e sem troca automática; a entrada dos autos passa a ser por **peças cadastradas**; o **enquadramento** das imputações do PADS passa a ser informado pelo usuário a partir de catálogo curado; e passa a existir uma **barreira obrigatória de privacidade** antes de cada envio. A seção 48 prevalece **somente** nesses pontos; os pontos alcançados estão sinalizados com **[Emenda §48]**, mantido o texto original para histórico. **Nenhuma regra de conexão, dosimetria, reincidência, comportamento, pontuação, regressão, resultados do PADS, vinculação ao Memorando (seção 22) ou de fatos novos na SR (seção 24.3) foi alterada.**  
 > **Legenda (V4):** **[APROVADO]** decisão explícita do usuário; **[PROPOSTA TÉCNICA]** detalhamento recomendado, não imposição normativa nem escolha técnica validada; **[VALIDAR EM TESTES]** solução/valor provisório dependente de prova de desempenho ou compatibilidade.  
 
 
@@ -70,6 +71,8 @@ O agente deverá consultar documentação oficial e, diante de decisões relevan
 
 ### 2.1. Automação do SEI/RO
 
+> **[Emenda §48]** O SEI passa a fornecer só os documentos selecionados pelo usuário, gerados pela própria opção do SEI e separados pelo carimbo, sem ampliar as ações permitidas (seção 48.4).
+
 - Tela de login conhecida: `https://sei.sistemas.ro.gov.br/sip/login.php?sigla_orgao_sistema=RO&sigla_sistema=SEI`.
 - Autenticação com **usuário, senha e instituição “PM”**.
 - Se o SEI solicitar **código OTP/2FA**, a interface deve solicitar ao usuário e continuar após autorização; nunca escolher desativar ou burlar 2FA.
@@ -83,6 +86,8 @@ O agente deverá consultar documentação oficial e, diante de decisões relevan
 > **[Atualização V4]** A expressão “logs operacionais seguros” deve ser lida conforme a seção 33: **sem módulo de logs técnicos persistentes nesta etapa**. A automação do SEI é uma das duas modalidades de entrada; a alternativa é o **upload manual do PDF** (seção 30). Sem internet, o aplicativo avisa e oferece o upload, sem reiniciar a configuração (seções 30.3 e 35). As credenciais são solicitadas **a cada nova tarefa** e mantidas somente em memória (seção 33).
 
 ### 2.2. Processamento e rastreabilidade
+
+> **[Emenda §48]** O tipo e a função de cada peça passam a ser declarados pelo usuário no cadastro de peças; a identificação automática passa a servir de conferência, e a página de referência é a dos autos montados a partir das peças (seções 48.2 e 48.4).
 
 - Reconhecer tipos de peças: memorando disciplinar, portaria, notificações, defesa prévia, termos de oitiva, documentos probatórios, alegações finais, relatórios, decisões e anexos.
 - Construir linha do tempo e identificar fatos controvertidos.
@@ -564,6 +569,8 @@ Adaptar «BOM»/«20 pontos» para a hipótese concreta e evitar usar essa funda
 
 ### 16.1. Classificação de peças pelo conteúdo e ordem processual
 
+> **[Emenda §48]** A função de cada peça passa a ser declarada pelo usuário no cadastro (seção 48.4). A classificação pelo conteúdo e pela ordem processual descrita aqui serve de **conferência**: divergência gera pergunta, nunca troca silenciosa.
+
 O aplicativo deve identificar automaticamente **peça e função**, sem depender apenas do título: memorando disciplinar, portaria, defesa prévia, oitivas, termos, provas, alegações finais, relatório, anexos etc. Nomes genéricos («Manifestação», «Petição», «Informação») não bastam para decidir sua função.
 
 **Defesa prévia versus alegações finais:** examinar posição no fluxo, data, contexto, conteúdo e sequência instrutória. A defesa prévia ocorre antes das alegações finais; estas contêm, em regra, a **última argumentação defensiva antes do julgamento**. Ambas podem apresentar pedidos como arquivamento, absolvição ou improcedência; **esses pedidos não discriminam sozinhos a classificação**.
@@ -645,6 +652,8 @@ Se o usuário não puder descrever conteúdo nem fornecer transcrição, o aplic
 **Exemplo V2:** defesa diz «a gravação demonstra que o militar permaneceu no local», porém nem vídeo nem relato/transcrição estão disponíveis. Não presumir que a gravação existe com esse exato conteúdo; apresentar a alegação como tal e fundamentar a análise com as provas acessíveis, consignando limitação.
 
 ### 17.4. Inclusão manual de arquivos complementares
+
+> **[Emenda §48]** A distinção entre peça de origem SEI e material fornecido pelo usuário se faz pela origem registrada no cadastro de peças (seção 48.4).
 
 Permitir anexação manual de **documentos complementares** ao trabalho (PDF, DOCX, imagens e arquivos textuais/transcrições, conforme suporte técnico a definir). A decisão de permitir arquivos adicionais foi confirmada. Arquivos de áudio/vídeo podem ser armazenados como referências/arquivos complementares somente conforme decisão técnica posterior, **mas isso não significa autorização para sua transcrição ou análise automática**: a regra aprovada é solicitar **texto ou transcrição**. Distinguir a peça de origem SEI de material complementar fornecido pelo usuário na organização do trabalho, sem impor etiqueta obrigatória de autoria do usuário dentro da fundamentação.
 
@@ -791,6 +800,8 @@ O sistema não deve confundir **acusado** (PADS) com **sindicado** (SR), nem cha
 ## 22. REGRA DE ESCOPO OBRIGATÓRIA DO PADS: VINCULAÇÃO ÀS IMPUTAÇÕES DO MEMORANDO DISCIPLINAR
 
 ### 22.1. Regra expressa e prevalente
+
+> **[Emenda §48]** Regra **mantida integralmente**. Os dispositivos e a natureza das imputações passam a ser informados pelo usuário a partir do catálogo curado (seção 48.5), conferidos contra o texto do Memorando; divergência exige confirmação expressa, e o aplicativo nunca sugere troca de dispositivo.
 
 **O julgamento de PADS está estritamente vinculado à acusação ou às acusações descritas no Memorando Disciplinar inicial.** Não ampliar, substituir, alterar ou criar imputação nova no julgamento para aproveitar transgressão diversa identificada durante a instrução. O Memorando Disciplinar é a referência delimitadora do objeto acusatório.
 
@@ -1220,6 +1231,8 @@ Os itens ainda pendentes no núcleo anterior continuam válidos, exceto a afirma
 
 ### 29.3. Distinção obrigatória entre armazenamento permanente e transitório
 
+> **[Emenda §48]** Acrescenta-se a linha "Credencial do ChatGPT" (seção 48.3). O cadastro de peças é trabalho transitório, somente na sessão (seção 48.4).
+
 > **[Emenda §47]** A linha "Modelos locais" deixa de existir e é acrescentada a linha "Chave da Gemini API" (seção 47.4).
 
 | Armazenamento | Conteúdo | Persistência |
@@ -1234,6 +1247,8 @@ Os itens ainda pendentes no núcleo anterior continuam válidos, exceto a afirma
 
 ### 30.1. Ordem obrigatória das escolhas
 
+> **[Emenda §48]** O "upload manual do PDF completo/consolidado" passa a ser o **cadastro de peças** (upload de um ou vários arquivos por peça), e a modalidade SEI passa a obter só os documentos selecionados (seção 48.4).
+
 1. **Primeiro**, perguntar **qual minuta o usuário deseja elaborar**:
    - **Julgamento de PADS**; ou
    - **Relatório de Sindicância Regular**.
@@ -1245,6 +1260,8 @@ Os itens ainda pendentes no núcleo anterior continuam válidos, exceto a afirma
 5. As duas modalidades resultam nas mesmas capacidades de extração, OCR, classificação, rastreabilidade, análise, geração, revisão e finalização da minuta.
 
 ### 30.2. Checagem de compatibilidade entre procedimento e autos
+
+> **[Emenda §48]** A peça central é a declarada pelo usuário no cadastro, e seu **conteúdo é conferido**. Se indicar outra modalidade ou outra peça, o aplicativo pergunta; a troca nunca é silenciosa (seção 48.4).
 
 **[APROVADO]** Após receber o PDF por qualquer modalidade, localizar e identificar a peça instauradora/delimitadora principal a partir de **conteúdo e função**, nunca somente pelo nome do arquivo:
 
@@ -1568,6 +1585,8 @@ O usuário aprovou **avaliar tecnicamente** as seguintes escolhas, sem necessida
 
 ## 45. Matriz complementar de aceitação / testes
 
+> **[Emenda §48]** T02 e T03 passam a ser verificados pelo cadastro de peças; T04–T06, pela conferência da peça central declarada (seção 48.2).
+
 | ID | Cenário | Resultado esperado |
 |---|---|---|
 | T01 | Usuário inicia tarefa | Primeira escolha é PADS ou SR; segunda, SEI ou PDF |
@@ -1629,6 +1648,8 @@ O usuário aprovou **avaliar tecnicamente** as seguintes escolhas, sem necessida
 
 ### 47.1. Decisão e alcance
 
+> **[Emenda §48]** Deixa de valer "OAuth… e outros provedores ficam fora do escopo": o ChatGPT é admitido como segundo provedor (seção 48). Continuam fora: Vertex AI, troca automática entre provedores e inferência local.
+
 - Por decisão expressa do usuário, a inferência por modelos de linguagem executados no computador (GGUF, `llama.cpp`/`llama-server`) **é removida** e substituída pela **Gemini API** (Google), acessada pelo backend Go com o SDK oficial `google.golang.org/genai` e autenticada por **chave de API cadastrada pelo próprio usuário**. Motivo: desempenho insatisfatório dos modelos locais no hardware disponível.
 - A troca é **exclusivamente de infraestrutura de inferência**. Permanecem integralmente em vigor, sem alteração: as regras jurídicas e de redação das seções 1–27; o motor determinístico em Go (seção 36, item 5); as perguntas, confirmações e autorizações (inclusive as da SR, seção 24.3); a vinculação do PADS às imputações do Memorando Disciplinar (seção 22); a validação obrigatória (seção 42); a revisão humana; a biblioteca jurídica local (seção 40); a pesquisa web desabilitada por padrão (seção 41); as sessões efêmeras (seção 29); as credenciais do SEI somente em memória (seção 33).
 - Não há fallback para modelo local. OAuth, Vertex AI e outros provedores ficam fora do escopo desta emenda.
@@ -1646,6 +1667,8 @@ O usuário aprovou **avaliar tecnicamente** as seguintes escolhas, sem necessida
 | 38 | Superada (perfis de hardware, GPU, quantização, contexto por memória). Mantido de 38.3: "contexto maior não substitui recuperação documental estruturada"; mantido de 38.4: não simular sucesso nem seguir com análise degradada sem conhecimento do usuário |
 
 ### 47.3. Envio de conteúdo ao provedor
+
+> **[Emenda §48]** Somam-se a barreira obrigatória, a revisão item a item e o bloqueio de dados de crianças no ChatGPT (seção 48.6). A autorização de envio passa a valer para um provedor e um modelo (seção 48.1).
 
 - **Somente o necessário:** o texto dos autos continua extraído localmente (pdfium/OCR), segmentado e conferido no computador; a IA recebe apenas os blocos de texto de cada etapa, como antes. **Não** se envia o PDF, **não** se usa a Files API nem armazenamento de contexto no provedor.
 - **Confirmação em cada tarefa:** antes da primeira etapa de IA, o usuário vê o modelo, as peças e páginas que serão lidas, uma estimativa aproximada de tokens e o resumo da pseudonimização, e **autoriza ou recusa** o envio. Sem autorização, nada é enviado e a tarefa para de forma recuperável.
@@ -1683,3 +1706,133 @@ O usuário aprovou **avaliar tecnicamente** as seguintes escolhas, sem necessida
 ## ESTADO FINAL — V4 + EMENDA 1 (09/11/2026)
 
 **INFERÊNCIA POR GEMINI API COM CHAVE DO USUÁRIO (SEÇÃO 47), EM SUBSTITUIÇÃO À IA LOCAL. ENVIO SOMENTE DO NECESSÁRIO, COM CONFIRMAÇÃO EM CADA TAREFA E PSEUDONIMIZAÇÃO DE DADOS PESSOAIS. TODAS AS DEMAIS REGRAS DA V4 PERMANECEM EM VIGOR.**
+
+## 48. EMENDA 2 — ChatGPT como segundo provedor, cadastro de peças, enquadramento manual e barreira de privacidade — [APROVADO] (09/11/2026)
+
+### 48.1. Decisão e alcance
+
+- Por decisão expressa do usuário (D-11), a seção 47 passa a admitir **dois provedores de inferência**:
+  - a **Gemini API**, com chave do usuário, inalterada;
+  - o **ChatGPT**, pelo fluxo oficial *Sign in with ChatGPT*, que usa o plano ChatGPT do próprio usuário em requisições elegíveis à Responses API da OpenAI.
+- A integração é implementada diretamente no backend Go do aplicativo, sem serviço intermediário, Node.js, Codex CLI, proxy local, reaproveitamento de cookies ou tokens de outros aplicativos, nem endpoints privados do ChatGPT.
+- O provedor e o modelo são **escolhidos explicitamente** pelo usuário. **Não há troca automática** entre provedores.
+- A autorização de envio de cada tarefa (47.3) vale para **um provedor e um modelo**. Se qualquer um dos dois mudar, ou se mudar o conjunto de dados a ocultar, o aplicativo pergunta de novo.
+- A entrada dos autos passa a ser feita por **peças cadastradas individualmente** (48.4), e o **enquadramento** das imputações do PADS passa a ser **informado manualmente** pelo usuário a partir de um catálogo curado (48.5).
+- Continuam **integralmente em vigor**:
+  - as regras jurídicas e de redação das seções 1–27;
+  - a vinculação do PADS às imputações do Memorando Disciplinar (seção 22);
+  - o regime de fatos e militares novos na SR (seção 24.3);
+  - as regras de conexão, dosimetria, reincidência, comportamento, pontuação e regressão, e o motor determinístico;
+  - a validação obrigatória (seção 42), a revisão humana e as sessões efêmeras (seção 29);
+  - as credenciais do SEI somente em memória (seção 33).
+- Continuam fora do escopo: Vertex AI, troca automática entre provedores e retorno à inferência local.
+
+### 48.2. Seções alcançadas
+
+| Seção | Efeito da emenda |
+|---|---|
+| 1, 1.1, 2 (tabela), 2.1, 30.1, 30.3, 31.4, 35 e "Estado final" | Onde se lê "upload manual do PDF completo/consolidado", vale o cadastro de peças (48.4). A modalidade SEI passa a obter só os documentos selecionados pelo usuário |
+| 2.2 e 16.1 (A01, A02, D1, D2) | O tipo e a função de cada peça são **declarados pelo usuário** no cadastro. A classificação automática por conteúdo e cronologia passa a servir de **conferência**: divergência gera pergunta, nunca troca silenciosa |
+| 17.4 (A12) | A distinção entre peça de origem SEI e material complementar se faz pela origem registrada no cadastro (SEI ou envio pelo usuário) |
+| 16.4, 39 | "Página do PDF consolidado" passa a ser a página dos autos montados a partir das peças, com o vínculo peça → arquivo → página preservado |
+| 22 e PADS-ESC-001 | As imputações continuam vinculadas ao Memorando. A IA extrai fatos, condutas e datas; os **dispositivos e a natureza vêm do usuário** (48.5), conferidos e congelados como antes |
+| 29.3 | Acrescenta a credencial do ChatGPT (48.3) |
+| 30.2 (T04–T06) | A peça central (Memorando ou Portaria) é a declarada pelo usuário, e seu conteúdo é conferido. Se o conteúdo indicar outra modalidade ou outra peça, o aplicativo pergunta. A troca nunca é silenciosa |
+| 45 (T02, T03) | Substituídos pelos testes do cadastro de peças |
+| 47.1 | Deixa de valer "OAuth… e outros provedores ficam fora do escopo" |
+| 47.3 | Somam-se a barreira obrigatória e a revisão item a item (48.6). As demais regras de envio valem para os dois provedores |
+| 47.4, 47.5 | Valem para a Gemini; para o ChatGPT valem 48.3 e 48.7 |
+
+### 48.3. Conta ChatGPT (Sign in with ChatGPT)
+
+- O usuário conecta a própria conta pelo **navegador padrão do Windows**, com o fluxo oficial de autorização (OAuth 2.0 com PKCE e OpenID Connect).
+- **Verificações obrigatórias:**
+  - `state`, `nonce`, emissor, destinatário, assinatura e validade do token de identidade;
+  - concessão expressa da **permissão de uso do plano**. Sem essa permissão, o provedor fica desabilitado para gerar texto, mesmo com o login feito.
+- O aplicativo se identifica pelo seu nome verdadeiro, **sys-executor**.
+- O retorno da autorização é recebido somente no endereço local do próprio computador (`127.0.0.1`).
+
+| Armazenamento | Conteúdo | Persistência |
+|---|---|---|
+| Credencial do ChatGPT | Identificação do registro do aplicativo, identificador da instalação, identidade validada da conta, permissões concedidas e token de renovação | Permanente, protegida pelo Windows (DPAPI, conta do usuário); removida ao desconectar |
+
+- O token de acesso fica **somente em memória**.
+- Os tokens nunca são exibidos, enviados à interface, incluídos em eventos, preferências, mensagens de erro ou logs, nem colocados em endereços de página.
+- A renovação substitui o token de renovação a cada uso e é feita **uma de cada vez**.
+- Falhas de rede **não** apagam a credencial.
+- **Desconectar** revoga a sessão no provedor, quando possível, e apaga a credencial local.
+- Os limites de uso do plano são do provedor. O aplicativo **não tenta contorná-los** e informa o usuário quando são atingidos (48.7).
+- A assinatura é pessoal e não é compartilhada entre usuários. O aplicativo não oferece acesso de uso geral à conta para outras ferramentas, não alterna contas para contornar limites e não cobra pelo uso do plano.
+- **Aviso de privacidade antes do primeiro login.** Antes de conectar a conta, o aplicativo explica, em português:
+  - quais dados vão ao provedor: só blocos de texto pseudonimizados das tarefas autorizadas;
+  - que a tabela de correspondência e os arquivos dos autos não saem do computador;
+  - onde ficam guardadas as credenciais;
+  - como desconectar.
+  
+  Os Termos do *Sign in with ChatGPT* exigem esse aviso.
+- **Marca.** O botão de conexão é só texto ("Entrar com ChatGPT"), sem logotipo da OpenAI e sem sugerir patrocínio ou endosso.
+
+### 48.4. Cadastro de peças
+
+- Depois de escolher a modalidade, o usuário cadastra as peças num assistente próprio.
+  - **PADS:** Memorando Disciplinar (com o acusado e os fatos e dispositivos, 48.5); defesa prévia ou indicação de **não apresentada**; depoimentos (testemunha ou declarante, com o depoente); alegações finais ou indicação de **não apresentadas**; outros documentos.
+  - **SR:** Portaria (com um ou vários sindicados e, quando houver, um ou vários ofendidos, ou a indicação de ausência de ofendido individualizado); depoimentos (testemunha, declarante ou sindicado, com o depoente); outros documentos.
+- **Regras de identificação:**
+  - cada peça tem identificador próprio e pode reunir **um ou vários arquivos**, com ordem e origem preservadas;
+  - cada oitiva é uma peça própria, e a mesma pessoa pode ter várias;
+  - arquivos repetidos são apontados.
+- **Conferência antes da análise:** o usuário pode adicionar, excluir, substituir, renomear, reordenar e corrigir vínculos antes de iniciar a análise.
+- **Pela modalidade SEI:**
+  - o aplicativo apresenta a lista de documentos do processo (título e número SEI), lida somente no computador;
+  - o usuário escolhe os documentos;
+  - o aplicativo gera o PDF somente dos selecionados, pela própria opção do SEI, e o separa pelo carimbo SEI;
+  - o usuário classifica e agrupa as peças no assistente.
+  
+  Não se ampliam as ações permitidas no SEI (seção 2.1 e guarda), e os títulos lidos do SEI não são enviados à IA.
+- **Cruzamento com o conteúdo:** os dados declarados pelo usuário (tipo da peça, acusado, sindicados, ofendidos, depoentes) são cruzados com o conteúdo extraído. Divergência relevante gera pergunta. Os campos preenchidos pelo usuário **não ampliam** as acusações do Memorando nem o objeto da Portaria.
+- A ausência de defesa prévia ou de alegações finais é registrada como tal e **não** é interpretada como confissão, concordância ou renúncia.
+- O cadastro existe **somente na sessão efêmera** (seção 29). Não há rascunho persistente nem retomada após o fechamento do aplicativo.
+
+### 48.5. Enquadramento manual no PADS
+
+- O enquadramento das imputações é **informado pelo usuário** a partir de um catálogo curado, extraído da biblioteca jurídica, com a redação vigente de cada dispositivo:
+  - **RDPM:** arts. 15 (natureza leve), 16 (média) e 17 (grave), com todos os incisos. A natureza é **fixa**, dada pelo próprio artigo;
+  - **Estatuto dos Policiais Militares** (Decreto-Lei nº 09-A/1982): arts. 29 (preceitos da ética) e 32 (deveres). Contrariar um desses preceitos também é infração disciplinar. Como esses artigos não trazem a natureza, ela é **atribuída pelo usuário** por semelhança de grau de intensidade com as transgressões do RDPM.
+- Um **fato cometido** pode ser enquadrado em mais de um dispositivo. **Cada dispositivo constitui uma imputação** com natureza própria.
+- Imputações do mesmo fato são **candidatas a conexas** e seguem a regra já vigente (seção 5):
+  - a principal é a de maior gravidade, e as demais funcionam como agravantes;
+  - em empate de natureza, o usuário escolhe a que mais se amolda ao fato.
+  
+  A conexão é sempre confirmada pelo usuário.
+- **Papel da IA:** extrai do Memorando os fatos, as condutas, as datas e os dispositivos citados, **apenas para conferência**.
+- **Divergência com o Memorando:** se um dispositivo escolhido não corresponder ao citado no texto, o aplicativo mostra os dois lado a lado, com o trecho e a remissão à seção 22.1, e exige **confirmação expressa**.
+- O aplicativo **nunca sugere** troca de dispositivo e nunca acrescenta imputação não contida no Memorando (seção 22).
+- O catálogo de dispositivos é revisado pelo usuário e registrado no CHANGELOG das políticas, com a fonte (arquivo e página) de cada item.
+
+### 48.6. Barreira de privacidade antes do envio
+
+- A pseudonimização da seção 47.3 continua com o mesmo alcance: nº SEI, nº de processo, datas dos fatos, links e posto/graduação **não** são substituídos. Ela passa a contar também com as pessoas cadastradas (48.4), suas grafias informadas e as variações de caixa e acento.
+- **Barreira obrigatória.** Antes de qualquer requisição, o aplicativo confere o conteúdo exato que será enviado: instruções, dados estruturados, textos, histórico de reenvio e formato de resposta.
+  - Restou dado pessoal **já conhecido** (pessoa cadastrada ou detectada, CPF, RG, matrícula, telefone, e-mail, endereço)? A requisição é **bloqueada**, sem opção de ignorar.
+  - Encontrou possível dado pessoal **não cadastrado**? A requisição só segue depois de uma decisão do usuário **item a item**, numa tela que lista os itens sem despejar o texto dos autos. Não existe confirmação genérica para ignorar tudo.
+- A tabela de correspondência entre marcadores e valores reais existe somente na memória da tarefa. Ela **nunca** é enviada ao provedor, gravada em disco, registrada em logs ou mostrada em mensagens de erro.
+- **Restauração.** As respostas são restauradas localmente de forma determinística. Marcador desconhecido ou alterado interrompe a etapa como resposta incompleta. O aplicativo nunca adivinha identidades.
+- **Crianças.** Na confirmação de envio de cada tarefa com o ChatGPT, o aplicativo pergunta se os autos contêm dados pessoais de **criança menor de 13 anos**. Em caso afirmativo, ou se alguma pessoa do cadastro estiver marcada como criança, o ChatGPT fica **bloqueado** para a tarefa. Os Termos do *Sign in with ChatGPT* proíbem o envio desses dados, mesmo pseudonimizados. A análise só prossegue com outro provedor escolhido explicitamente pelo usuário, sem troca automática.
+- **Limite.** Pseudonimização não é anonimização: o contexto (local, cargo, datas, circunstâncias) pode permitir reidentificação, e o aplicativo não promete anonimato. A confirmação do usuário não substitui autorização institucional para tratar dados da PMRO em serviço externo.
+
+### 48.7. Provedor ChatGPT — requisições, modelos e falhas
+
+- **Requisições:**
+  - pela Responses API pública da OpenAI, com o registro de requisições desligado (`store` = falso) e resposta em fluxo, consumida internamente;
+  - não há streaming de tokens na interface (seção 37, mantida);
+  - o modelo não recebe ferramentas, como na 47.3;
+  - não se enviam arquivos, imagens nem o PDF; só os blocos de texto de cada etapa.
+- **Conclusão:** a resposta só é aceita com o evento de **conclusão** do provedor. Resposta interrompida, incompleta ou com falha **nunca** é tratada como concluída.
+- **Modelos:** a lista vem da conta do usuário. Nenhum modelo é fixado no código. Se o modelo escolhido deixar de estar disponível, o aplicativo avisa e pede nova escolha.
+- **Falhas:** sem conexão, conta não conectada, bloqueio por dados de criança (48.6), permissão do plano não concedida, sessão expirada ou revogada, conta não elegível, limite de uso do plano atingido, modelo indisponível, tempo esgotado ou recurso não suportado geram mensagem clara em português e **parada recuperável**, com a tarefa preservada (seção 47.6).
+- **Limite de uso:** atingido o limite, o aplicativo **não repete** a requisição e indica onde o usuário acompanha o uso na própria conta ChatGPT.
+- **Dados:** valem as ressalvas das seções 1.1 (item 9), 11 e 47.3. O aplicativo **não promete apagar** registros do provedor. Fica registrado que a política de retenção e de uso de dados para treinamento no modo *Sign in with ChatGPT* não estava documentada em 09/11/2026, e que o usuário deve conferir os termos do provedor.
+
+## ESTADO FINAL — V4 + EMENDAS 1 E 2 (09/11/2026)
+
+**INFERÊNCIA PELA GEMINI API (CHAVE DO USUÁRIO) OU PELO CHATGPT (PLANO DO USUÁRIO), À ESCOLHA EXPLÍCITA DO USUÁRIO E SEM TROCA AUTOMÁTICA. ENTRADA POR PEÇAS CADASTRADAS (UPLOAD OU SEI, SÓ OS SELECIONADOS). ENQUADRAMENTO DO PADS INFORMADO PELO USUÁRIO A PARTIR DE CATÁLOGO CURADO. PSEUDONIMIZAÇÃO COM BARREIRA OBRIGATÓRIA ANTES DO ENVIO E RESTAURAÇÃO LOCAL. TODAS AS DEMAIS REGRAS DA V4 PERMANECEM EM VIGOR.**

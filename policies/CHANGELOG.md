@@ -22,3 +22,24 @@ O CI falha enquanto o SHA-256 da V4 divergir do lock (GOV-LOCK-01).
 - **Registro:** D-10 em `docs/planning/REGISTRO_DUVIDAS_DECISOES.md`.
 - **Aprovação:** usuário, em 09/11/2026 ("Aprovo o texto").
 
+
+### 09/11/2026 — Emenda 2 (seção 48): ChatGPT, cadastro de peças, enquadramento manual e barreira de privacidade
+- **O que mudou na V4:**
+  - nova seção 48;
+  - nota no cabeçalho;
+  - marcas **[Emenda §48]** em §§2.1, 2.2, 16.1, 17.4, 22.1, 29.3, 30.1, 30.2, 45, 47.1 e 47.3, com o texto original mantido.
+- **Conteúdo da emenda:**
+  - ChatGPT (*Sign in with ChatGPT*, plano do usuário) como 2º provedor, à escolha explícita e sem troca automática;
+  - autorização de envio vinculada ao provedor e ao modelo;
+  - entrada por peças cadastradas (upload ou só os documentos selecionados no SEI), com o conteúdo conferido contra a declaração;
+  - enquadramento do PADS informado pelo usuário a partir de catálogo curado (RDPM arts. 15–17 com natureza fixa; Estatuto arts. 29 e 32 com natureza atribuída pelo usuário); cada dispositivo é uma imputação, e a conexão segue a seção 5;
+  - barreira obrigatória de privacidade antes do envio, com revisão item a item;
+  - bloqueio do ChatGPT quando há dados de criança menor de 13 anos;
+  - aviso de privacidade antes do primeiro login e uso de marca restrito, ambos por exigência dos Termos do SIWC.
+- **Regras jurídicas:** nenhuma alteração de conexão, dosimetria, reincidência, comportamento, pontuação, regressão, resultados do PADS, vinculação ao Memorando (§22) ou fatos novos na SR (§24.3).
+- **Regras do catálogo afetadas** (lista prevista em `docs/planning/PROPOSTA_EMENDA2_V4.md`):
+  - serão reescritas, revogadas ou criadas **junto com o código que as garante**, em cada etapa do plano `docs/planning/PLANO_CHATGPT_PECAS_PRIVACIDADE.md`, como na Emenda 1;
+  - nesta entrada o catálogo não muda.
+- **Testes:** T02, T03 e T04–T06 continuam mapeados às regras atuais até a etapa do cadastro de peças, quando passam a ser verificados no sentido da seção 48.2.
+- **Registro:** D-11 em `docs/planning/REGISTRO_DUVIDAS_DECISOES.md`.
+- **Aprovação:** usuário, em 09/11/2026 ("Tudo certo"). Os acréscimos sobre crianças, aviso de privacidade e marca decorrem dos Termos do SIWC fornecidos pelo usuário; a opção "pergunta + bloqueio" foi escolhida por ele.

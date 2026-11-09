@@ -113,6 +113,18 @@
      Um **fato cometido** pode ter vários dispositivos, e **cada dispositivo é uma imputação** com natureza própria. Imputações do mesmo fato são candidatas a conexas: a principal é a mais grave e as demais viram agravantes; em empate, o usuário escolhe a que mais se amolda. É a regra já vigente (V4 §5) e já implementada (`engine.SugerirPrincipal`/`AplicarConexao`), **sem mudança no motor**.
   8. **Divergência com o Memorando (E8):** dispositivo escolhido ≠ dispositivo citado no Memorando → o app mostra os dois lado a lado, com o trecho e a §22.1, e exige confirmação explícita. O app nunca sugere artigo.
   9. **Momento do enquadramento (E9):** no assistente (etapa do Memorando), cruzado depois com os fatos extraídos pela IA no formulário de confirmação.
+10. **Emenda 2 aprovada** ("Tudo certo"), com acréscimos decorrentes dos Termos do SIWC fornecidos pelo usuário:
+    - aviso de privacidade antes do primeiro login (Termos §2.3);
+    - botão só com texto, sem logotipo nem sugestão de endosso (Termos §5);
+    - **crianças menores de 13 anos** (Termos §4): o usuário escolheu **pergunta em cada tarefa + bloqueio**. Se os autos contiverem dados de criança, ou se alguma pessoa do cadastro estiver marcada como criança, o ChatGPT fica bloqueado para a tarefa, e a análise só segue com outro provedor escolhido explicitamente.
+    
+    Inserida na V4 como seção 48; `V4.lock` atualizado.
+- **Termos do SIWC (lidos pelo usuário):** o plano já atende a:
+  - identidade própria;
+  - tokens guardados só no computador;
+  - requisições só da máquina do usuário;
+  - consentimento expresso para processamento automático (a confirmação por tarefa);
+  - nenhum acesso de uso geral, nenhuma alternância de contas e nenhuma cobrança.
 - **Fontes oficiais consultadas (09/11/2026):** documentação *Sign in with ChatGPT — token sharing for open source* (developers.openai.com/siwc). Em resumo:
   - OAuth com PKCE e registro dinâmico (`dynamic_agent_client`), retorno em loopback `127.0.0.1`;
   - escopo obrigatório `chatgpt.tokens.use.direct`;
@@ -120,7 +132,7 @@
   - sucesso só com `response.completed`;
   - limite de 5 h do Plus compartilhado entre apps.
   
-  Os termos (openai.com/policies/sign-in-with-chatgpt-terms) **não puderam ser lidos automaticamente** (HTTP 403): o usuário deve lê-los.
+  Os termos (openai.com/policies/sign-in-with-chatgpt-terms) não puderam ser lidos automaticamente (HTTP 403); o próprio usuário os forneceu em 09/11/2026 (item 10).
 - **Riscos registrados:**
   - **elegibilidade:** a documentação diz "parceiros open source e clientes privados selecionados", e o repositório ainda não é público;
   - **dados no modo SIWC:** retenção e uso para treinamento não estão documentados;

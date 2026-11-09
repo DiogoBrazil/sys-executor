@@ -1,8 +1,8 @@
 # PROPOSTA — Emenda 2 à V4 (seção 48)
 
-> **Situação:** proposta, **aguardando aprovação do usuário**. O texto ainda **não** foi inserido em `docs/rules/sys-executor_especificacao_consolidada_V4.md`.
+> **Situação:** **APROVADA pelo usuário em 09/11/2026** ("Tudo certo") e inserida na V4 como seção 48. Antes da inserção, foram feitos três acréscimos decorrentes dos Termos do *Sign in with ChatGPT* fornecidos pelo usuário: aviso de privacidade antes do primeiro login (Termos §2.3), uso da marca (Termos §5) e bloqueio de dados de crianças menores de 13 anos (Termos §4). O usuário escolheu pergunta em cada tarefa + bloqueio.
 >
-> **Depois do aval:**
+> **Passos depois do aval (feitos em 09/11/2026, exceto o item 2):**
 > 1. inserir a seção 48 e as marcas **[Emenda §48]** nas seções alcançadas, conservando o texto anterior, como foi feito na §47;
 > 2. atualizar o catálogo de regras, a matriz e o plano de testes;
 > 3. registrar no `policies/CHANGELOG.md`;
@@ -12,7 +12,7 @@
 
 ---
 
-## 48. EMENDA 2 — ChatGPT como segundo provedor, cadastro de peças, enquadramento manual e barreira de privacidade — [PROPOSTA] (09/11/2026)
+## 48. EMENDA 2 — ChatGPT como segundo provedor, cadastro de peças, enquadramento manual e barreira de privacidade — [APROVADO] (09/11/2026)
 
 ### 48.1. Decisão e alcance
 
@@ -67,7 +67,15 @@
 - Falhas de rede **não** apagam a credencial.
 - **Desconectar** revoga a sessão no provedor, quando possível, e apaga a credencial local.
 - Os limites de uso do plano são do provedor. O aplicativo **não tenta contorná-los** e informa o usuário quando são atingidos (48.7).
-- A assinatura é pessoal e não é compartilhada entre usuários.
+- A assinatura é pessoal e não é compartilhada entre usuários. O aplicativo não oferece acesso de uso geral à conta para outras ferramentas, não alterna contas para contornar limites e não cobra pelo uso do plano.
+- **Aviso de privacidade antes do primeiro login.** Antes de conectar a conta, o aplicativo explica, em português:
+  - quais dados vão ao provedor: só blocos de texto pseudonimizados das tarefas autorizadas;
+  - que a tabela de correspondência e os arquivos dos autos não saem do computador;
+  - onde ficam guardadas as credenciais;
+  - como desconectar.
+  
+  Os Termos do *Sign in with ChatGPT* exigem esse aviso.
+- **Marca.** O botão de conexão é só texto ("Entrar com ChatGPT"), sem logotipo da OpenAI e sem sugerir patrocínio ou endosso.
 
 ### 48.4. Cadastro de peças
 
@@ -114,6 +122,7 @@
   - Encontrou possível dado pessoal **não cadastrado**? A requisição só segue depois de uma decisão do usuário **item a item**, numa tela que lista os itens sem despejar o texto dos autos. Não existe confirmação genérica para ignorar tudo.
 - A tabela de correspondência entre marcadores e valores reais existe somente na memória da tarefa. Ela **nunca** é enviada ao provedor, gravada em disco, registrada em logs ou mostrada em mensagens de erro.
 - **Restauração.** As respostas são restauradas localmente de forma determinística. Marcador desconhecido ou alterado interrompe a etapa como resposta incompleta. O aplicativo nunca adivinha identidades.
+- **Crianças.** Na confirmação de envio de cada tarefa com o ChatGPT, o aplicativo pergunta se os autos contêm dados pessoais de **criança menor de 13 anos**. Em caso afirmativo, ou se alguma pessoa do cadastro estiver marcada como criança, o ChatGPT fica **bloqueado** para a tarefa. Os Termos do *Sign in with ChatGPT* proíbem o envio desses dados, mesmo pseudonimizados. A análise só prossegue com outro provedor escolhido explicitamente pelo usuário, sem troca automática.
 - **Limite.** Pseudonimização não é anonimização: o contexto (local, cargo, datas, circunstâncias) pode permitir reidentificação, e o aplicativo não promete anonimato. A confirmação do usuário não substitui autorização institucional para tratar dados da PMRO em serviço externo.
 
 ### 48.7. Provedor ChatGPT — requisições, modelos e falhas
@@ -125,11 +134,11 @@
   - não se enviam arquivos, imagens nem o PDF; só os blocos de texto de cada etapa.
 - **Conclusão:** a resposta só é aceita com o evento de **conclusão** do provedor. Resposta interrompida, incompleta ou com falha **nunca** é tratada como concluída.
 - **Modelos:** a lista vem da conta do usuário. Nenhum modelo é fixado no código. Se o modelo escolhido deixar de estar disponível, o aplicativo avisa e pede nova escolha.
-- **Falhas:** sem conexão, conta não conectada, permissão do plano não concedida, sessão expirada ou revogada, conta não elegível, limite de uso do plano atingido, modelo indisponível, tempo esgotado ou recurso não suportado geram mensagem clara em português e **parada recuperável**, com a tarefa preservada (seção 47.6).
+- **Falhas:** sem conexão, conta não conectada, bloqueio por dados de criança (48.6), permissão do plano não concedida, sessão expirada ou revogada, conta não elegível, limite de uso do plano atingido, modelo indisponível, tempo esgotado ou recurso não suportado geram mensagem clara em português e **parada recuperável**, com a tarefa preservada (seção 47.6).
 - **Limite de uso:** atingido o limite, o aplicativo **não repete** a requisição e indica onde o usuário acompanha o uso na própria conta ChatGPT.
 - **Dados:** valem as ressalvas das seções 1.1 (item 9), 11 e 47.3. O aplicativo **não promete apagar** registros do provedor. Fica registrado que a política de retenção e de uso de dados para treinamento no modo *Sign in with ChatGPT* não estava documentada em 09/11/2026, e que o usuário deve conferir os termos do provedor.
 
-## ESTADO FINAL — V4 + EMENDAS 1 E 2 ([data da aprovação])
+## ESTADO FINAL — V4 + EMENDAS 1 E 2 (09/11/2026)
 
 **INFERÊNCIA PELA GEMINI API (CHAVE DO USUÁRIO) OU PELO CHATGPT (PLANO DO USUÁRIO), À ESCOLHA EXPLÍCITA DO USUÁRIO E SEM TROCA AUTOMÁTICA. ENTRADA POR PEÇAS CADASTRADAS (UPLOAD OU SEI, SÓ OS SELECIONADOS). ENQUADRAMENTO DO PADS INFORMADO PELO USUÁRIO A PARTIR DE CATÁLOGO CURADO. PSEUDONIMIZAÇÃO COM BARREIRA OBRIGATÓRIA ANTES DO ENVIO E RESTAURAÇÃO LOCAL. TODAS AS DEMAIS REGRAS DA V4 PERMANECEM EM VIGOR.**
 
