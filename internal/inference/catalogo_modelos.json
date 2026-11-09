@@ -32,7 +32,7 @@
       "privado_mb": 1300,
       "qualidade": 1,
       "testado": true,
-      "nota": "Perfil básico (8 GB): mais rápido, exige validação mais forte."
+      "nota": "Perfil básico, para computadores em que o padrão não cabe: mais rápido, porém menos confiável (na avaliação sintética, as instruções maliciosas mudaram a proposta em 4 de 5 casos; nenhuma passou pelo validador)."
     },
     {
       "id": "qwen3-embedding-0.6b-q8",

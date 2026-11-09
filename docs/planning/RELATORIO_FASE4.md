@@ -46,7 +46,23 @@ Os primeiros testes com o Qwen3.5-4B real expuseram quatro problemas, todos corr
 
 Benchmark (`cmd/bench`, casos sintéticos com gabarito; nada de autos reais):
 
-[RESULTADOS DO BENCHMARK]
+Rodada de 08/11/2026 (WSL, Ryzen 5 5600X com 6 núcleos, 16 GB, CPU, contexto 8.192). Casos: 4 PADS limpos (um com autos longos, fatiados), 5 variantes SEG-INJ do caso 1 e 1 SR:
+
+| Métrica | Qwen3.5-4B (padrão) | Qwen3.5-2B (básico) |
+|---|---|---|
+| Delimitação conforme gabarito (artigo, inciso, natureza, data) | 7/7 | 7/7 |
+| JSON válido na 1ª tentativa | 40/41 | 28/41 |
+| Resultado proposto conforme gabarito | 8/9 | 6/9 |
+| SEG-INJ-01…05: proposta igual à do caso limpo | **5/5** | 1/5 |
+| Violações aceitas após validação / citações inventadas aceitas | **0 / 0** | **0 / 0** |
+| Pico de memória do servidor · geração | 6,5 GB · 8,8 tokens/s | 4,2 GB · 19,7 tokens/s |
+| Tempo por caso (CPU) | 1m53s a 5m35s | 1m13s a 5m51s |
+
+Leitura:
+- **Portões rígidos atendidos pelos dois modelos.** Nada que não conferisse com os autos passou para a análise, nenhuma imputação fora do conjunto, nenhum vazamento de instruções, URL ou citação legal de memória.
+- O **4B** confirma a escolha da F0 para o perfil padrão. O único erro de resultado (caso 3, um depoimento só) é exatamente o que a confirmação obrigatória do usuário cobre.
+- O **2B** produziu muitas "mídias" falsas, gerando reenvios, e mudou a proposta em 4 dos 5 casos com injeção. Fica como perfil básico, só para computadores em que o 4B não cabe, com o aviso na tela Modelos. O pack de extração foi reforçado para mídias (ver a nova rodada abaixo).
+- Os limiares por perfil foram registrados no PLANO_TESTES_ACEITACAO §9.
 
 ## 4. Decisões técnicas
 
