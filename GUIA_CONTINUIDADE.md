@@ -1,126 +1,130 @@
 # Guia de continuidade — sys-executor
 
-> **Comece por aqui.** Este arquivo é o ponto de entrada para retomar o trabalho em qualquer máquina. Atualizado em 10/11/2026, ao fim da etapa 8 do plano D-11.
+> **Comece por aqui.** Ponto de entrada para retomar o trabalho em qualquer máquina.
 >
-> **Branch:** `add-mode-apikey-oauth`. O push será feito pelo usuário; não há merge com a `main`.
+> - **Atualizado em:** 10/11/2026, depois da etapa 7 do plano D-11 (commit `0579327`) e deste guia.
+> - **Branch:** `add-mode-apikey-oauth`. O push é feito pelo usuário. Não há merge com a `main`.
+> - **Em uma linha:** as etapas 0 a 8 do plano D-11 estão **implementadas**. Para **concluir** o D-11 faltam os testes manuais do usuário (§6.1), uma bateria do bench (§6.2) e algumas decisões dele (§6.3).
 
 ---
 
-## 1. Estado em uma frase
+## 1. Onde estamos
 
-O aplicativo (Go + Wails 3 + Vue, para Windows) faz o seguinte, da escolha do procedimento até a análise das provas, e para em "Consultando fontes jurídicas" (TAR-004, fim previsto deste escopo):
-- recebe os autos **peça por peça**;
-- pseudonimiza e passa pela **barreira de privacidade**;
-- delimita o objeto com **enquadramento manual**;
-- analisa as provas com o **Gemini** (chave) ou o **ChatGPT** (*Sign in with ChatGPT*, plano do usuário).
+O aplicativo (Go + Wails 3 + Vue, para Windows) percorre:
+1. a escolha do procedimento (PADS ou SR);
+2. a obtenção dos autos **peça por peça**, por upload ou **pelo SEI**, com a seleção dos documentos no computador;
+3. a pseudonimização e a **barreira de privacidade**;
+4. a delimitação com **enquadramento manual**;
+5. a análise das provas com o **Gemini** (chave do usuário) ou o **ChatGPT** (*Sign in with ChatGPT*, plano do usuário).
 
-O usuário testou no Windows, em 09/11/2026, o cadastro de peças com o ChatGPT (`gpt-6-luna`) até esse ponto: autorização, imputações, mídias, resultados, conexão, comportamento e histórico.
+O processamento para em **"Consultando fontes jurídicas" (TAR-004)**, que é o fim previsto do escopo D-11. A minuta, o DOCX/PDF e o instalador ficam para as fases F5 a F8, fora deste escopo.
 
-Em 10/11/2026 (etapa 8), o bench rodou nos dois provedores com os casos sintéticos, nas entradas monolítica e por peças (`RELATORIO_ETAPA8_BENCH.md`):
-- **vazamento zero** nos dois provedores;
-- **Gemini dentro dos limiares**, e o 400 da análise está confirmado como corrigido;
-- **ChatGPT abaixo dos limiares** de JSON na 1ª tentativa e de resultado. A causa principal foi achada: a mensagem do validador para pessoa sem nome. A correção depende de decisão do usuário.
-
-A etapa 7 (SEI com seleção dos documentos no computador) foi implementada em 10/11/2026 e aguarda o teste real do usuário.
+### 1.1 O que já foi testado e o que não foi
+| Item | Automatizado | Manual no Windows (usuário) |
+|---|---|---|
+| ChatGPT no app (login, modelo, PADS até TAR-004) | ✅ | ✅ 09/11/2026, conta Plus, `gpt-6-luna` |
+| Cadastro de peças PADS | ✅ | ✅ 09/11/2026, com ChatGPT |
+| Cadastro de peças SR | ✅ | ❌ **pendente** (§6.1-B) |
+| SEI com seleção no computador (etapa 7) | ✅ CAD-SEI-01 (simulado, pdfium real) | ❌ **pendente** (§6.1-A) |
+| Gemini no app, de ponta a ponta | ✅ | ⚠️ **parcial**: a cota gratuita acabou no teste de 09/11/2026. A conta está no nível pago desde 10/11 (§6.1-C) |
+| Bench Gemini `gemini-3.6-flash` (casos sintéticos) | ✅ dentro dos limiares; vazamento 0 | — |
+| Bench ChatGPT `gpt-6-luna` | ⚠️ abaixo dos limiares de JSON 1ª e de resultado; vazamento 0 | Falta repetir a bateria depois da mudança 1(a) (§6.2) |
+| Barreira de privacidade e métrica de vazamento | ✅ 0 nomes em todos os pedidos, nos dois provedores e nas três entradas | — |
 
 ---
 
 ## 2. Leia antes de mexer (nesta ordem)
-
 1. **Este guia.**
-2. `docs/planning/PLANO_CHATGPT_PECAS_PRIVACIDADE.md`: plano D-11 aprovado (etapas 0 a 8).
-3. `docs/rules/sys-executor_especificacao_consolidada_V4.md`: a especificação. **Prioridade absoluta: as regras jurídicas.** Emendas: §47 (Gemini) e §48 (ChatGPT, peças, enquadramento, barreira).
-4. `docs/planning/REGISTRO_DUVIDAS_DECISOES.md`: D-10 e D-11 (decisões E1 a E9).
-5. Relatórios por etapa em `docs/planning/`:
+2. `docs/planning/PLANO_CHATGPT_PECAS_PRIVACIDADE.md`: plano D-11 aprovado, etapas 0 a 8. O §4.8 (SEI) foi revisado e o §9 traz os critérios de aceitação.
+3. `docs/rules/sys-executor_especificacao_consolidada_V4.md`: a especificação. **Prioridade absoluta: as regras jurídicas.**
+   - Emenda 1: §47 (Gemini).
+   - Emenda 2: §48 (ChatGPT, peças, enquadramento, barreira), com a **revisão de 10/11/2026 da §48.4 (SEI)**.
+4. `docs/planning/REGISTRO_DUVIDAS_DECISOES.md`: D-10 e D-11 (E1 a E9, com o **E2 revisado**).
+5. `docs/planning/ADR_010_chatgpt_pecas_barreira.md`: as decisões de arquitetura do D-11.
+6. Relatórios das etapas, em `docs/planning/`:
    - `RELATORIO_POC_CHATGPT.md`;
-   - `RELATORIO_ETAPA2_BARREIRA.md`, `RELATORIO_ETAPA3_MULTIPROVEDOR.md` e `RELATORIO_ETAPA4_CHATGPT.md`;
-   - `RELATORIO_ETAPA6_CADASTRO.md`, `RELATORIO_ETAPA7_SEI.md` e `RELATORIO_ETAPA8_BENCH.md`;
-   - `ADR_010_chatgpt_pecas_barreira.md` (decisões de arquitetura do D-11).
-6. `CONTINUIDADE_MIGRACAO_GEMINI.md`: histórico detalhado da migração para o Gemini e as pendências dela.
+   - `RELATORIO_ETAPA2_BARREIRA.md`, `RELATORIO_ETAPA3_MULTIPROVEDOR.md`, `RELATORIO_ETAPA4_CHATGPT.md`;
+   - `RELATORIO_ETAPA6_CADASTRO.md`, `RELATORIO_ETAPA7_SEI.md`, `RELATORIO_ETAPA8_BENCH.md`.
+7. `CONTINUIDADE_MIGRACAO_GEMINI.md`: histórico da migração para o Gemini.
 
 ---
 
 ## 3. Regras de trabalho combinadas com o usuário
-
-- **Autorização expressa por etapa ou fase.** Nada de código novo fora do que foi autorizado. As etapas 5 a 8 do plano D-11 já estão autorizadas; as fases F5 a F8 do plano original estão fora do escopo e exigem autorização própria.
-- **Dúvida → perguntar** antes de decidir.
+- **Autorização expressa por etapa ou fase.** Nada de código novo fora do que foi autorizado.
+  - As etapas 0 a 8 do D-11 estão autorizadas e implementadas.
+  - Correções decorrentes dos testes manuais e as melhorias do §6.4 cabem no D-11, mas é preciso **perguntar antes**.
+  - As fases F5 a F8 exigem autorização própria.
+- **Dúvida → perguntar** antes de decidir. Mudança no texto da V4 só com o texto aprovado pelo usuário, seguido de CHANGELOG e `go run ./cmd/rulescov -atualizar-lock`.
 - **Commits:**
-  - só quando o usuário pedir (ele tem aprovado um commit por etapa);
+  - só quando o usuário pedir. Ele tem aprovado um commit por etapa;
   - **nunca** com coautor ou atribuição ao Claude/IA.
-- **Git:** sem push, merge, rebase, reset, clean ou checkout destrutivo sem autorização. Não apagar alterações do usuário. **Não tocar em `logo-cabecalho-docs.jpeg`**: é um arquivo do usuário, não rastreado.
+- **Git:** sem push (o push é do usuário), merge, rebase, reset, clean ou checkout destrutivo. Não apagar alterações do usuário. **Não tocar em `logo-cabecalho-docs.jpeg`** (e no `:Zone.Identifier`): são arquivos do usuário, não rastreados.
 - **Dados:** só casos **sintéticos**. Nunca autos reais da PMRO, CPF, tokens ou chaves no repositório, em logs, no chat ou em argumentos de linha de comando. A tabela de pseudônimos nunca vai à IA.
-- **Máquina do usuário:** **não rodar GPU/Vulkan** (já derrubou a máquina). Use só a CPU.
-- **Prompts de referência:** os arquivos golden (`internal/policy/testdata/golden`) **não podem mudar**.
-- **Atualizar este guia** e o relatório da etapa ao fim de cada etapa.
-- **Documentação de bibliotecas:** consultar pelo Context7 ou pela web antes de usar uma API externa.
+  - Saídas do `sei-mapa` coladas no chat trazem só a forma dos textos; o usuário as revisa antes.
+- **Máquina do usuário:** **não rodar GPU/Vulkan**, que já derrubou a máquina. Use só a CPU; o Chrome de teste roda com `--disable-gpu`.
+- **Prompts de referência:** os golden (`internal/policy/testdata/golden`) **não podem mudar**.
+- **Ao fim de cada etapa:** atualizar este guia e o relatório da etapa.
+- **Bibliotecas:** consultar a documentação pelo Context7 ou pela web antes de usar uma API externa.
 
 ---
 
 ## 4. Preparar a máquina nova
 
-### 4.1 Ferramentas
-- **Go:** 1.26 ou superior (`go.mod` pede 1.26.0; o CI e esta máquina usam 1.27.x).
-- **Node** 24 com npm.
-- **Wails 3 CLI** v3.1.0: `go install github.com/wailsapp/wails/v3/cmd/wails3@v3.1.0` (fica em `$(go env GOPATH)/bin`).
-- Ambiente de desenvolvimento: **WSL** (Linux). O executável é gerado para Windows por compilação cruzada.
+### 4.1 Ferramentas (WSL/Linux; o executável é gerado para Windows por compilação cruzada)
+- **Go 1.27.3**, a versão do CI e do `gofmt` dele. O `go.mod` pede 1.26.0.
+  ```bash
+  go install golang.org/dl/go1.27.3@latest && go1.27.3 download
+  export PATH=$HOME/sdk/go1.27.3/bin:$PATH      # em todo terminal de trabalho
+  ```
+- **Node 24** com npm.
+- **Wails 3 CLI v3.1.0:** `go install github.com/wailsapp/wails/v3/cmd/wails3@v3.1.0` (fica em `$(go env GOPATH)/bin`).
 
 ```bash
 git clone <repo> && cd sys-executor && git checkout add-mode-apikey-oauth
 cd frontend && npm ci && npm run build && cd ..
-go build ./... && go test ./internal/...
+go build $(go list ./... | grep -v '/cmd/sys-executor$')   # tudo, menos o app
+GOOS=windows go vet ./...                                   # inclui o app
+go test ./internal/... ./cmd/bench/...
 ```
+- `go build ./...` e `go test ./cmd/sys-executor` **não compilam no Linux**, porque o app exige GTK4/WebKit. Não é defeito.
 
-Observações:
-- `go build ./...` e `go test ./cmd/sys-executor` **não compilam no Linux**, porque o pacote do app exige GTK4/WebKit. Não é defeito: o app é para Windows.
-  - Para compilar no Linux: `go build $(go list ./... | grep -v '/cmd/sys-executor$')`.
-  - Para conferir esse pacote: `GOOS=windows go vet ./...`.
-- **Versão do Go:** se o Go do PATH for anterior ao 1.27, instale o 1.27.3 com `go install golang.org/dl/go1.27.3@latest && go1.27.3 download` e use `export PATH=$HOME/sdk/go1.27.3/bin:$PATH`. É a versão do CI e do `gofmt` dele.
+### 4.2 O que NÃO está no repositório (refazer em cada máquina)
+| Item | Onde fica | Como refazer |
+|---|---|---|
+| Chave de desenvolvimento do Gemini (bench) | `~/.config/sys-executor/gemini-dev.key` (0600) | No terminal do usuário, **nunca no chat**:<br>`install -d -m 700 ~/.config/sys-executor`<br>`read -rs K; printf %s "$K" > ~/.config/sys-executor/gemini-dev.key; unset K`<br>`chmod 600 ~/.config/sys-executor/gemini-dev.key`<br>Usar com `SYSEXEC_GEMINI_API_KEY="$(tr -d '[:space:]' < ~/.config/sys-executor/gemini-dev.key)"`.<br>Validar sem gerar texto: `go run ./cmd/bench -provedor gemini -modelos`. |
+| Conta ChatGPT do bench | `~/.config/sys-executor/chatgpt-dev.json` (0600) | `go run ./cmd/bench -conectar-chatgpt` abre o navegador do Windows e dá 5 min para entrar.<br>`-estado-chatgpt` e `-desconectar-chatgpt`. |
+| Credenciais do app (Windows) | `%LOCALAPPDATA%\sys-executor\credenciais\` (`gemini.dpapi`, `chatgpt.dpapi`, DPAPI) | **Não migram.** Em *Configurações de IA*, cadastre a chave do Gemini e conecte o ChatGPT, que exige conta **com assinatura**; conta gratuita recebe `invalid_grant`. |
+| Tesseract (OCR) do teste manual | `componentes\tesseract\` ao lado do `.exe` (`tesseract.exe`, DLLs, `tessdata\por.traineddata` e `osd.traineddata`) | Copiar a pasta de uma máquina que já a tenha (`~/.cache/sys-executor-dev/bin/win-tesseract/`) ou instalar o Tesseract 5.4 da UB Mannheim e copiar a pasta.<br>Sem ele, página escaneada termina em OCR-001. PDF com texto funciona sem OCR.<br>Não é o binário sem GPL previsto no D-09.7 para o instalador. |
+| Chrome de desenvolvimento (só para `poc/sei-mapa`, `go test .`) | `~/.cache/sys-executor-dev/bin/chrome/chrome-linux64/chrome` ou `SEIMAPA_CHROME` | Opcional. Sem ele, o teste é pulado. |
+| PDFs sintéticos do teste manual | pasta de teste no Windows | `SAIDA_PDF=/mnt/c/Users/<usuário>/Documents/testes-sys-executor go test -count=1 -run TestGerarPDFsSinteticos ./internal/testutil/pdfsint`<br>Gera `pecas-pads-sintetico/`, `pecas-sr-sintetico/` e os consolidados `*-texto.pdf`. |
 
-### 4.2 O que NÃO está no repositório (refazer na máquina nova)
-- **Chave de desenvolvimento do Gemini:**
-  - guarde-a em `~/.config/sys-executor/gemini-dev.key`, com permissão 600;
-  - use sempre `SYSEXEC_GEMINI_API_KEY="$(tr -d '[:space:]' < ~/.config/sys-executor/gemini-dev.key)"`;
-  - **nível pago (pré-pago)** desde 10/11/2026. A conta de faturamento usa os créditos do GCP primeiro e exige saldo pré-pago acima de zero;
-  - o perfil de pagamentos é de **outra conta Google do usuário**, do tipo pessoa física, que não aceita outros usuários. Para comprar créditos, entre no AI Studio com essa outra conta. Os créditos valem para a conta de faturamento.
-- **Conta ChatGPT do bench** (WSL), separada da do app:
-  - `go run ./cmd/bench -conectar-chatgpt` abre o navegador do Windows;
-  - a credencial de desenvolvimento fica em `~/.config/sys-executor/chatgpt-dev.json` (0600). Nunca no repositório;
-  - `-estado-chatgpt` mostra o estado e `-desconectar-chatgpt` revoga a sessão e apaga a credencial.
-- **Credenciais do app no Windows:**
-  - ficam em `%LOCALAPPDATA%\sys-executor\credenciais\`: `gemini.dpapi` e `chatgpt.dpapi`, cifradas com DPAPI;
-  - **não migram entre máquinas.** Em outra máquina, cadastre a chave do Gemini de novo e reconecte o ChatGPT em *Configurações de IA*;
-  - o ChatGPT só funciona com conta **com assinatura** (testado com Plus). Conta gratuita recebe `invalid_grant`.
-- **Tesseract (OCR):** precisa de `componentes\tesseract\tesseract.exe` e `tessdata\por.traineddata` ao lado do `.exe`. Sem ele, página digitalizada termina em OCR-001. PDFs só com texto funcionam sem OCR.
-  - Para teste, a cópia de desenvolvimento fica em `~/.cache/sys-executor-dev/bin/win-tesseract/` e vai para `componentes\tesseract\` com `cp -r`. Não é o binário sem GPL do D-09.7.
-- **PDFs sintéticos para o teste manual.** O gerador agora está versionado:
-  ```bash
-  SAIDA_PDF=/mnt/c/Users/<usuário>/Documents/testes-sys-executor go test -run TestGerarPDFsSinteticos ./internal/testutil/pdfsint
-  ```
-  Ele cria `pecas-pads-sintetico/` (Memorando, 2 termos de inquirição, alegações finais) e `pecas-sr-sintetico/` (Portaria, termo de inquirição, termo de declarações), além dos PDFs consolidados `*-texto.pdf`.
+**Faturamento do Gemini.** O nível é pago (pré-pago) desde 10/11/2026.
+- A conta de faturamento usa primeiro os créditos do GCP, mas exige saldo pré-pago acima de zero.
+- O perfil de pagamentos pertence a **outra conta Google do usuário**, do tipo pessoa física, que não aceita outros usuários. Para comprar créditos, entre no AI Studio **com essa outra conta**.
+- No nível pago, prompts e respostas não são usados para melhorar os produtos do Google.
 
 ### 4.3 Gerar e testar o executável
 ```bash
-# bindings (depois de mudar métodos dos serviços em internal/app)
-GOOS=windows $(go env GOPATH)/bin/wails3 generate bindings -ts -d frontend/bindings ./cmd/sys-executor
-# interface + executável
+GOOS=windows $(go env GOPATH)/bin/wails3 generate bindings -ts -d frontend/bindings ./cmd/sys-executor  # se mudar serviços em internal/app
 cd frontend && npm run build && cd ..
-GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o sys-executor.exe ./cmd/sys-executor
+GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o /mnt/c/Users/<usuário>/Documents/testes-sys-executor/sys-executor.exe ./cmd/sys-executor
 ```
-- **Feche o app antes de copiar** o `.exe` novo; confira com `tasklist.exe | grep -i sys-executor`.
-- Pasta de teste usada até aqui: `C:\Users\diogo\Documents\testes-sys-executor\`. Ajuste o caminho na máquina nova.
-- **Modo diagnóstico** (mostra a causa técnica, com os dígitos mascarados): no PowerShell, `$env:SYSEXEC_DIAGNOSTICO = "1"; .\sys-executor.exe`.
+- **Feche o app antes de substituir o `.exe`.** Confira com `tasklist.exe | grep -i sys-executor`.
+- Pasta de teste usada até aqui: `C:\Users\diogo\Documents\testes-sys-executor\`, com o `.exe`, `componentes\tesseract\`, os PDFs sintéticos e o `sei-mapa.exe`.
+- **Modo diagnóstico:** mostra a causa técnica, com os dígitos mascarados. No PowerShell: `$env:SYSEXEC_DIAGNOSTICO = "1"; .\sys-executor.exe`.
 
 ### 4.4 Verificação completa (antes de cada commit)
 ```bash
-gofmt -l ./internal ./cmd                 # deve ficar vazio
+gofmt -l ./internal ./cmd                                   # vazio
 GOOS=windows go vet ./...
-go test ./internal/... ./cmd/bench/...    # e -race nos pacotes alterados
-cd frontend && npx vitest run && npm run build && cd ..   # vitest 30/30; vue-tsc + vite
-go run ./cmd/rulescov -estrito            # catálogo × V4 × matriz × testes
-go run ./cmd/bench -provedor falso -entrada memoria,monolitica,pecas   # vazamento 0, sem rede (sai 3 se reprovar)
-(cd poc/sei-mapa && go test .)            # se mexer no sei-mapa (usa o Chrome de desenvolvimento, sem GPU)
-go run ./cmd/licencas
-git diff --stat -- internal/policy/testdata   # golden: deve ficar vazio
+go vet ./internal/... ./cmd/rulescov/... ./cmd/licencas/... ./cmd/bench/...
+go test ./internal/... ./cmd/bench/...                      # -race nos pacotes alterados
+cd frontend && npx vitest run && npm run build && cd ..     # vitest 31/31; vue-tsc + vite
+go run ./cmd/rulescov -estrito                              # 202 regras; 124/124 IDs da V4
+go run ./cmd/bench -provedor falso -entrada memoria,monolitica,pecas   # vazamento 0, sem rede
+(cd poc/sei-mapa && go test .)                              # só se mexer no sei-mapa
+go run ./cmd/licencas                                       # 45 módulos Go, 40 npm
+git diff --stat -- internal/policy/testdata                 # golden: vazio
 ```
 
 ---
@@ -128,23 +132,23 @@ git diff --stat -- internal/policy/testdata   # golden: deve ficar vazio
 ## 5. O que já foi feito
 
 ### 5.1 Antes do plano D-11
-- Fases F0 a F4 do plano original: base, SEI, ingestão e OCR, motor determinístico, catálogo de regras, etapas de IA com schemas e validadores. Ver `RELATORIO_FASE0..4.md`.
-- D-10 (V4 §47): a IA local foi removida, e a análise passou a usar a **Gemini API** com a chave do usuário. Ver `CONTINUIDADE_MIGRACAO_GEMINI.md`.
+- Fases F0 a F4 do plano original: base, SEI, ingestão e OCR, motor determinístico, catálogo de regras e etapas de IA com schemas e validadores (`RELATORIO_FASE0..4.md`).
+- D-10 (V4 §47): a IA local foi removida, e a análise passou a usar a Gemini API com a chave do usuário.
 
-### 5.2 Plano D-11 (etapas de 09 e 10/11/2026)
-
+### 5.2 Plano D-11 (09 e 10/11/2026)
 | Etapa | Commit | Conteúdo | Situação |
 |---|---|---|---|
 | 0 | `51af5e5`, `c0b2e57` | Plano, D-11, Emenda 2 (V4 §48), `V4.lock` | Concluída |
-| 1 | `e0dfdeb` | PoC do *Sign in with ChatGPT* em Go (`poc/chatgpt`) | Concluída; conta Plus ok |
-| 2 | `ab14035` | Barreira de privacidade: camada 1 no pedido e camada 2 nos bytes enviados (IA-014), revisão item a item; correções do 400 do Gemini (`maxItems`) e da classificação da cota | Concluída; testada no Windows |
-| 3 | `0c5335c` | Dois provedores sem troca automática; autorização presa a provedor e modelo; preferências v3; IA-015 a IA-020 | Concluída |
-| 4 | `e53a815`, `78bc80e` | ChatGPT no app (OAuth com PKCE, DPAPI, Responses API com SSE, `store:false`), IA-021 (criança) | **Testada pelo usuário** (Plus, PADS até TAR-004) |
-| 5 | `76df133` | Catálogo de enquadramento com 130 dispositivos (RDPM arts. 15–17 com natureza fixa; Estatuto arts. 29 e 32 com natureza escolhida); formulário PADS-ESC-001 com divergência e confirmação da §22.1 | Concluída; **curadoria a revisar pelo usuário** |
-| 6 | `e6f40d6` | Cadastro peça por peça (PADS/SR), junção dos PDFs em memória, peças declaradas conferidas pelo conteúdo, semente de pseudônimos, conferência com a delimitação, assistente `Montagem.vue` | **Testada pelo usuário** com ChatGPT até TAR-004 |
-| — | `f001fdd` | Este guia e o gerador versionado de PDFs sintéticos | — |
-| 7 | este commit | SEI com seleção no computador (opção A):<br>• o PDF de todos os documentos é separado pelo carimbo;<br>• os documentos vão ao cadastro, e o usuário escolhe os de cada peça.<br>V4 §48.4 revisada; TRV-ING-008.<br>Validador: pessoa sem nome é descartada, sem recusa. | Implementada; teste real do SEI pendente |
-| 8 | `4ec155d` | Bench:<br>• `-provedor gemini\|chatgpt\|falso`, `-entrada`, `-max-chamadas`, `-amostras`;<br>• login do ChatGPT próprio;<br>• métrica de vazamento sobre o corpo exato.<br>ADR 010, README, plano de testes §9, `sei-mapa` ampliado para a etapa 7. | Concluída. Gemini dentro dos limiares; ChatGPT abaixo (§6.2) |
+| 1 | `e0dfdeb` | PoC do *Sign in with ChatGPT* em Go (`poc/chatgpt`) | Concluída |
+| 2 | `ab14035` | Barreira de privacidade: camada 1 no pedido, camada 2 nos bytes (IA-014), revisão item a item; correção do 400 do Gemini | Concluída; **400 confirmado como corrigido** no bench de 10/11 |
+| 3 | `0c5335c` | Dois provedores sem troca automática; autorização presa a provedor e modelo; preferências v3 | Concluída |
+| 4 | `e53a815`, `78bc80e` | ChatGPT no app (OAuth com PKCE, DPAPI, Responses API com SSE, `store:false`), bloqueio de dados de criança (IA-021) | Testada pelo usuário |
+| 5 | `76df133` | Catálogo de enquadramento (130 dispositivos) e formulário PADS-ESC-001 com a §22.1 | Concluída; **curadoria a revisar** (§6.3) |
+| 6 | `e6f40d6` | Cadastro peça por peça, junção em memória, peças declaradas conferidas pelo conteúdo, assistente `Montagem.vue` | PADS testado pelo usuário; **SR pendente** |
+| — | `f001fdd` | Guia e gerador versionado dos PDFs sintéticos | — |
+| 8 | `4ec155d` | Bench:<br>• `-provedor gemini\|chatgpt\|falso`, `-entrada memoria,monolitica,pecas`, `-max-chamadas`, `-amostras`;<br>• conta ChatGPT própria;<br>• métrica de vazamento sobre o corpo exato.<br>ADR 010, README, plano de testes §9, `sei-mapa` ampliado. | Concluída. Gemini dentro dos limiares; ChatGPT abaixo (§6.2) |
+| 7 | `0579327` | SEI com seleção no computador (opção A, E2 revisado):<br>• o PDF de todos os documentos é separado pelo carimbo;<br>• os documentos vão ao cadastro, e o usuário escolhe os de cada peça.<br>V4 §48.4 revisada; TRV-ING-008; CAD-SEI-01.<br>Na extração, pessoa sem nome é descartada, sem recusa. | Implementada; **teste real pendente** (§6.1-A) |
+| — | (este commit) | Este guia reescrito para a continuidade | — |
 
 ### 5.3 Onde está cada coisa (código)
 - **Provedores de IA:**
@@ -159,14 +163,19 @@ git diff --stat -- internal/policy/testdata   # golden: deve ficar vazio
   - `internal/ingest/segment/declaradas.go`;
   - `internal/pipeline/cadastro.go`;
   - `internal/app/cadastro.go`;
-  - `frontend/src/views/Montagem.vue`, `components/ArquivosPeca.vue` e `components/EditorEnquadramento.vue`.
-- **SEI → cadastro:** `internal/pipeline/sei.go` (`separarSEI`), `internal/workflow/documentos_sei.go`, `internal/ingest/pdf` (`Separador`), `internal/ingest/autos` (`LerTextoNativo`) e `frontend/src/components/ArquivosPeca.vue`.
-- **Enquadramento:** `internal/rules/enquadramento/` (o YAML embutido) e `internal/pipeline/{enquadramento,delimitar}.go`.
-- **Bench:** `cmd/bench/`:
-  - `provedores.go`: os três provedores e a conta de desenvolvimento;
-  - `vazamento.go`: a métrica;
-  - `entrada.go`: memória, monolítica e por peças;
-  - os casos sintéticos, com `Pessoas`/`Identificadores`, ficam em `internal/testutil/casos`.
+  - `frontend/src/views/Montagem.vue`, `components/ArquivosPeca.vue`, `components/EditorEnquadramento.vue`.
+- **SEI → cadastro (etapa 7):**
+  - `internal/pipeline/sei.go` (`separarSEI`, `sugestaoPeca`);
+  - `internal/workflow/documentos_sei.go`;
+  - `internal/ingest/pdf` (`Separador`) e `internal/ingest/autos` (`LerTextoNativo`);
+  - na interface, "Documento do SEI" em `ArquivosPeca.vue`.
+  - O cliente e a guarda do SEI (`internal/sei/`) **não mudaram**: continuam gerando "Todos os documentos".
+- **Enquadramento:** `internal/rules/enquadramento/` e `internal/pipeline/{enquadramento,delimitar}.go`.
+- **Validadores das etapas de IA:** `internal/analise/` (na extração, pessoa sem nome é descartada em `extracao.go`).
+- **Bench:**
+  - `cmd/bench/` (`provedores.go`, `vazamento.go`, `entrada.go`);
+  - casos sintéticos em `internal/testutil/casos`, com `Pessoas`/`Identificadores`.
+- **Mapeamento do SEI (observação):** `poc/sei-mapa/`, com o comando `mapear` e as linhas `[post-gerar]`. O roteiro está no `LEIA-ME.md`.
 - **Governança:**
   - `internal/rules/catalog/*.yaml`;
   - `docs/planning/MATRIZ_REQUISITOS_V4.md`;
@@ -176,54 +185,94 @@ git diff --stat -- internal/policy/testdata   # golden: deve ficar vazio
 
 ---
 
-## 6. O que falta — próximos passos (em ordem sugerida)
+## 6. O que falta para concluir o D-11 (em ordem)
 
-### 6.1 Etapa 7 do D-11: SEI com seleção no computador (implementada; **falta o teste real do usuário**)
-- **Mapeamento real (10/11/2026, `poc/sei-mapa`):** "Apenas selecionados" exige a tela `documento_selecionar` (lupa), fora da guarda.
-- **Decisão (E2 revisado, opção A):**
-  - o app gera "Todos" (fluxo da Fase 2), separa o PDF pelo carimbo em um documento por nº SEI e leva a tarefa ao **cadastro**;
-  - o usuário anexa a cada peça os documentos escolhidos, em "Documento do SEI";
-  - os não escolhidos não entram nos autos nem vão à IA.
-- **V4 §48.4 revisada e aprovada.** Detalhes em `RELATORIO_ETAPA7_SEI.md`.
-- **Código:** `autos.LerTextoNativo`, `pdf.Separador`, `pipeline.separarSEI`/`sugestaoPeca`, `workflow/documentos_sei.go`, `TarefaService.AnexarDocumentosSEI`, `ArquivosPeca.vue`/`Montagem.vue`. Regra TRV-ING-008 e teste CAD-SEI-01.
-- **Falta:** o teste no SEI real com o executável novo (roteiro no relatório da etapa 7, §5).
-  - Se o número de documentos ou os títulos não baterem com a árvore, o ajuste é em `segment.Segmentar` ou em `autos.LerCarimbos`, nunca na guarda.
+### 6.1 Testes manuais do usuário no Windows (bloqueiam a conclusão)
+Antes, gere o `.exe` (§4.3) e os PDFs sintéticos e copie o Tesseract (§4.2). Em *Configurações de IA*, conecte o ChatGPT e cadastre a chave do Gemini.
 
-### 6.2 Depois da etapa 8: pendências de decisão (detalhes em `RELATORIO_ETAPA8_BENCH.md` §§2.3-A e 4)
-1. **Pessoa sem nome na extração (ChatGPT): resolvido em 10/11/2026.**
-   - O validador descarta a pessoa sem nome, sem recusar (decisão 1(a)).
-   - Na conferência rápida do pads-01, o JSON 1ª ficou em 7/8. Falta repetir a bateria completa quando houver limite do Plus.
-2. **ChatGPT `gpt-6-luna` abaixo do limiar de resultado** (11/18 a 12/18). É julgamento do modelo. O usuário decidiu não testar outro modelo agora; talvez use o `gpt-6.1-sol` num teste manual.
-3. **Variação entre rodadas:** repetir cada caso 3 vezes e usar a mediana antes de afirmar qualidade.
-4. **Comandos das rodadas reais** (só casos sintéticos):
-   ```bash
-   SYSEXEC_GEMINI_API_KEY="$(tr -d '[:space:]' < ~/.config/sys-executor/gemini-dev.key)" \
-     go run ./cmd/bench -provedor gemini -modelo gemini-3.6-flash -entrada monolitica,pecas -max-chamadas 120 -saida rel.md
-   go run ./cmd/bench -provedor chatgpt -modelo gpt-6-luna -entrada monolitica,pecas -max-chamadas 120 -saida rel.md
-   ```
+**A. SEI real (etapa 7).** Use um processo de teste ou já encerrado.
+1. Escolha PADS (ou SR) e depois **"Buscar no SEI"**. Faça o login e o 2FA e informe o processo.
+2. O app gera e baixa "Todos os documentos", como antes, e **abre o cadastro** com o aviso "separado em N documento(s)".
+3. Em cada peça, anexe os documentos em **"Documento do SEI"**. Os de tipo sugerido igual ao da peça aparecem primeiro.
+4. Na conferência, veja a contagem de escolhidos e não escolhidos. Conclua.
+5. **Conferir:**
+   - N é igual ao número de documentos da árvore do processo;
+   - títulos e números SEI estão corretos;
+   - a sugestão de tipo é razoável;
+   - só os documentos escolhidos aparecem nos autos;
+   - o processamento segue até TAR-004.
+6. **Se algo divergir,** descreva sem dados reais: quantos documentos eram esperados e quantos apareceram, e a forma dos títulos. O ajuste é em `segment.Segmentar` ou em `autos.LerCarimbos`, **nunca na guarda**.
 
-### 6.3 Pendências de revisão e decisão do usuário
-1. **Revisar a curadoria do catálogo de enquadramento** em `docs/planning/CATALOGO_ENQUADRAMENTO_REVISAO.md`. Registrar a aprovação no CHANGELOG.
-2. **Interrogatório do acusado no PADS** (plano §8.1): hoje vai em "Outros documentos", e o assistente não deixa o acusado ser testemunha ou declarante. Falta decidir se terá tipo próprio.
-3. **Imagens (JPG/PNG) como peça:** hoje só PDF; a conversão fica para depois, se o usuário quiser.
+**B. SR com upload** (`pecas-sr-sintetico/`): Portaria com sindicados e ofendidos (ou "sem ofendido"), depoimentos e conferência, até TAR-004. Conferir os alertas de sindicados divergentes e a pergunta de conexão.
 
-### 6.4 Melhorias pequenas já identificadas (dentro do escopo D-11)
-- **Conexão por fato:** usar o agrupamento por fato do cadastro para pré-selecionar os grupos na pergunta de conexão que já existe. O motor não muda e o usuário confirma.
-- **Conferência da SR:** os ofendidos do cadastro ainda não são cruzados com a leitura da Portaria; os sindicados já são.
-- **Teste manual da SR no Windows** com `pecas-sr-sintetico/`. A PADS já foi testada.
-- ~~Confirmar o 400 do Gemini~~: **confirmado** no bench de 10/11/2026 (75 chamadas, 0 falhas).
+**C. Gemini no app, de ponta a ponta** (`pecas-pads-sintetico/`): escolha a Gemini em *Configurações de IA*. Faça a confirmação de envio, a delimitação e a análise até TAR-004. Ele já roda no nível pago, sem a cota de 20 por dia.
 
-### 6.5 Fora do escopo D-11 (exigem autorização própria)
-- **F5:** biblioteca jurídica (busca lexical × embeddings, V4 §47.7).
-- **F6/F7:** composição da minuta, DOCX/PDF e revisão. O motor de cálculo existe, mas o pipeline ainda não o chama; a tarefa para em TAR-004.
-- **F8:** instalador.
+**D. Opcional:** repetir um caso com o ChatGPT `gpt-6.1-sol` (decisão do usuário: "talvez, num teste manual").
+
+### 6.2 Bench pendente (só casos sintéticos)
+- **Repetir a bateria completa do ChatGPT** depois da mudança 1(a) (pessoa sem nome descartada). Na conferência rápida do pads-01, o JSON 1ª ficou em 7/8. Registre o resultado no `RELATORIO_ETAPA8_BENCH.md`.
+  ```bash
+  S=/tmp/bench && mkdir -p $S
+  go run ./cmd/bench -provedor chatgpt -modelo gpt-6-luna -entrada monolitica,pecas -max-chamadas 120 -saida $S/chatgpt.md
+  SYSEXEC_GEMINI_API_KEY="$(tr -d '[:space:]' < ~/.config/sys-executor/gemini-dev.key)" \
+    go run ./cmd/bench -provedor gemini -modelo gemini-3.6-flash -entrada monolitica,pecas -max-chamadas 120 -saida $S/gemini.md
+  ```
+  Cada bateria completa usa cerca de 95 chamadas no ChatGPT e 75 no Gemini. No ChatGPT, o limite de 5 h do Plus é compartilhado com os outros apps.
+- **Limiares (plano de testes §9), para cada provedor:**
+  - delimitação ≥ 90%;
+  - JSON 1ª ≥ 90%;
+  - resultado ≥ 75%;
+  - SEG-INJ igual ao caso limpo em 5/5;
+  - 0 violações e vazamento 0.
+- **O ChatGPT `gpt-6-luna` ficou abaixo no resultado** (11/18 a 12/18). É julgamento do modelo: o pads-01 sai IMPROCEDENTE. O usuário decidiu não trocar de modelo por enquanto.
+- **Proposta ainda não decidida:** repetir cada caso 3 vezes e usar a mediana antes de afirmar qualidade.
+
+### 6.3 Decisões pendentes do usuário
+1. **Revisar a curadoria do catálogo de enquadramento** (`docs/planning/CATALOGO_ENQUADRAMENTO_REVISAO.md`) e registrar a aprovação no `policies/CHANGELOG.md`.
+2. **Interrogatório do acusado no PADS** (plano §8.1). Hoje vai em "Outros documentos", inclusive na sugestão do SEI. Tipo próprio?
+3. **Imagens (JPG/PNG) como peça:** hoje só PDF. Converter, se o usuário quiser.
+4. **ChatGPT abaixo do limiar:** aceitar como está (o usuário escolhe o modelo) ou investigar mais (outro modelo ou `-pensamento high`).
+
+### 6.4 Melhorias pequenas identificadas (dentro do D-11; perguntar antes)
+- **Conexão por fato:** usar o agrupamento por fato do cadastro para pré-selecionar os grupos na pergunta de conexão. O motor não muda e o usuário confirma.
+- **Conferência da SR:** cruzar os ofendidos do cadastro com a leitura da Portaria. Os sindicados já são cruzados.
+- **Pânico nos workers da extração:** `recover` → INT-001 (problema conhecido 2).
+
+### 6.5 Critérios de conclusão do D-11 (plano §9) e situação
+| Critério | Situação |
+|---|---|
+| OAuth oficial em Go; escopos; tokens com DPAPI e fora do Vue e de logs; Responses API com `store:false`/`stream:true`; sucesso só com `completed`; modelos dinâmicos | ✅ Feito e testado |
+| Gemini preservado, sem fallback; nenhuma IA local | ✅ Bench ok; ⚠️ falta o teste manual completo no app (§6.1-C) |
+| Cadastro PADS/SR peça por peça | ✅ PADS; ⚠️ SR manual pendente (§6.1-B) |
+| SEI só com os documentos escolhidos, sem download manual (V4 §48.4 revisada) | ✅ Implementado; ⚠️ teste real pendente (§6.1-A) |
+| Enquadramento por catálogo, divergência da §22.1 confirmada, conexão pelo motor | ✅ Feito; ⚠️ curadoria a revisar (§6.3-1) |
+| Barreira bloqueia identificador conhecido; mapa nunca sai do computador; restauração determinística | ✅ Feito; vazamento 0 no bench |
+| Regras jurídicas, cálculos e golden inalterados; `rulescov -estrito` verde | ✅ |
+
+**O D-11 estará concluído quando** os três ⚠️ de teste manual passarem, a curadoria for aprovada e o usuário decidir sobre o ChatGPT abaixo do limiar (§6.3-4). Ao concluir:
+- registrar a conclusão no `REGISTRO_DUVIDAS_DECISOES.md` (histórico) e neste guia;
+- o usuário decide o merge com a `main`.
+
+### 6.6 Depois do D-11 (cada fase exige autorização própria)
+- **F5:** biblioteca jurídica. Decidir antes entre busca lexical e embeddings (V4 §47.7).
+- **F6/F7:** composição da minuta, DOCX/PDF (Typst) e revisão humana. O motor de cálculo existe, mas o pipeline ainda não o chama. Precisa dos materiais institucionais (D-04).
+- **F8:** instalador (certificado, WiX, Tesseract sem GPL, Liberation Serif).
 
 ---
 
-## 7. Problemas conhecidos
+## 7. Como retomar com o Claude
+Na nova sessão, cole algo como:
+
+> Projeto sys-executor, branch `add-mode-apikey-oauth`. Leia o `GUIA_CONTINUIDADE.md` e os documentos que ele indica antes de qualquer ação. Siga as regras do §3. Prepare esta máquina pelo §4 e rode a verificação completa (§4.4). Depois me diga o que falta configurar. Em seguida, vamos pelo §6: <o que quer fazer agora, por exemplo, "acabei o teste A do §6.1; o resultado foi…">.
+
+---
+
+## 8. Problemas conhecidos
 1. `go build ./...` e `go test ./cmd/sys-executor` não compilam no Linux (GTK). Use o vet do Windows (§4.1).
-2. Os pânicos dentro dos workers da extração (fora de `executarSeguro`) ainda derrubam o processo. A melhoria sugerida é um `recover`, convertendo em INT-001.
-3. No nível gratuito, o Gemini permite 20 requisições por dia, e uma tarefa completa usa dezenas de chamadas. Desde 10/11/2026 a conta está no nível pago. O bench completo nas duas entradas usa cerca de 75 chamadas no Gemini e 104 no ChatGPT (limite de 5 h do Plus, compartilhado).
-4. Dez commits antigos da branch, anteriores a esta regra, têm a linha `Co-Authored-By`. O usuário foi informado e nada foi reescrito.
-5. O `gofmt` do CI já acusou `internal/ingest/segment/carimbo_test.go`, arquivo anterior à migração. Com o Go 1.27.3 local ele está limpo; provavelmente é diferença de versão do formatador. Confira no próximo CI.
-6. O backend ainda tem `ReceberUpload` (PDF único) para os testes legados e o SEI atual. A interface não oferece mais esse caminho (decisão E6).
+2. Os pânicos dentro dos workers da extração, fora de `executarSeguro`, ainda derrubam o processo (§6.4).
+3. Uma tarefa completa usa dezenas de chamadas de IA. O ChatGPT Plus tem limite de 5 h compartilhado com os outros apps da conta.
+4. Dez commits antigos da branch, anteriores à regra, têm `Co-Authored-By`. O usuário foi informado; nada foi reescrito.
+5. O `gofmt` do CI já acusou `internal/ingest/segment/carimbo_test.go`. Com o Go 1.27.3 está limpo. Confira no próximo CI.
+6. O backend ainda tem `ReceberUpload` (PDF único) só para os testes legados. A interface não oferece esse caminho (E6).
+7. **Carimbo do SEI no texto:** o nome do documento na árvore, impresso no carimbo de cada página, faz parte do texto da página. Ele segue com as evidências e passa pela pseudonimização (já era assim desde a Fase 2).
+8. Pelo SEI, o processo inteiro é baixado e separado, o que é mais lento em processos grandes. Os documentos não escolhidos ficam só na sessão cifrada até o fim da tarefa.
