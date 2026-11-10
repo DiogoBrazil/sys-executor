@@ -75,3 +75,19 @@ export const credenciais = {
     Tarefa.InformarCredenciais(pedidoID, usuario, senha, orgao, processo),
   segredo: (pedidoID: string, valor: string): Promise<Resposta> => Tarefa.InformarSegredo(pedidoID, valor),
 };
+
+import type { DispositivoVisao } from "../bindings/github.com/DiogoBrazil/sys-executor/internal/app/models";
+import type { Cadastro } from "../bindings/github.com/DiogoBrazil/sys-executor/internal/workflow/models";
+
+export type { Cadastro, DispositivoVisao };
+
+// Cadastro de peças (V4 §48.4): os arquivos são escolhidos no diálogo nativo
+// e lidos pelo Go; aqui chegam só nome, páginas e resumo do hash.
+export const cadastro = {
+  salvar: (c: Cadastro): Promise<Resposta> => Tarefa.SalvarCadastro(c),
+  anexar: (pecaID: string): Promise<Resposta> => Tarefa.AnexarArquivos(pecaID),
+  remover: (pecaID: string, arquivoID: string): Promise<Resposta> => Tarefa.RemoverArquivo(pecaID, arquivoID),
+  mover: (pecaID: string, arquivoID: string, delta: number): Promise<Resposta> => Tarefa.MoverArquivo(pecaID, arquivoID, delta),
+  concluir: (): Promise<Resposta> => Tarefa.ConcluirCadastro(),
+  catalogo: (): Promise<DispositivoVisao[]> => Tarefa.CatalogoEnquadramento(),
+};

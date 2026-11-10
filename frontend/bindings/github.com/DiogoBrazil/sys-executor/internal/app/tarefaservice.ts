@@ -12,7 +12,20 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as workflow$0 from "../workflow/models.js";
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as $models from "./models.js";
+
+/**
+ * AnexarArquivos abre o diálogo e acrescenta os PDFs escolhidos à peça.
+ */
+export function AnexarArquivos(pecaID: string): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(3736151581, pecaID).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
 
 /**
  * Atual devolve a tarefa atual (nula se não houver).
@@ -28,6 +41,25 @@ export function Atual(): $CancellablePromise<$models.Resposta> {
  */
 export function Cancelar(): $CancellablePromise<$models.Resposta> {
     return $Call.ByID(3618363581).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * CatalogoEnquadramento devolve os dispositivos do catálogo curado (RDPM
+ * arts. 15–17; Estatuto arts. 29 e 32), para o assistente.
+ */
+export function CatalogoEnquadramento(): $CancellablePromise<$models.DispositivoVisao[]> {
+    return $Call.ByID(2794250318).then(($result: any) => {
+        return $$createType2($result);
+    });
+}
+
+/**
+ * ConcluirCadastro confere as pendências e inicia o processamento.
+ */
+export function ConcluirCadastro(): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(1670581910).then(($result: any) => {
         return $$createType0($result);
     });
 }
@@ -90,6 +122,24 @@ export function Iniciar(): $CancellablePromise<$models.Resposta> {
 }
 
 /**
+ * MoverArquivo muda a ordem do arquivo na peça (-1 sobe, +1 desce).
+ */
+export function MoverArquivo(pecaID: string, arquivoID: string, delta: number): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(899034840, pecaID, arquivoID, delta).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * RemoverArquivo tira o arquivo da peça (e da sessão).
+ */
+export function RemoverArquivo(pecaID: string, arquivoID: string): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(3889528305, pecaID, arquivoID).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
  * Responder escolhe uma opção da pergunta pendente, com os valores dos
  * campos do formulário (validados no Go).
  */
@@ -118,6 +168,15 @@ export function Revisar(perguntaID: string): $CancellablePromise<$models.Respost
 }
 
 /**
+ * SalvarCadastro grava os metadados editados (pessoas, fatos, peças).
+ */
+export function SalvarCadastro(c: workflow$0.Cadastro): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(2842767914, c).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
  * SelecionarPDF abre o diálogo nativo e envia o arquivo escolhido. Não pede
  * credenciais nem acessa o SEI (T02). O nome do arquivo não é guardado.
  */
@@ -138,3 +197,5 @@ export function VoltarParaEntrada(): $CancellablePromise<$models.Resposta> {
 
 // Private type creation functions
 const $$createType0 = $models.Resposta.createFrom;
+const $$createType1 = $models.DispositivoVisao.createFrom;
+const $$createType2 = $Create.Array($$createType1);

@@ -33,6 +33,8 @@ type TarefaService struct {
 	g          *workflow.Gerenciador
 	selecionar SeletorPDF
 	lerArquivo func(string) ([]byte, error)
+	// SelecionarArquivos: diálogo de vários PDFs do cadastro de peças.
+	SelecionarArquivos SeletorArquivos
 }
 
 // NovaTarefaService cria o serviço.

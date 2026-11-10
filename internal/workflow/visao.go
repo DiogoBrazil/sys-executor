@@ -35,6 +35,9 @@ type Visao struct {
 	// depois dos eventos que a etapa emitiu em seguida (ex.: revisão da
 	// barreira, que não espera a rede).
 	Sequencia uint64 `json:"sequencia"`
+	// Cadastro das peças (entrada por upload, V4 §48.4) e o que falta nele.
+	Cadastro           *Cadastro `json:"cadastro"`
+	PendenciasCadastro []string  `json:"pendenciasCadastro"`
 }
 
 // Situacao de uma etapa da linha do tempo.
@@ -125,7 +128,7 @@ var descricoes = map[Estado]string{
 	SEIReautenticacao:        "O processo é sigiloso: o SEI/RO pede sua senha novamente.",
 	SEIGerandoPDF:            "O SEI/RO está gerando o PDF do processo.",
 	SEIBaixando:              "Baixando o PDF do processo.",
-	RecebendoUpload:          "Selecione o PDF completo do processo.",
+	RecebendoUpload:          "Cadastre as peças do procedimento.",
 	Verificando:              "Conferindo o arquivo recebido.",
 	Extraindo:                "Extraindo o texto das páginas.",
 	Classificando:            "Identificando as peças dos autos.",

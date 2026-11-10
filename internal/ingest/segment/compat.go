@@ -14,6 +14,8 @@ const (
 	Incompativel ResultadoCompat = "INCOMPATIVEL"  // T04: alerta, nunca troca o tipo
 	PecaIlegivel ResultadoCompat = "PECA_ILEGIVEL" // T06: pede versão legível
 	PecaAusente  ResultadoCompat = "PECA_AUSENTE"  // peça central não encontrada
+	// Divergente: alguma peça declarada parece outra peça (V4 §48.4).
+	Divergente ResultadoCompat = "DECLARACAO_DIVERGENTE"
 )
 
 // Compatibilidade descreve a checagem.
@@ -21,6 +23,8 @@ type Compatibilidade struct {
 	Resultado    ResultadoCompat `json:"resultado"`
 	PecaCentral  string          `json:"pecaCentral"`  // ID da peça central encontrada
 	TipoAparente string          `json:"tipoAparente"` // "PADS" ou "SR" quando incompatível
+	// Divergencias entre a função declarada e o conteúdo (cadastro de peças).
+	Divergencias []DeclaracaoDivergente `json:"divergencias,omitempty"`
 }
 
 // VerificarCompatibilidade localiza a peça central pelo conteúdo e função,

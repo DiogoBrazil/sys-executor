@@ -225,3 +225,74 @@ func (d *documentoPdfium) Fechar() {
 		d.inst = nil
 	}
 }
+
+// Juntador monta, em memória, um único PDF com as páginas de vários
+// arquivos, na ordem dada (cadastro de peças, V4 §48.4). Devolve também
+// quantas páginas cada arquivo tem, para mapear peça → páginas dos autos.
+type Juntador interface {
+	Juntar(ctx context.Context, arquivos [][]byte) (pdf []byte, paginas []int, err error)
+}
+
+// Juntar usa uma única instância do pdfium (o pool tem uma) e não grava
+// nada em disco. PDF protegido, corrompido ou vazio é recusado.
+func (e *extratorPdfium) Juntar(ctx context.Context, arquivos [][]byte) ([]byte, []int, error) {
+	if len(arquivos) == 0 {
+		return nil, nil, erros.Novo(erros.PDFVazio)
+	}
+	if err := e.iniciar(); err != nil {
+		return nil, nil, erros.Com(erros.InternoInesperado, err)
+	}
+	inst, err := e.pool.GetInstance(30 * time.Second)
+	if err != nil {
+		return nil, nil, erros.Com(erros.InternoInesperado, err)
+	}
+	defer inst.Close()
+	novo, err := inst.FPDF_CreateNewDocument(&requests.FPDF_CreateNewDocument{})
+	if err != nil {
+		return nil, nil, erros.Com(erros.InternoInesperado, err)
+	}
+	defer inst.FPDF_CloseDocument(&requests.FPDF_CloseDocument{Document: novo.Document})
+	paginas := make([]int, len(arquivos))
+	total := 0
+	for i := range arquivos {
+		if ctx.Err() != nil {
+			return nil, nil, ctx.Err()
+		}
+		d, err := inst.OpenDocument(&requests.OpenDocument{File: &arquivos[i]})
+		if err != nil {
+			return nil, nil, classificarErro(err)
+		}
+		pc, err := inst.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: d.Document})
+		if err == nil && pc.PageCount <= 0 {
+			err = erros.Novo(erros.PDFVazio)
+		}
+		if err == nil {
+			_, err = inst.FPDF_ImportPagesByIndex(&requests.FPDF_ImportPagesByIndex{Source: d.Document, Destination: novo.Document, Index: total})
+		}
+		inst.FPDF_CloseDocument(&requests.FPDF_CloseDocument{Document: d.Document})
+		if err != nil {
+			var e *erros.Erro
+			if errors.As(err, &e) {
+				return nil, nil, err
+			}
+			return nil, nil, erros.Com(erros.PDFCorrompido, err)
+		}
+		paginas[i] = pc.PageCount
+		total += pc.PageCount
+	}
+	salvo, err := inst.FPDF_SaveAsCopy(&requests.FPDF_SaveAsCopy{Document: novo.Document})
+	if err != nil || salvo.FileBytes == nil {
+		return nil, nil, erros.Com(erros.InternoInesperado, fmt.Errorf("salvar o PDF juntado: %v", err))
+	}
+	return *salvo.FileBytes, paginas, nil
+}
+
+// ContarPaginas abre o PDF só para conferir que é legível e contar as páginas.
+func ContarPaginas(ctx context.Context, e Extrator, dados []byte) (int, error) {
+	d, err := e.Abrir(ctx, dados)
+	if err != nil {
+		return 0, err
+	}
+	defer d.Fechar()
+	return d.Paginas(), nil
+}

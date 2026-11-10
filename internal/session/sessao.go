@@ -141,6 +141,24 @@ func (s *Sessao) Gravar(nome string, dados []byte) error {
 	return nil
 }
 
+// ApagarLogico sobrescreve e remove o arquivo de um nome lógico (ex.:
+// arquivo retirado de uma peça do cadastro). Ausente não é erro.
+func (s *Sessao) ApagarLogico(nome string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	arq, ok := s.nomes[nome]
+	if !ok {
+		return nil
+	}
+	delete(s.nomes, nome)
+	p := filepath.Join(s.dir, arq)
+	sobrescrever(p)
+	if err := os.Remove(p); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return erros.Com(erros.ArquivoEscrita, err)
+	}
+	return nil
+}
+
 // Ler decifra o conteúdo gravado sob o nome lógico.
 func (s *Sessao) Ler(nome string) ([]byte, error) {
 	s.mu.Lock()

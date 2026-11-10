@@ -159,6 +159,7 @@ type tarefa struct {
 	sessao         *session.Sessao
 	contexto       *Contexto
 	cancelar       context.CancelFunc
+	cadastro       *Cadastro // entrada por peças (V4 §48.4); nil = PDF único (SEI)
 }
 
 type respondida struct {
@@ -176,6 +177,8 @@ type Gerenciador struct {
 	t         *tarefa
 	trabalho  sync.WaitGroup
 	seq       uint64 // última Visao.Sequencia (protegido por mu)
+	// contarPaginas: ver Opcoes.ContarPaginas.
+	contarPaginas func([]byte) (int, error)
 }
 
 // Opcoes configura o gerenciador.
@@ -188,6 +191,9 @@ type Opcoes struct {
 	Etapas map[Estado]Etapa
 	// SEIDisponivel habilita a obtenção pelo SEI.
 	SEIDisponivel bool
+	// ContarPaginas confere que um arquivo do cadastro é um PDF legível e
+	// conta as páginas (nil = só a assinatura %PDF é conferida).
+	ContarPaginas func([]byte) (int, error)
 }
 
 // Novo cria o gerenciador.
@@ -196,7 +202,7 @@ func Novo(o Opcoes) *Gerenciador {
 	if n == nil {
 		n = func(*Visao) {}
 	}
-	return &Gerenciador{sessoes: o.Sessoes, notificar: n, etapas: o.Etapas, seiPronto: o.SEIDisponivel}
+	return &Gerenciador{sessoes: o.Sessoes, notificar: n, etapas: o.Etapas, seiPronto: o.SEIDisponivel, contarPaginas: o.ContarPaginas}
 }
 
 func novoID() string {
@@ -228,6 +234,10 @@ func (g *Gerenciador) visaoLocked() *Visao {
 	}
 	g.seq++
 	v.Sequencia = g.seq
+	if t.cadastro != nil {
+		v.Cadastro = t.cadastro.copia()
+		v.PendenciasCadastro = t.cadastro.Pendencias()
+	}
 	for _, rr := range t.respondidas {
 		resumo := ""
 		if rr.p.Resumir != nil {
@@ -358,6 +368,8 @@ func (g *Gerenciador) EscolherEntrada(e Entrada) (*Visao, error) {
 	}
 	if prox != RecebendoUpload {
 		g.iniciarProcessamentoLocked()
+	} else if g.t.cadastro == nil {
+		g.t.cadastro = novoCadastro(g.t.tipo)
 	}
 	return g.emitirUnlock()
 }
@@ -392,6 +404,8 @@ func (g *Gerenciador) ReceberUpload(dados []byte) (*Visao, error) {
 		g.mu.Unlock()
 		return nil, err
 	}
+	// PDF único (uso interno e testes; a interface cadastra peça por peça).
+	g.t.cadastro = nil
 	return g.receberAutosLocked(dados)
 }
 
@@ -729,6 +743,9 @@ func (g *Gerenciador) mover(para Estado) error {
 		g.t.retorno = de
 	}
 	g.t.estado = para
+	if para == RecebendoUpload && g.t.cadastro != nil {
+		g.t.cadastro.Concluido = false // de volta ao cadastro, editável e preservado
+	}
 	if para != AguardandoEsclarecimento && !para.Terminal() {
 		g.t.ref = para
 	}

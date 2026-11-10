@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
+	"github.com/DiogoBrazil/sys-executor/internal/testutil/pdfsint"
 )
 
 var (
@@ -133,5 +134,49 @@ func TestContextoCancelado(t *testing.T) {
 	cancel()
 	if _, err := d.Pagina(ctx, 0); !errors.Is(err, context.Canceled) {
 		t.Fatalf("esperado cancelamento, veio %v", err)
+	}
+}
+
+// Cadastro de peças (V4 §48.4): vários arquivos viram um PDF só, na ordem
+// dada, com a contagem de páginas de cada um; o texto de cada página é
+// preservado.
+func TestJuntarPreservaOrdemETexto(t *testing.T) {
+	e := NovoExtrator()
+	defer e.Fechar()
+	j := e.(Juntador)
+	a := pdfsint.Gerar([]pdfsint.Pagina{{Linhas: []string{"PRIMEIRO ARQUIVO pagina um"}}, {Linhas: []string{"PRIMEIRO ARQUIVO pagina dois"}}})
+	b := pdfsint.Gerar([]pdfsint.Pagina{{Linhas: []string{"SEGUNDO ARQUIVO pagina unica"}}})
+	junto, pags, err := j.Juntar(context.Background(), [][]byte{a, b})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pags) != 2 || pags[0] != 2 || pags[1] != 1 {
+		t.Fatalf("páginas %v", pags)
+	}
+	d, err := e.Abrir(context.Background(), junto)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.Paginas() != 3 {
+		t.Fatalf("%d páginas", d.Paginas())
+	}
+	for i, quer := range []string{"PRIMEIRO ARQUIVO pagina um", "PRIMEIRO ARQUIVO pagina dois", "SEGUNDO ARQUIVO pagina unica"} {
+		p, err := d.Pagina(context.Background(), i)
+		var txt strings.Builder
+		for _, c := range p.Caracteres {
+			txt.WriteRune(c.Runa)
+		}
+		if err != nil || !strings.Contains(txt.String(), quer) {
+			t.Fatalf("página %d: %q %v", i+1, txt.String(), err)
+		}
+	}
+	d.Fechar() // libera a instância (o pool tem uma)
+	_, _, err = j.Juntar(context.Background(), [][]byte{a, []byte("não é pdf")})
+	var ee *erros.Erro
+	if !errors.As(err, &ee) || ee.Codigo != erros.PDFCorrompido {
+		t.Fatalf("arquivo inválido deveria ser PDF-003: %v", err)
+	}
+	if n, err := ContarPaginas(context.Background(), e, a); err != nil || n != 2 {
+		t.Fatalf("contar: %d %v", n, err)
 	}
 }

@@ -1,7 +1,10 @@
 // Estado da interface: espelha a visão da tarefa enviada pelo Go.
 // Nada aqui é persistido (sem localStorage): a tarefa vive só na sessão.
 import { reactive } from "vue";
-import { api, credenciais, ia as iaApi, responder as responderApi, tarefa, type Resposta, type Visao, type VisaoIA } from "./api";
+import {
+  api, cadastro as cadastroApi, credenciais, ia as iaApi, responder as responderApi, tarefa,
+  type Cadastro, type DispositivoVisao, type Resposta, type Visao, type VisaoIA,
+} from "./api";
 
 export interface ErroTela {
   codigo: string;
@@ -123,11 +126,29 @@ export async function escolherTipo(tipo: "PADS" | "SR") {
   await executar(() => api.escolherTipo(tipo));
 }
 
-export async function enviarPDF() {
-  if (estado.visao?.estado === "TIPO_ESCOLHIDO") {
-    if (!(await executar(() => api.escolherEntrada("UPLOAD")))) return;
-  }
-  await executar(api.selecionarPDF);
+// cadastrarPecas: entrada peça por peça (V4 §48.4; o PDF único não é mais aceito).
+export async function cadastrarPecas() {
+  if (estado.visao?.estado === "TIPO_ESCOLHIDO") await executar(() => api.escolherEntrada("UPLOAD"));
+}
+
+// ---- cadastro de peças ----
+// Cada comando de arquivo grava antes os metadados editados (salvar), para
+// que nada digitado se perca quando a visão nova chega do Go.
+export const salvarCadastro = (c: Cadastro) => executar(() => cadastroApi.salvar(c));
+async function comSalvar(c: Cadastro | null, cmd: () => Promise<Resposta>) {
+  if (c && !(await salvarCadastro(c))) return false;
+  return executar(cmd);
+}
+export const anexarArquivos = (c: Cadastro | null, pecaID: string) => comSalvar(c, () => cadastroApi.anexar(pecaID));
+export const removerArquivo = (c: Cadastro | null, pecaID: string, arqID: string) => comSalvar(c, () => cadastroApi.remover(pecaID, arqID));
+export const moverArquivo = (c: Cadastro | null, pecaID: string, arqID: string, delta: number) =>
+  comSalvar(c, () => cadastroApi.mover(pecaID, arqID, delta));
+export const concluirCadastro = (c: Cadastro | null) => comSalvar(c, cadastroApi.concluir);
+
+let catalogo: Promise<DispositivoVisao[]> | null = null;
+export function catalogoEnquadramento(): Promise<DispositivoVisao[]> {
+  if (!catalogo) catalogo = cadastroApi.catalogo().catch(() => { catalogo = null; return []; });
+  return catalogo;
 }
 
 export const responder = (perguntaID: string, opcaoID: string, valores: Record<string, string> = {}) =>

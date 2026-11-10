@@ -77,6 +77,33 @@ func (m *Mapa) AcrescentarNomes(itens []string) {
 	m.re = nil
 }
 
+// CadastrarPessoa registra um envolvido informado no cadastro de peças
+// (V4 §48.4): o nome, a forma em maiúsculas e as outras grafias ou apelidos
+// informados, todos como variantes da mesma pessoa ([PESSOA-NN.v]).
+func (m *Mapa) CadastrarPessoa(nome string, grafias []string) {
+	nome = strings.Join(strings.Fields(nome), " ")
+	if utf8.RuneCountInString(nome) < 3 {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.registrar(Pessoa, nome)
+	m.registrar(Pessoa, strings.ToUpper(nome))
+	n := m.pessoa[chavePessoa(nome)]
+	for _, g := range grafias {
+		g = strings.Join(strings.Fields(g), " ")
+		if utf8.RuneCountInString(g) < 3 {
+			continue
+		}
+		if _, ok := m.pessoa[chavePessoa(g)]; !ok {
+			m.pessoa[chavePessoa(g)] = n // a grafia é da mesma pessoa
+		}
+		m.registrar(Pessoa, g)
+		m.registrar(Pessoa, strings.ToUpper(g))
+	}
+	m.re = nil
+}
+
 func (m *Mapa) registrar(tp Tipo, forma string) {
 	if _, ok := m.marcador[forma]; ok || forma == "" {
 		return

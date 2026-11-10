@@ -31,6 +31,9 @@ const (
 	ArquivoLeitura  Codigo = "ARQ-001"
 	ArquivoEscrita  Codigo = "ARQ-002"
 	ArquivoSemEspac Codigo = "ARQ-003"
+	// Cadastro de peças (V4 §48.4).
+	ArquivoRepetido Codigo = "ARQ-004"
+	CadastroLimite  Codigo = "ARQ-005"
 
 	// Modelo de IA (Gemini API, emenda V4 §47). MOD-001…009 pertenciam à
 	// inferência local, removida (D-10): ficam reservados e nunca serão
@@ -164,6 +167,12 @@ func init() {
 	def(ArquivoSemEspac, CatArquivo, "Espaço em disco insuficiente",
 		"Não há espaço livre suficiente no disco para continuar.",
 		"Libere espaço em disco e tente novamente.")
+	def(ArquivoRepetido, CatArquivo, "Arquivo já anexado",
+		"Este arquivo já foi anexado a uma peça do cadastro.",
+		"Confira a lista de arquivos: cada arquivo entra uma única vez. Se ele está na peça errada, remova-o de lá e anexe-o de novo.")
+	def(CadastroLimite, CatArquivo, "Limite de arquivos do cadastro atingido",
+		"O cadastro admite até 300 arquivos e 1 GB no total.",
+		"Remova arquivos desnecessários ou junte documentos menores antes de anexar.")
 
 	def(IAChaveAusente, CatModelo, "Chave da Gemini API não cadastrada",
 		"A análise por IA usa a Gemini API, e ainda não há uma chave cadastrada neste computador.",

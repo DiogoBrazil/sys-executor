@@ -33,6 +33,25 @@ function visao(estado: string, extra: Record<string, unknown> = {}) {
   };
 }
 
+// Cadastro inicial do PADS, como o Go o cria (peças fixas da modalidade).
+function cadastroPADS(extra: Record<string, unknown> = {}) {
+  const peca = (id: string, tipo: string) => ({ id, tipo, titulo: "", descricao: "", papel: "", pessoaIds: [], data: "", sei: "", naoApresentada: false, arquivos: [] });
+  return {
+    tipo: "PADS", pessoas: [], acusadoId: "", fatos: [], portaria: "", sindicados: [], ofendidos: [], semOfendido: false,
+    pecas: [peca("PEC-01", "MEMORANDO"), peca("PEC-02", "DEFESA_PREVIA"), peca("PEC-03", "ALEGACOES_FINAIS")], concluido: false, ...extra,
+  };
+}
+// O "Go" simulado do cadastro: IDs provisórios viram definitivos.
+function salvarSimulado(c: any) {
+  let n = 10;
+  const novo: Record<string, string> = {};
+  const real = (id: string) => (id.startsWith("NOVO-") ? (novo[id] ??= `PES-${n++}`) : id);
+  const pessoas = c.pessoas.map((p: any) => ({ ...p, id: real(p.id) }));
+  const pecas = c.pecas.map((p: any) => ({ ...p, id: p.id.startsWith("NOVO-") ? `PEC-${n++}` : p.id, pessoaIds: p.pessoaIds.map(real) }));
+  const fatos = c.fatos.map((f: any, i: number) => ({ ...f, id: f.id.startsWith("NOVO-") ? `FATO-${n + i}` : f.id }));
+  return { ...c, pessoas, pecas, fatos, acusadoId: real(c.acusadoId) };
+}
+
 function resp(v: any, erro: any = null) {
   visaoAtual = v;
   return Promise.resolve({ visao: v, erro });
@@ -48,7 +67,7 @@ vi.mock("./api", () => ({
       if (e === "SEI") {
         return resp(visaoAtual, { codigo: "TAR-004", titulo: "Etapa ainda não disponível", mensagem: "m", acao: "a" });
       }
-      return resp(visao("RECEBENDO_UPLOAD", { tipo: visaoAtual.tipo, entrada: e }));
+      return resp(visao("RECEBENDO_UPLOAD", { tipo: visaoAtual.tipo, entrada: e, cadastro: cadastroPADS(), pendenciasCadastro: ["Anexe o Memorando Disciplinar."] }));
     },
     voltarParaEntrada: () => { chamadas.push("voltar"); return resp(visao("TIPO_ESCOLHIDO")); },
     selecionarPDF: () => { chamadas.push("pdf"); return resp(visao("EXTRAINDO", { tipo: visaoAtual.tipo })); },
@@ -113,6 +132,25 @@ vi.mock("./api", () => ({
       return resp(visao("SEI_LOCALIZANDO"));
     },
   },
+  cadastro: {
+    salvar: (c: any) => {
+      chamadas.push("salvar:" + JSON.stringify({ pessoas: c.pessoas, acusadoId: c.acusadoId, fatos: c.fatos }));
+      return resp({ ...visaoAtual, cadastro: salvarSimulado(c) });
+    },
+    anexar: (id: string) => {
+      chamadas.push("anexar:" + id);
+      const cad = visaoAtual.cadastro;
+      const pecas = cad.pecas.map((p: any) => (p.id === id ? { ...p, arquivos: [...p.arquivos, { id: "ARQ-90", nome: "memorando.pdf", paginas: 3, hash: "abc", origem: "UPLOAD" }] } : p));
+      return resp({ ...visaoAtual, cadastro: { ...cad, pecas }, pendenciasCadastro: [] });
+    },
+    remover: (p: string, a: string) => { chamadas.push(`remover:${p}:${a}`); return resp(visaoAtual); },
+    mover: (p: string, a: string, d: number) => { chamadas.push(`mover:${p}:${a}:${d}`); return resp(visaoAtual); },
+    concluir: () => { chamadas.push("concluir"); return resp(visao("VERIFICANDO")); },
+    catalogo: () => Promise.resolve([
+      { id: "RDPM-17-V", diploma: "RDPM", rotulo: "art. 17, V — utilizar viatura sem autorização", natureza: "GRAVE" },
+      { id: "EST-29-I", diploma: "ESTATUTO", rotulo: "art. 29, I — amar a verdade", natureza: "" },
+    ]),
+  },
   fontes: {
     enderecoPDF: () => Promise.resolve({ endereco: "", erro: { codigo: "TAR-003", titulo: "", mensagem: "", acao: "" } }),
     destaque: () => Promise.resolve({ pagina: 1, largura: 0, altura: 0, caixas: [], erro: null }),
@@ -163,17 +201,69 @@ describe("T01 — ordem das escolhas", () => {
   });
 });
 
-describe("T02 — upload sem credencial", () => {
-  it("enviar PDF escolhe UPLOAD e abre o seletor, sem campo de senha", async () => {
+describe("T02 — cadastro de peças sem credencial", () => {
+  it("cadastrar peças escolhe UPLOAD e abre o assistente, sem campo de senha", async () => {
     visaoAtual = visao("TIPO_ESCOLHIDO");
     const w = mount(App);
     await flushPromises();
     expect(w.find('input[type="password"]').exists()).toBe(false);
     await w.find('[data-teste="entrada-UPLOAD"]').trigger("click");
     await flushPromises();
-    expect(chamadas).toEqual(["atual", "ia", "entrada:UPLOAD", "pdf"]);
+    expect(chamadas).toEqual(["atual", "ia", "entrada:UPLOAD"]);
+    expect(w.find('[data-teste="montagem"]').exists()).toBe(true);
     expect(w.find('input[type="password"]').exists()).toBe(false);
-    expect(w.find('[data-teste="linha-do-tempo"]').exists()).toBe(true);
+  });
+});
+
+describe("Cadastro de peças (V4 §48.4)", () => {
+  it("grava acusado e enquadramento antes de anexar; o Estatuto exige a natureza", async () => {
+    visaoAtual = visao("RECEBENDO_UPLOAD", { entrada: "UPLOAD", cadastro: cadastroPADS(), pendenciasCadastro: ["Anexe o Memorando Disciplinar."] });
+    const w = mount(App);
+    await flushPromises();
+    await w.find('[data-teste="acusado-posto"]').setValue("CB PM");
+    await w.find('[data-teste="acusado-nome"]').setValue("Carlos Inventado");
+    await w.find('[data-teste="enq-0-mais"]').trigger("click");
+    await w.find('[data-teste="enq-0-rdpm-0"]').trigger("change");
+    await w.find('[data-teste="enq-0-disp-0-filtro"]').setValue("viatura");
+    await w.find('[data-teste="enq-0-disp-0-opcao-RDPM-17-V"]').trigger("click");
+    expect(w.find('[data-teste="enq-0-nat-0"]').exists()).toBe(false); // RDPM: natureza do artigo
+    await w.find('[data-teste="enq-0-mais"]').trigger("click");
+    await w.find('[data-teste="enq-0-est-1"]').trigger("change");
+    await w.find('[data-teste="enq-0-disp-1-filtro"]').setValue("verdade");
+    await w.find('[data-teste="enq-0-disp-1-opcao-EST-29-I"]').trigger("click");
+    expect(w.find('[data-teste="enq-0-nat-1"]').exists()).toBe(true);
+    await w.find('[data-teste="arq-memorando-anexar"]').trigger("click");
+    await flushPromises();
+    const salvo = JSON.parse(chamadas.find((c) => c.startsWith("salvar:"))!.slice(7));
+    expect(salvo.pessoas).toEqual([{ id: salvo.acusadoId, nome: "Carlos Inventado", postoGrad: "CB PM", crianca: false, grafias: [] }]);
+    // Sem a natureza, o dispositivo do Estatuto não vai ao Go (fica na tela).
+    expect(salvo.fatos[0].enquadramentos).toEqual([{ dispositivoId: "RDPM-17-V", natureza: "" }]);
+    expect(chamadas.at(-1)).toBe("anexar:PEC-01");
+    expect(w.find('[data-teste="arq-memorando-arquivo"]').text()).toContain("memorando.pdf");
+    expect(w.find('[data-teste="enq-0-nat-1"]').exists()).toBe(true); // linha incompleta preservada
+    expect(w.find('[data-teste="acusado-nome"]').element as HTMLInputElement).toHaveProperty("value", "Carlos Inventado");
+  });
+
+  it("depoimentos, conferência com pendências e conclusão", async () => {
+    visaoAtual = visao("RECEBENDO_UPLOAD", { entrada: "UPLOAD", cadastro: cadastroPADS(), pendenciasCadastro: ["Informe o acusado."] });
+    const w = mount(App);
+    await flushPromises();
+    await w.find('[data-teste="passo-depoimentos"]').trigger("click");
+    await flushPromises();
+    await w.find('[data-teste="novo-depoimento"]').trigger("click");
+    await w.find('[data-teste="depoente-nome-0"]').setValue("Diego Suposto");
+    await w.find('[data-teste="papel-0-DECLARANTE"]').setValue(true);
+    await w.find('[data-teste="arq-dep-0-anexar"]').trigger("click");
+    await flushPromises();
+    // A peça nova ganha ID no Go antes de receber o arquivo.
+    expect(chamadas.at(-1)).toMatch(/^anexar:PEC-\d+$/);
+    await w.find('[data-teste="passo-conferencia"]').trigger("click");
+    await flushPromises();
+    expect(w.find('[data-teste="conferencia-pecas"]').text()).toContain("Depoimento (declarante): Diego Suposto");
+    expect(w.findAll('[data-teste="pessoa"]')).toHaveLength(1);
+    await w.find('[data-teste="concluir-cadastro"]').trigger("click");
+    await flushPromises();
+    expect(chamadas.at(-1)).toBe("concluir");
   });
 });
 
@@ -287,11 +377,11 @@ describe("Fase 2 — autos, perguntas e parada", () => {
   });
 
   it("PDF protegido volta ao envio com o alerta, mantendo o tipo", async () => {
-    visaoAtual = visao("RECEBENDO_UPLOAD", { erro: { codigo: "PDF-004", titulo: "PDF protegido por senha", mensagem: "m", acao: "a" } });
+    visaoAtual = visao("RECEBENDO_UPLOAD", { cadastro: cadastroPADS(), erro: { codigo: "PDF-004", titulo: "PDF protegido por senha", mensagem: "m", acao: "a" } });
     const w = mount(App);
     await flushPromises();
-    expect(w.find('[data-teste="aguardando-pdf"]').exists()).toBe(true);
-    expect(w.find('[data-teste="erro-arquivo"]').text()).toContain("PDF protegido por senha");
+    expect(w.find('[data-teste="montagem"]').exists()).toBe(true);
+    expect(w.find('[data-teste="erro-cadastro"]').text()).toContain("PDF protegido por senha");
     expect(w.find('[data-teste="faixa-tipo"]').text()).toContain("Julgamento de PADS");
   });
 });

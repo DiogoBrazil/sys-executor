@@ -73,6 +73,8 @@ type Peca struct {
 	Base          Base   `json:"base"`
 	Provavel      bool   `json:"provavel"` // função inferida (não declarada no título)
 	Externo       bool   `json:"externo"`  // sem marcação SEI (anexo/escaneado)
+	// Declarada: ID da peça no cadastro do usuário (BaseUsuario).
+	Declarada string `json:"declarada,omitempty"`
 }
 
 var (

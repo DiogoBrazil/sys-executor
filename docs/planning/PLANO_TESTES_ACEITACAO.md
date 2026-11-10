@@ -198,12 +198,12 @@ Complementos:
 | UI-SRC-01 | Clique em uma referência | Abre a página e realça o trecho (fallback: só a página) |
 | UI-CALC-01/02 | Memória de cálculo PADS | 7 itens §8.8 presentes antes de "Aprovar" |
 | PRG-01 / PRG-ORD-01 | Dados já comprovados nos autos | Não pergunta; ordem §9 respeitada |
-| T01 | Início | 1ª escolha PADS/SR; 2ª SEI/PDF |
-| T02 | Upload | Sem credencial nem SEI |
-| T03 | SEI sem internet | Aviso + upload sem reiniciar a configuração |
-| T04 | PADS escolhido, PDF de SR | Alerta; não troca o tipo |
+| T01 | Início | 1ª escolha PADS/SR; 2ª SEI ou cadastro de peças (V4 §48.4) |
+| T02 | Cadastro de peças | Sem credencial nem SEI |
+| T03 | SEI sem internet | Aviso + cadastro de peças sem reiniciar a configuração |
+| T04 | PADS escolhido, PDF de SR (ou arquivo cadastrado como Memorando com conteúdo de Portaria de SR) | Alerta; não troca o tipo |
 | T05 | PADS com portaria de SR anexa | Procedimento principal mantido |
-| T06 | Peça instauradora ilegível | Pede versão legível; não infere |
+| T06 | Peça instauradora ilegível (também a declarada no cadastro) | Pede versão legível; não infere |
 | T07 | Em execução | Status; sem chatbot nem tokens |
 | T08 | Dado disciplinar essencial ausente | Pergunta objetiva e retoma |
 | T09 | Minuta validada | Prévia + DOCX/PDF + ajustes/finalizar |
@@ -269,6 +269,9 @@ Minuta adulterada → o validador **deve bloquear** e o laço de correção deve
 | SEG-SIWC-01 | Credencial do ChatGPT | Gravada sem o access token; renovação concorrente faz um único POST e grava o refresh novo; refresh morto apaga só os tokens e pede reconexão; desconectar revoga e apaga; nenhum token na visão da tela |
 | SEG-SIWC-02 | Login (emissor falso com JWKS) | PKCE S256, state, nonce, 127.0.0.1, sys-executor; negado, state forjado, nonce errado, invalid_grant, registro sem client_id → IA-016 sem gravar; sem permissão do plano → IA-017 (conectada, sem gerar texto); retorno duplicado recusado; outra conta no relogin não troca a credencial |
 | SEG-CRI-01 | ChatGPT com dados de criança declarados | IA-021, nada enviado; continua bloqueado ao tentar de novo; com a Gemini escolhida, nova confirmação sem a pergunta |
+| CAD-PEC-01 | Cadastro PADS e SR no assistente | Peças fixas da modalidade; pessoas com ID próprio (IDs provisórios da interface remapeados); várias oitivas da mesma pessoa; vários arquivos por peça, reordenáveis; arquivo repetido → ARQ-004; não-PDF recusado; peça "não apresentada" sem arquivo; peça ou arquivo removido sai da sessão; pendências impedem a conclusão (TAR-006); depoimento de sindicado só na SR; SR com sindicados e ofendidos ou ausência declarada |
+| CAD-PEC-02 | Peças declaradas × conteúdo | Páginas contíguas na ordem declarada, função do usuário (Base USUARIO), SEI do carimbo quando não informado; primeira página com outra peça processual → pergunta (voltar ao cadastro ou continuar), sem troca; peça central ilegível → versão legível; central de outro procedimento → incompatível; soma de páginas divergente → erro |
+| CAD-PEC-03 | Cadastro PADS sintético até a delimitação (pdfium real) | Arquivos juntados na ordem processual (Memorando, defesa, oitivas, outros, alegações) mesmo anexados fora de ordem; peças do resumo com a função declarada e o depoente; divergência perguntada; "Voltar ao cadastro" o preserva editável; depois de corrigido, compatível e para em IA-001 sem IA; pessoas do cadastro e grafias semeiam a pseudonimização; criança marcada bloqueia o ChatGPT; acusado e dispositivos do cadastro conferidos com a leitura do Memorando (extra sem correspondência exige a confirmação da §22.1) |
 | PADS-ENQ-01 | Formulário das imputações com o catálogo de enquadramento | Diploma e dispositivo não vêm preenchidos; o citado aparece só para conferência; RDPM → natureza do artigo; Estatuto → natureza obrigatória; escolha diferente da citada volta com o alerta da §22.1 e só congela com "Confirmo"; igual à citada não pede confirmação; catálogo íntegro (130 itens, sem lacunas, fonte por item) |
 | IA-SIWC-01 | Responses API (servidor SSE falso) | Corpo sem campos proibidos; só sucesso com response.completed; incompleto por tamanho → Truncada; filtro → IA-009; limite do plano → IA-019 sem repetir; 401 → renovação e uma nova tentativa; inatividade → IA-008; barreira de bytes; endpoint privado do ChatGPT bloqueado |
 | SEG-PSEUDO-01 | Nomes, CPF, RG, matrícula, contatos e endereço sentinelas nos autos | Ausentes do corpo enviado à IA, também em outra caixa, sem acento, com quebra de linha ou escapados em JSON; resposta restaurada byte a byte; trechos citados conferem literalmente com os autos (melhor esforço: nomes sem âncora vão à revisão da SEG-BAR-01) |

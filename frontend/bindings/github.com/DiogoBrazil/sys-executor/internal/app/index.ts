@@ -14,6 +14,7 @@ export {
 
 export {
     Caixa,
+    DispositivoVisao,
     ModeloChatGPTIA,
     ModeloIA,
     Resposta,

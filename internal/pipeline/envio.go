@@ -59,11 +59,19 @@ func (p *Pipeline) autorizarEnvio(c *workflow.Contexto, d *Dados) (aguardar bool
 	}
 	if e.mapa == nil {
 		e.mapa = pseudonimo.NovoMapa()
+		// Envolvidos do cadastro primeiro (com as outras grafias); a
+		// detecção nas páginas completa o mapa.
+		if semearMapa(e.mapa, c.Cadastro()) {
+			e.criancaSemChatGPT = true // marcado no cadastro (V4 §48.6)
+		}
 		if d.Autos != nil {
 			for _, pg := range d.Autos.Paginas {
 				e.mapa.Aprender(pg.Texto)
 			}
 		}
+	}
+	if alvo.Provedor == inference.ProvedorChatGPT && e.criancaSemChatGPT {
+		return false, erros.Novo(erros.IACriancaChatGPT)
 	}
 	if e.suspeitosEnvio == nil {
 		// Revisão item a item dos possíveis nomes sem âncora (TRV-SEG-013).

@@ -1,6 +1,6 @@
 # Continuidade — migração da IA local para a Gemini API
 
-Atualizado em 09/11/2026. Branch: **`add-mode-apikey-oauth`** (nada foi enviado ao remoto nem mesclado).
+Atualizado em 09/11/2026 (etapa 6). Branch: **`add-mode-apikey-oauth`** (nada foi enviado ao remoto nem mesclado).
 
 > **Atualização de 09/11/2026 — D-11:** o usuário aprovou o plano `docs/planning/PLANO_CHATGPT_PECAS_PRIVACIDADE.md`. Ele trata do ChatGPT pelo *Sign in with ChatGPT* como 2º provedor, do cadastro peça por peça, do enquadramento manual (RDPM/Estatuto) e da barreira obrigatória de privacidade. A D-11 reabre parcialmente o item 1 da §1 abaixo, que excluía o OAuth e outros provedores; o Gemini continua preservado. **Etapa 0 concluída:** a Emenda 2 foi aprovada e inserida na V4 (seção 48), com `V4.lock`/CHANGELOG atualizados; o catálogo de regras muda junto com o código de cada etapa. **Etapa 1 concluída (PoC `poc/chatgpt`):** login, tokens, renovação, revogação, modelos e inferência SSE funcionaram. Os 8 schemas reais foram aceitos em strict sem nenhuma violação. Resultados em `docs/planning/RELATORIO_POC_CHATGPT.md`; a sessão de teste foi revogada. **Etapa 2 concluída (barreira de privacidade):**
 - casamento sem diferenciar caixa nem acentos;
@@ -14,11 +14,26 @@ Relatório: `docs/planning/RELATORIO_ETAPA2_BARREIRA.md`. O teste no Windows con
 
 O 400 só pode ser reconfirmado ponta a ponta quando a cota diária gratuita (20/dia) renovar. **Etapas 2, 3 e 4 commitadas** (`ab14035`, `0c5335c`, `e53a815`). O ChatGPT foi **testado pelo usuário no Windows** com a conta Plus: PADS sintético até TAR-004, IMP-1 procedente e IMP-2 improcedente. Relatório em `docs/planning/RELATORIO_ETAPA4_CHATGPT.md`.
 
+**Etapas 5 a 8 autorizadas** pelo usuário em 09/11/2026 ("Pode prosseguir com as demais etapas").
+- **Etapa 5 commitada** (`76df133`): catálogo de enquadramento com 130 dispositivos e formulário PADS-ESC-001 com diploma, dispositivo e natureza, e confirmação da §22.1. **A revisão da curadoria pelo usuário está pendente** (`docs/planning/CATALOGO_ENQUADRAMENTO_REVISAO.md`).
+- **Etapa 6 concluída:** cadastro de peças.
+  - Assistente PADS e SR com vários PDFs por peça.
+  - Junção em memória pelo pdfium, na ordem processual.
+  - Peças declaradas (`Base USUARIO`), conferidas pelo conteúdo.
+  - Pessoas do cadastro semeando a pseudonimização.
+  - Acusado, dispositivos e sindicados do cadastro conferidos com a leitura da peça central.
+  - O cartão do PDF único saiu da interface.
+
+  Relatório: `docs/planning/RELATORIO_ETAPA6_CADASTRO.md`.
+
 Pendências:
 - confirmar o 400 do Gemini quando a cota gratuita renovar; a chave de desenvolvimento está em `~/.config/sys-executor/gemini-dev.key`;
-- etapas 5 a 8.
+- teste manual no Windows do cadastro PADS e SR sintéticos;
+- interrogatório do acusado no PADS: hoje vai em "Outros documentos" (plano §8.1);
+- etapa 7, que exige antes o mapeamento real da tela "Gerar PDF" do SEI com `poc/sei-mapa`, feito pelo usuário;
+- etapa 8: bench nos dois provedores, ADR 010 e README.
 
-**Próximo passo:** etapa 5 (catálogo de enquadramento e formulário PADS-ESC-001), que depende de autorização expressa. **Nenhum código** foi alterado; cada etapa do plano depende de autorização expressa.
+**Próximo passo:** etapa 7 (depende do mapeamento do SEI feito pelo usuário) ou etapa 8.
 
 Leia junto: `docs/planning/RELATORIO_MIGRACAO_GEMINI.md` (relatório técnico), `docs/planning/ADR_009_gemini_api.md` (arquitetura), V4 §47 (`docs/rules/sys-executor_especificacao_consolidada_V4.md`) e D-10 (`docs/planning/REGISTRO_DUVIDAS_DECISOES.md`).
 

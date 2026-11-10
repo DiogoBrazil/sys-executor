@@ -27,6 +27,9 @@ type Dados struct {
 	Datas  []autos.DataMencionada // todas as menções, inclusive divergentes (A03)
 	Indice *autos.Indice
 	Compat segment.Compatibilidade
+	// Declaradas: peças do cadastro, na ordem dos autos juntados (nil quando
+	// os autos vieram de um PDF único do SEI).
+	Declaradas []segment.Declarada
 	// IA: estado das etapas de IA (Fase 4), nil antes da delimitação.
 	IA *EstadoIA
 }
@@ -50,6 +53,9 @@ type Pipeline struct {
 	SEI ObterSEI
 	// IA prepara o motor de IA local (nil: etapas de IA indisponíveis).
 	IA FonteMotor
+	// Juntador monta os autos a partir do cadastro de peças (nil: usa o
+	// Extrator, se ele souber juntar).
+	Juntador pdf.Juntador
 
 	once   sync.Once
 	motor  ocr.Motor
@@ -93,6 +99,21 @@ func dados(c *workflow.Contexto) *Dados {
 // verificar abre o PDF para conferir que é legível. PDF protegido, corrompido
 // ou sem páginas volta ao envio, com o alerta, sem perder o tipo escolhido.
 func (p *Pipeline) verificar(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
+	d := dados(c)
+	d.Declaradas = nil
+	if cad := c.Cadastro(); cad != nil {
+		// Cadastro de peças: junta os arquivos (a junção já confere cada um).
+		ds, err := p.juntarCadastro(ctx, c.Sessao, cad)
+		if err != nil {
+			var e *erros.Erro
+			if errors.As(err, &e) && e.Categoria == erros.CatPDF {
+				return workflow.RecebendoUpload, err
+			}
+			return "", err
+		}
+		d.Declaradas = ds
+		return workflow.Extraindo, nil
+	}
 	b, err := c.Sessao.Ler(workflow.NomeAutos)
 	if err != nil {
 		return "", err
@@ -131,7 +152,15 @@ func (p *Pipeline) classificar(ctx context.Context, c *workflow.Contexto) (workf
 	if d.Autos == nil {
 		return "", erros.Com(erros.InternoInesperado, errors.New("autos não extraídos"))
 	}
-	d.Pecas = segment.Segmentar(d.Autos)
+	if d.Declaradas != nil {
+		ps, err := segment.DeDeclaracao(d.Autos, d.Declaradas)
+		if err != nil {
+			return "", erros.Com(erros.InternoInesperado, err)
+		}
+		d.Pecas = ps
+	} else {
+		d.Pecas = segment.Segmentar(d.Autos)
+	}
 	d.Midias = segment.DetectarMidias(d.Autos, d.Pecas)
 	d.Datas = d.Autos.Datas()
 	if d.Indice != nil {
@@ -150,13 +179,21 @@ const perguntaCompat = "compatibilidade"
 
 func (p *Pipeline) compatibilidade(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
 	d := dados(c)
-	d.Compat = segment.VerificarCompatibilidade(string(c.Tipo), d.Pecas, d.Autos)
+	if d.Declaradas != nil {
+		d.Compat = segment.VerificarDeclaradas(string(c.Tipo), d.Pecas, d.Autos)
+	} else {
+		d.Compat = segment.VerificarCompatibilidade(string(c.Tipo), d.Pecas, d.Autos)
+	}
 	c.Publicar(Resumir(d))
 	if d.Compat.Resultado == segment.Compativel {
 		return workflow.Delimitando, nil
 	}
 	if r, ok := c.Resposta(perguntaCompat); ok && r == "continuar" {
 		return workflow.Delimitando, nil
+	}
+	if d.Declaradas != nil {
+		c.Perguntar(perguntaDeclaradas(c.Tipo, d))
+		return workflow.AguardandoEsclarecimento, nil
 	}
 	c.Perguntar(perguntaCompatibilidade(c.Tipo, d.Compat))
 	return workflow.AguardandoEsclarecimento, nil

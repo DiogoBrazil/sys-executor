@@ -115,3 +115,37 @@ func TestDetalheSoNoDiagnostico(t *testing.T) {
 		t.Fatalf("detalhe: %+v", r.Erro)
 	}
 }
+
+// Cadastro: o diálogo é de vários PDFs, os bytes são lidos no Go e a
+// interface recebe só o nome (sem a pasta), as páginas e o resumo do hash.
+func TestAnexarArquivosDoCadastro(t *testing.T) {
+	pdf := func(s string) []byte { return []byte("%PDF-1.7\n% " + s + "\n%%EOF\n") }
+	arquivos := map[string][]byte{`C:\autos\b.pdf`: pdf("b"), `C:\autos\a.pdf`: pdf("a")}
+	s := servico(t, nil, func(c string) ([]byte, error) { return arquivos[c], nil })
+	s.SelecionarArquivos = func() ([]string, error) { return []string{`C:\autos\b.pdf`, `C:\autos\a.pdf`}, nil }
+	if r := s.AnexarArquivos("PEC-01"); r.Erro == nil || r.Erro.Codigo != "TAR-002" {
+		t.Fatalf("sem cadastro: %+v", r.Erro)
+	}
+	s.Iniciar()
+	s.EscolherTipo("PADS")
+	r := s.EscolherEntrada("UPLOAD")
+	memo := r.Visao.Cadastro.Pecas[0].ID
+	r = s.AnexarArquivos(memo)
+	if r.Erro != nil {
+		t.Fatalf("%+v", r.Erro)
+	}
+	as := r.Visao.Cadastro.Pecas[0].Arquivos
+	if len(as) != 2 || filepath.Base(as[0].Nome) != as[0].Nome || !strings.HasSuffix(as[0].Nome, "a.pdf") {
+		t.Fatalf("arquivos: %+v", as)
+	}
+	b, _ := json.Marshal(r)
+	if strings.Contains(string(b), `C:\\autos`) || strings.Contains(string(b), "PDF-1.7") {
+		t.Fatalf("a visão expõe caminho ou conteúdo: %s", b)
+	}
+	if r := s.AnexarArquivos(memo); r.Erro == nil || r.Erro.Codigo != "ARQ-004" {
+		t.Fatalf("repetido: %+v", r.Erro)
+	}
+	if cat := s.CatalogoEnquadramento(); len(cat) < 100 || cat[0].Rotulo == "" {
+		t.Fatalf("catálogo: %d", len(cat))
+	}
+}

@@ -84,9 +84,9 @@ func (p *Pipeline) delimitar(ctx context.Context, c *workflow.Contexto) (workflo
 
 func semPecaCentral(c *workflow.Contexto, peca string) (workflow.Estado, error) {
 	c.Perguntar(workflow.Pergunta{ID: perguntaSemCentral, Titulo: "Peça central não encontrada",
-		Contexto: fmt.Sprintf("Sem %s não é possível delimitar o objeto do procedimento. Envie o PDF completo do processo.", peca),
+		Contexto: fmt.Sprintf("Sem %s não é possível delimitar o objeto do procedimento. Confira o arquivo da peça central.", peca),
 		Opcoes: []workflow.Opcao{
-			{ID: "outro", Rotulo: "Enviar outro PDF", Destino: workflow.RecebendoUpload},
+			opcaoOutroPDF(c),
 			{ID: "cancelar", Rotulo: "Cancelar a tarefa", Destino: workflow.Cancelada},
 		}})
 	return workflow.AguardandoEsclarecimento, nil
@@ -111,7 +111,7 @@ func (p *Pipeline) delimitarPADS(ctx context.Context, c *workflow.Contexto, d *D
 	resp, ok := c.RespostaCompleta(perguntaDelimitacao)
 	if !ok {
 		ant, _ := c.Anterior(perguntaDelimitacao)
-		c.Perguntar(perguntaImputacoes(*e.DelimPADS, ant, nil))
+		c.Perguntar(perguntaImputacoes(*e.DelimPADS, ant, nil, c.Cadastro()))
 		publicarPainel(c, d)
 		return workflow.AguardandoEsclarecimento, nil
 	}
@@ -120,7 +120,7 @@ func (p *Pipeline) delimitarPADS(ctx context.Context, c *workflow.Contexto, d *D
 	// expressa (V4 §§22.1, 48.5); nada é congelado antes disso.
 	if div, pendentes := divergencias(*e.DelimPADS, resp); pendentes > 0 {
 		c.Esquecer(perguntaDelimitacao)
-		c.Perguntar(perguntaImputacoes(*e.DelimPADS, resp, div))
+		c.Perguntar(perguntaImputacoes(*e.DelimPADS, resp, div, c.Cadastro()))
 		publicarPainel(c, d)
 		return workflow.AguardandoEsclarecimento, nil
 	}
@@ -138,9 +138,19 @@ func (p *Pipeline) delimitarPADS(ctx context.Context, c *workflow.Contexto, d *D
 }
 
 // perguntaImputacoes monta o formulário de confirmação (PADS-ESC-001).
-func perguntaImputacoes(r analise.PropostaDelimitacaoPADS, ant workflow.Resposta, div map[string]string) workflow.Pergunta {
+//
+// Com o cadastro de peças (V4 §48.5, E9), o acusado e os dispositivos
+// informados no assistente são conferidos com a leitura do Memorando: o
+// dispositivo do cadastro preenche a imputação cujo dispositivo citado é o
+// mesmo; os do cadastro sem correspondência viram imputações extras (com o
+// alerta e a confirmação da V4 §22.1). Nada é sugerido pelo app.
+func perguntaImputacoes(r analise.PropostaDelimitacaoPADS, ant workflow.Resposta, div map[string]string, cad *workflow.Cadastro) workflow.Pergunta {
+	pre := conferirComCadastro(r, cad)
 	val := func(campo, padrao string) string {
 		if v, ok := ant.Valores[campo]; ok {
+			return v
+		}
+		if v, ok := pre.padroes[campo]; ok {
 			return v
 		}
 		return padrao
@@ -170,11 +180,16 @@ func perguntaImputacoes(r analise.PropostaDelimitacaoPADS, ant workflow.Resposta
 			campo.Fontes = append(campo.Fontes, fonteDe(a.Ponto, "Memorando"))
 		}
 	}
+	grupo.Alertas = append(grupo.Alertas, pre.alertasAcusado...)
+	if pre.acusado != "" {
+		campo.Valor = pre.acusado
+	}
 	campo.Valor = val("acusado", campo.Valor)
 	pg.Grupos = append(pg.Grupos, grupo)
 	pg.Campos = append(pg.Campos, campo)
 
 	add := func(id, titulo string, desc []string, fontes []workflow.Fonte, alertas []string, conduta, data, incluir string) {
+		alertas = append(append([]string(nil), alertas...), pre.alertas[id]...)
 		if msg, ok := div[id]; ok {
 			alertas = append(alertas, msg)
 		}
@@ -202,8 +217,23 @@ func perguntaImputacoes(r analise.PropostaDelimitacaoPADS, ant workflow.Resposta
 		add(im.ID, im.ID, desc, []workflow.Fonte{fonteDe(im.Ponto, "Memorando")}, im.Pendencias,
 			im.Conduta, dataTexto(im.Data), "sim")
 	}
-	for k := 1; k <= maxExtras; k++ {
-		id := fmt.Sprintf("IMP-X%d", k)
+	nExtras := maxExtras
+	if len(pre.extras) > nExtras {
+		nExtras = len(pre.extras)
+	}
+	if n := extrasDe(ant.Valores); n > nExtras {
+		nExtras = n
+	}
+	for k := 1; k <= nExtras; k++ {
+		id := idExtra(k)
+		if k <= len(pre.extras) {
+			x := pre.extras[k-1]
+			add(id, "Enquadramento do cadastro sem correspondência no Memorando",
+				[]string{"Informado no cadastro, no " + rotuloFato(x.Fato) + ". A IA não encontrou no Memorando imputação com este dispositivo: " +
+					"confira no Memorando se ela consta da acusação; se não constar, não a inclua."},
+				nil, nil, x.Fato.Resumo, x.Fato.Data, "sim")
+			continue
+		}
 		add(id, "Imputação não identificada pela IA", []string{"Use só se o memorando trouxer outra imputação que não apareceu acima."},
 			nil, nil, "", "", "nao")
 	}
@@ -241,8 +271,8 @@ func congelarImputacoes(r analise.PropostaDelimitacaoPADS, resp workflow.Respost
 		ids = append(ids, im.ID)
 		evid[im.ID] = []string{fmt.Sprintf("pág. %d", im.Ponto.Pagina)}
 	}
-	for k := 1; k <= maxExtras; k++ {
-		ids = append(ids, fmt.Sprintf("IMP-X%d", k))
+	for k := 1; k <= extrasDe(resp.Valores); k++ {
+		ids = append(ids, idExtra(k))
 	}
 	n := 0
 	for _, id := range ids {
@@ -288,7 +318,7 @@ func (p *Pipeline) delimitarSR(ctx context.Context, c *workflow.Contexto, d *Dad
 	resp, ok := c.RespostaCompleta(perguntaObjeto)
 	if !ok {
 		ant, _ := c.Anterior(perguntaObjeto)
-		c.Perguntar(perguntaObjetoSR(*e.DelimSR, ant))
+		c.Perguntar(perguntaObjetoSR(*e.DelimSR, ant, c.Cadastro()))
 		publicarPainel(c, d)
 		return workflow.AguardandoEsclarecimento, nil
 	}
@@ -301,7 +331,8 @@ func (p *Pipeline) delimitarSR(ctx context.Context, c *workflow.Contexto, d *Dad
 	return workflow.Analisando, nil
 }
 
-func perguntaObjetoSR(r analise.PropostaObjetoSR, ant workflow.Resposta) workflow.Pergunta {
+func perguntaObjetoSR(r analise.PropostaObjetoSR, ant workflow.Resposta, cad *workflow.Cadastro) workflow.Pergunta {
+	alertasSind, alertasGerais := conferirObjetoSR(r, cad)
 	val := func(campo, padrao string) string {
 		if v, ok := ant.Valores[campo]; ok {
 			return v
@@ -315,7 +346,7 @@ func perguntaObjetoSR(r analise.PropostaObjetoSR, ant workflow.Resposta) workflo
 		Opcoes: []workflow.Opcao{{ID: "confirmar", Rotulo: "Confirmar objeto", Validar: true},
 			{ID: "cancelar", Rotulo: "Cancelar a tarefa", Destino: workflow.Cancelada}},
 	}
-	port := workflow.GrupoCampos{ID: "portaria", Titulo: "Portaria", Alertas: r.Pendencias}
+	port := workflow.GrupoCampos{ID: "portaria", Titulo: "Portaria", Alertas: append(append([]string(nil), r.Pendencias...), alertasGerais...)}
 	pg.Grupos = append(pg.Grupos, port)
 	pg.Campos = append(pg.Campos, workflow.Campo{ID: "portaria", Rotulo: "Identificação da portaria", Tipo: workflow.CampoTexto, Obrigatorio: true, Grupo: "portaria",
 		Valor: val("portaria", strings.TrimSpace(strings.Join([]string{r.Numero, r.Autoridade, dataTexto(r.Data)}, " — "))), Ajuda: "Número, autoridade e data"})
@@ -329,7 +360,7 @@ func perguntaObjetoSR(r analise.PropostaObjetoSR, ant workflow.Resposta) workflo
 	}
 	for _, s := range r.Sindicados {
 		id := s.ID
-		pg.Grupos = append(pg.Grupos, workflow.GrupoCampos{ID: id, Titulo: "Sindicado " + id, Fontes: []workflow.Fonte{fonteDe(s.Ponto, "Portaria")}})
+		pg.Grupos = append(pg.Grupos, workflow.GrupoCampos{ID: id, Titulo: "Sindicado " + id, Fontes: []workflow.Fonte{fonteDe(s.Ponto, "Portaria")}, Alertas: alertasSind[id]})
 		pg.Campos = append(pg.Campos,
 			workflow.Campo{ID: "incluir_" + id, Rotulo: "Incluir como sindicado", Tipo: workflow.CampoSimNao, Obrigatorio: true, Grupo: id, Valor: val("incluir_"+id, "sim")},
 			workflow.Campo{ID: "nome_" + id, Rotulo: "Posto/graduação e nome", Tipo: workflow.CampoTexto, Obrigatorio: true, Grupo: id,

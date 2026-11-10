@@ -119,6 +119,9 @@ func main() {
 			}
 		},
 		SEIDisponivel: pipe.SEI != nil,
+		// Cadastro de peças (V4 §48.4): cada arquivo é aberto no pdfium para
+		// conferir que é legível e contar as páginas.
+		ContarPaginas: func(b []byte) (int, error) { return pdf.ContarPaginas(context.Background(), extrator, b) },
 	})
 
 	var janela *application.WebviewWindow
@@ -132,6 +135,19 @@ func main() {
 		}
 		return d.PromptForSingleSelection()
 	}
+
+	seletorVarios := func() ([]string, error) {
+		d := wapp.Dialog.OpenFile().
+			SetTitle("Selecione os arquivos PDF desta peça").
+			CanChooseFiles(true).
+			AddFilter("Documentos PDF (*.pdf)", "*.pdf")
+		if janela != nil {
+			d = d.AttachToWindow(janela)
+		}
+		return d.PromptForMultipleSelection()
+	}
+	servTarefa := app.NovaTarefaService(ger, seletor)
+	servTarefa.SelecionarArquivos = seletorVarios
 
 	fontes := app.NovaFontesService(ger)
 	servIA := &app.IAService{Fonte: fonteIA, ChatGPT: fonteChatGPT,
@@ -155,7 +171,7 @@ func main() {
 		Logger:   slog.New(slog.DiscardHandler),
 		LogLevel: slog.LevelError + 100,
 		Services: []application.Service{
-			application.NewService(app.NovaTarefaService(ger, seletor)),
+			application.NewService(servTarefa),
 			application.NewService(app.NovaPreferenciasService(loja)),
 			application.NewService(fontes),
 			application.NewService(servIA),

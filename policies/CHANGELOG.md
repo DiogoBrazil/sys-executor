@@ -94,3 +94,15 @@ O CI falha enquanto o SHA-256 da V4 divergir do lock (GOV-LOCK-01).
   - a visibilidade dos campos agora é encadeada, no Go e na interface.
 - **Golden:** sem alteração.
 - **Aprovação:** usuário, por meio do plano D-11 aprovado (etapas 5–8 autorizadas em 09/11/2026); revisão da curadoria pendente.
+
+### 09/11/2026 — Catálogo: cadastro de peças (etapa 6 do plano D-11; V4 §48.4)
+- **V4:** sem alteração; o lock não muda.
+- **Nova TRV-ING-007:** cadastro peça por peça (PADS e SR), com vários arquivos por peça, ordem e origem preservadas, cada oitiva uma peça, arquivo repetido apontado, junção em memória na ordem processual, só na sessão; os dados do usuário são cruzados com a leitura da peça central e não ampliam as acusações nem o objeto.
+- **TRV-ING-001 v2:** a função declarada no cadastro vale; a classificação pelo conteúdo e pela cronologia é conferência (a `instrucao_ia` não muda).
+- **TRV-ING-002 v2:** conteúdo que contradiz a declaração gera pergunta, nunca troca.
+- **TRV-PRV-005 v2:** a origem operacional fica registrada por arquivo do cadastro.
+- **TRV-UI-001 a TRV-UI-004 v2:** "upload" passa a ser o cadastro de peças; a compatibilidade parte da peça central declarada, com o conteúdo conferido.
+- **Erros novos:** ARQ-004 (arquivo já anexado) e ARQ-005 (limite do cadastro).
+- **Testes:** CAD-PEC-01, CAD-PEC-02 e CAD-PEC-03; T01–T04 e T06 passam a ser verificados no sentido da seção 48.2.
+- **Golden:** sem alteração.
+- **Aprovação:** usuário, por meio do plano D-11 aprovado (etapas 5–8 autorizadas em 09/11/2026).

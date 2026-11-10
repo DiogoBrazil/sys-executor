@@ -52,6 +52,46 @@ export class Caixa {
 }
 
 /**
+ * DispositivoVisao é um item do catálogo de enquadramento para a interface.
+ */
+export class DispositivoVisao {
+    "id": string;
+    "diploma": string;
+    "rotulo": string;
+
+    /**
+     * fixa no RDPM; vazia no Estatuto
+     */
+    "natureza": string;
+
+    /** Creates a new DispositivoVisao instance. */
+    constructor($$source: Partial<DispositivoVisao> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("diploma" in $$source)) {
+            this["diploma"] = "";
+        }
+        if (!("rotulo" in $$source)) {
+            this["rotulo"] = "";
+        }
+        if (!("natureza" in $$source)) {
+            this["natureza"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DispositivoVisao instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DispositivoVisao {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DispositivoVisao($$parsedSource as Partial<DispositivoVisao>);
+    }
+}
+
+/**
  * ModeloChatGPTIA é um modelo na tela, com o resultado do último teste.
  */
 export class ModeloChatGPTIA {

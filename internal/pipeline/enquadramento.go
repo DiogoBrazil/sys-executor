@@ -112,7 +112,7 @@ func divergencias(r analise.PropostaDelimitacaoPADS, resp workflow.Resposta) (ma
 	for _, im := range r.Imputacoes {
 		citados[im.ID] = im
 	}
-	for _, id := range idsDelimitacao(r) {
+	for _, id := range idsDelimitacao(r, extrasDe(resp.Valores)) {
 		if resp.Valor("incluir_"+id) != "sim" {
 			continue
 		}
@@ -151,13 +151,29 @@ func divergencias(r analise.PropostaDelimitacaoPADS, resp workflow.Resposta) (ma
 	return out, pendentes
 }
 
-func idsDelimitacao(r analise.PropostaDelimitacaoPADS) []string {
+// idsDelimitacao: as imputações propostas pela IA e as extras (as do
+// cadastro sem correspondência no Memorando, ou a vaga em branco).
+func idsDelimitacao(r analise.PropostaDelimitacaoPADS, extras int) []string {
 	var ids []string
 	for _, im := range r.Imputacoes {
 		ids = append(ids, im.ID)
 	}
-	for k := 1; k <= maxExtras; k++ {
+	for k := 1; k <= extras; k++ {
 		ids = append(ids, fmt.Sprintf("IMP-X%d", k))
 	}
 	return ids
+}
+
+func idExtra(k int) string { return fmt.Sprintf("IMP-X%d", k) }
+
+// extrasDe conta as imputações extras presentes na resposta (no mínimo
+// maxExtras).
+func extrasDe(vs map[string]string) int {
+	n := maxExtras
+	for k := maxExtras + 1; ; k++ {
+		if _, ok := vs["incluir_"+idExtra(k)]; !ok {
+			return n
+		}
+		n = k
+	}
 }

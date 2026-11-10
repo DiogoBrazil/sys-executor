@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { acessarSEI, enviarPDF, estado, voltarAoInicio, voltarParaEntrada } from "../estado";
+import { acessarSEI, cadastrarPecas, estado, voltarAoInicio } from "../estado";
 import AvisoErro from "../components/AvisoErro.vue";
 import PainelSEI from "../components/PainelSEI.vue";
+import Montagem from "./Montagem.vue";
 
 const aguardandoArquivo = computed(() => estado.visao?.estado === "RECEBENDO_UPLOAD");
+const emCadastro = computed(() => aguardandoArquivo.value && !!estado.visao?.cadastro);
 const noSEI = computed(() => !!estado.visao?.estado.startsWith("SEI_"));
 </script>
 
@@ -26,29 +28,22 @@ const noSEI = computed(() => !!estado.visao?.estado.startsWith("SEI_"));
         </span>
         <span class="req">Requer internet</span>
       </button>
-      <button class="opcao" :disabled="estado.ocupado" data-teste="entrada-UPLOAD" @click="enviarPDF">
-        <span class="nome">Enviar o PDF do processo</span>
+      <button class="opcao" :disabled="estado.ocupado" data-teste="entrada-UPLOAD" @click="cadastrarPecas">
+        <span class="nome">Cadastrar as peças</span>
         <span class="desc">
-          Use o PDF completo que você já gerou no SEI/RO ("Gerar Arquivo PDF do Processo", com todos os
-          documentos). Não pede senha.
+          Você indica cada peça (Memorando ou Portaria, defesa, depoimentos, alegações e outros documentos) e anexa
+          os PDFs de cada uma. Não pede senha.
         </span>
         <span class="req">A análise por IA requer internet</span>
       </button>
     </div>
 
-    <section v-else class="arquivo" data-teste="aguardando-pdf">
-      <h2>Selecione o PDF completo do processo</h2>
-      <p>O arquivo é copiado de forma cifrada para a área temporária desta tarefa e apagado ao final.</p>
-      <div class="acoes">
-        <button class="botao primario" :disabled="estado.ocupado" data-teste="selecionar-pdf" @click="enviarPDF">
-          Selecionar PDF
-        </button>
-        <button class="botao" :disabled="estado.ocupado" @click="voltarParaEntrada">Escolher outro caminho</button>
-      </div>
-    </section>
+    <Montagem v-else-if="emCadastro" :key="estado.visao!.id" />
 
-    <AvisoErro v-if="estado.erro" :erro="estado.erro" />
-    <AvisoErro v-else-if="!noSEI && estado.visao?.erro" :erro="estado.visao.erro" data-teste="erro-arquivo" />
+    <template v-if="!emCadastro">
+      <AvisoErro v-if="estado.erro" :erro="estado.erro" />
+      <AvisoErro v-else-if="!noSEI && estado.visao?.erro" :erro="estado.visao.erro" data-teste="erro-arquivo" />
+    </template>
 
     <div>
       <button class="botao discreto" :disabled="estado.ocupado" data-teste="voltar-inicio" @click="voltarAoInicio">
@@ -85,15 +80,4 @@ const noSEI = computed(() => !!estado.visao?.estado.startsWith("SEI_"));
 .desc { color: var(--tinta-suave); max-width: 52ch; }
 .req { font-size: var(--t-sm); color: var(--tinta-suave); border-top: 1px solid var(--linha); padding-top: 0.6rem; }
 
-.arquivo {
-  display: grid;
-  gap: 0.8rem;
-  padding: 1.6rem;
-  background: var(--superficie);
-  border: 1px dashed var(--linha-forte);
-  border-radius: var(--raio);
-}
-.arquivo h2 { font-size: var(--t-lg); }
-.arquivo p { color: var(--tinta-suave); max-width: 64ch; }
-.acoes { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.4rem; }
 </style>

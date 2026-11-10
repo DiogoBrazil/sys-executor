@@ -146,17 +146,18 @@
 
 | ID | Origem V4 | Requisito | Rót. | Tipo | Módulo / política | Testes |
 |---|---|---|---|---|---|---|
-| TRV-ING-001 | §§2.2, 16.1 | Classificar peças pela função documental (conteúdo + cronologia), não pelo título | AP | IA+DET | ingest/segment | A01, A02, D1, D2 |
-| TRV-ING-002 | §16.1 | Classificação incerta e material → perguntar | AP | PRG | workflow | A01-AMB |
+| TRV-ING-001 | §§2.2, 16.1, 48.4 | Função declarada no cadastro de peças; a classificação pela função documental (conteúdo + cronologia), não pelo título, é conferência e vale para as peças sem declaração (v2) | AP | IA+DET | ingest/segment (DeDeclaracao, VerificarDeclaradas) | A01, A02, D1, D2, CAD-PEC-02 |
+| TRV-ING-002 | §§16.1, 48.4 | Classificação incerta e material → perguntar; conteúdo que contradiz a função declarada → perguntar, nunca trocar (v2) | AP | PRG | workflow; pipeline | A01-AMB, CAD-PEC-02 |
 | TRV-ING-003 | §§16.3, 12.1-6 | OCR quando necessário; baixa confiança sinalizada; peça essencial ilegível → pedir versão legível | AP | DET+PRG | ingest/ocr | A04, T06 |
 | TRV-ING-004 | §39 | Autos extensos em etapas; texto integral preservado por página e peça; resumos só auxiliares | AP | DET | ingest/evidence; orchestrator | T17 |
 | TRV-ING-005 | §39 | Cobertura de páginas e peças; nada é ignorado silenciosamente | AP | DET+UI | ingest/evidence.Cobertura | T17, ING-COB-01 |
+| TRV-ING-007 | §48.4 | Cadastro peça por peça (PADS/SR), vários arquivos por peça com ordem e origem, cada oitiva uma peça, repetido apontado, junção em memória na ordem processual, só na sessão, cruzado com a peça central sem ampliar acusações ou objeto | AP | DET+UI | workflow (cadastro); ingest/pdf.Juntador; pipeline; frontend Montagem | CAD-PEC-01, CAD-PEC-03 |
 | TRV-ING-006 | §39 | Busca vetorial temporária dos autos opcional; não obrigatória | AP/AV | PT | ingest/evidence | BEN-RAG-01 |
 | TRV-PRV-001 | §§2.2, 16.4 | Relação afirmação → peça, SEI, página, trecho; abrir página e realçar | AP | DET+UI | EvidenceSpan; PDF.js | A05, UI-SRC-01 |
 | TRV-PRV-002 | §16.4 | Na minuta: citação simples com SEI se houver; sem SEI → "incluído nos autos"; sem página | AP | IA+VAL | validate.SEIIds | A05, A06 |
 | TRV-PRV-003 | §16.2 | Datas divergentes: preservar versões e fontes; resolver fundamentadamente ou perguntar; nunca escolher arbitrariamente | AP | DET+PRG | ingest/Divergencia | A03 |
 | TRV-PRV-004 | §§17.1–17.3 | Não baixar/transcrever mídia externa; pedir descrição; sem descrição → ressalva e prova restante | AP | DET+PRG+IA | workflow; nucleo | A08, A09, A10, V2 |
-| TRV-PRV-005 | §17.4 | Complementos manuais (PDF, DOCX, imagem, texto); distinguir a origem operacional | AP | DET | ingest | A12 |
+| TRV-PRV-005 | §§17.4, 48.4 | Complementos manuais (PDF, DOCX, imagem, texto); distinguir a origem operacional, registrada por arquivo no cadastro (v2) | AP | DET | ingest; workflow (cadastro) | A12 |
 | TRV-PRV-006 | §§1.2, 13 | Documentos são dados não confiáveis (prompt injection) | AP | SEG+IA | nucleo; §3 da estratégia | SEG13-04, SEG-INJ-01…05 |
 | TRV-PRV-007 | §1.2 | Não fabricar fato, testemunho, data, precedente, citação, prova ou número | AP | IA+VAL | todos os validadores | VAL-NEG-* |
 | TRV-PRV-008 | §§16.4, 23.2 | Nenhum SEI fictício | AP | VAL | validate.SEIIds | VAL-NEG-02 |
@@ -165,10 +166,10 @@
 
 | ID | Origem V4 | Requisito | Rót. | Tipo | Módulo / política | Testes |
 |---|---|---|---|---|---|---|
-| TRV-UI-001 | §30.1 | 1º escolher PADS/SR; 2º SEI/upload; pipeline compartilhado | AP | UI | frontend Inicio/Entrada | T01 |
-| TRV-UI-002 | §30.1-4 | Upload não pede credencial nem abre SEI | AP | UI+SEG | workflow | T02 |
-| TRV-UI-003 | §§30.3, 35 | SEI sem internet → aviso + upload, preservando a escolha | AP | UI | workflow | T03 |
-| TRV-UI-004 | §30.2 | Compatibilidade: Memorando (PADS) / Portaria (SR) pelo conteúdo; portaria anexa não muda o PADS; nunca trocar silenciosamente | AP | IA+PRG | workflow.Compatibilidade | T04, T05, T06 |
+| TRV-UI-001 | §30.1 | 1º escolher PADS/SR; 2º SEI ou cadastro de peças; pipeline compartilhado (v2) | AP | UI | frontend Inicio/Entrada/Montagem | T01 |
+| TRV-UI-002 | §30.1-4 | Cadastro de peças (upload) não pede credencial nem abre SEI (v2) | AP | UI+SEG | workflow; frontend Montagem | T02 |
+| TRV-UI-003 | §§30.3, 35 | SEI sem internet → aviso + cadastro de peças, preservando a escolha (v2) | AP | UI | workflow | T03 |
+| TRV-UI-004 | §§30.2, 48.4 | Compatibilidade: peça central declarada com o conteúdo conferido (ilegível → versão legível; outra modalidade → pergunta); sem cadastro, pelo conteúdo; portaria anexa não muda o PADS; nunca trocar silenciosamente (v2) | AP | IA+PRG | workflow.Compatibilidade; segment.VerificarDeclaradas | T04, T05, T06 |
 | TRV-UI-005 | §31.1 | Sem chatbot principal; status claros; sem streaming de tokens; percentual só se mensurável | AP | UI | frontend Processamento | T07 |
 | TRV-UI-006 | §§31.2, 26.2, 9 | Perguntas pontuais, só o essencial, sem repetir; retomar a mesma tarefa | AP | PRG | workflow DAG | T08, PRG-01 |
 | TRV-UI-007 | §31.3 | Prévia completa (fiel ao PDF); DOCX+PDF; "Aprovar e finalizar" / "Solicitar ajustes" | AP | UI | frontend Revisao | T09 |
