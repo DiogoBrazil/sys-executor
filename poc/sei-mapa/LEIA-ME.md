@@ -27,3 +27,45 @@ Ferramenta **somente de observação**. Ela não clica, não digita e não grava
 - Formulário POST com `txtUsuario`, `pwdSenha` (há um campo texto homônimo, provavelmente o "mostrar senha"), `selOrgao` (select) e o oculto `hdnAcao`.
 - Botão "ACESSAR"; links "Entrar com gov.br" e "Autenticação em dois fatores".
 - Um único host: `sei.sistemas.ro.gov.br`.
+
+## Etapa 7 do plano D-11 — tela "Apenas selecionados" (10/11/2026)
+
+Continua **somente observação**: nada é clicado, digitado ou gravado. O que a extensão acrescenta:
+- **Comando `mapear`:** descreve a tela "Gerar Arquivo PDF do Processo" em todos os quadros:
+  - rádios `rdoTipo`;
+  - *selects*, como `selDocumentosApenas` (se é múltipla, quantas opções tem, a forma de até 10 opções e dos valores);
+  - caixas de seleção e as linhas da tabela em que estão;
+  - tabelas (cabeçalhos e forma de até 4 linhas);
+  - campos ocultos, botões e scripts externos;
+  - o código das funções da página ligadas à seleção (`gerar()` e os handlers dos controles), com o conteúdo das strings mascarado.
+- **POST da geração:** em `procedimento_gerar_pdf`, mostra os **nomes** dos campos e a **forma** dos valores, por exemplo `hdnDocumentosApenas = "########,########"`. O POST de outras telas, como o do login, **não é lido**.
+- **Forma, nunca texto:**
+  - cada palavra vira `Aa`, `AA` ou `a`, e cada número vira `#` repetido;
+  - só ficam em claro as palavras da lista fixa de tipos documentais e rótulos (`tiposDocumentais` em `mapear.go`), por exemplo `Termo de Inquirição - AA AA AA (#######)`;
+  - nomes de pessoas, unidades e números nunca aparecem.
+- **Teste:** `go test .` (com o Chrome de desenvolvimento, sem GPU) confere que nada da página fictícia vaza.
+
+### Roteiro
+1. **Gerar o executável** (no WSL):
+   ```bash
+   cd poc/sei-mapa && GOOS=windows GOARCH=amd64 go build -o sei-mapa.exe .
+   cp sei-mapa.exe /mnt/c/Users/<usuário>/Documents/
+   ```
+2. **Executar** no PowerShell, na pasta do executável: `.\sei-mapa.exe`.
+3. **No Edge que abrir:**
+   1. Faça o login.
+   2. Abra **um processo de teste ou já encerrado**, de preferência com poucos documentos.
+   3. Clique no ícone **"Gerar Arquivo PDF do Processo"**.
+   4. Volte ao console, digite **`mapear`** + Enter. Esta leitura mostra a tela antes da seleção.
+   5. No Edge, marque **"Apenas selecionados"**. Se aparecer uma lista, uma tabela ou uma janela de escolha, **selecione 1 ou 2 documentos**.
+   6. No console, digite **`mapear`** de novo. Esta leitura mostra a tela depois da seleção.
+   7. No Edge, clique em **"Gerar"**. O download é bloqueado de propósito, e o console mostra as linhas `[post-gerar]`.
+   8. **Não** use nenhuma função de escrita.
+4. **Encerrar:** digite `sair` + Enter.
+5. **Revisar e colar na conversa:**
+   - as linhas `[gerar-pdf]` (as duas leituras);
+   - as linhas `[post-gerar]`;
+   - as linhas `[nav]` da geração;
+   - o RESUMO.
+   
+   **Revise antes de colar.** Se alguma palavra em claro identificar pessoa ou processo, apague-a.

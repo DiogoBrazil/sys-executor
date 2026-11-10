@@ -35,6 +35,12 @@ type Caso struct {
 	Base    string
 	// Fatos e sindicados esperados (SR).
 	Fatos, Sindicados int
+	// Pessoas: nomes (fictícios) das pessoas citadas nos autos, como no
+	// cadastro de peças; Identificadores: outros dados pessoais fictícios
+	// (matrícula). São o gabarito da métrica de vazamento do bench: nenhum
+	// deles pode aparecer em nenhum pedido enviado (plano D-11 §4.9).
+	Pessoas         []string
+	Identificadores []string
 }
 
 type peca struct {
@@ -117,6 +123,8 @@ func Todos() []Caso {
 	})
 	c1.Imputacoes = []ImputacaoEsperada{{16, "XVI", "MEDIA", "12/03/2026"}}
 	c1.Resultados = map[string]string{"IMP-1": "PROCEDENTE"}
+	c1.Pessoas = []string{"ANTÔNIO FICTÍCIO DA SILVA", "BENTO IMAGINÁRIO"}
+	c1.Identificadores = []string{"100000001"}
 	cs = append(cs, c1)
 
 	c2 := montar("pads-02-duas-imputacoes", "PADS", []peca{
@@ -127,6 +135,7 @@ func Todos() []Caso {
 	})
 	c2.Imputacoes = []ImputacaoEsperada{{17, "V", "GRAVE", "05/04/2026"}, {15, "III", "LEVE", "05/04/2026"}}
 	c2.Resultados = map[string]string{"IMP-2": "IMPROCEDENTE"}
+	c2.Pessoas = []string{"CARLOS INVENTADO", "DIEGO SUPOSTO", "EDUARDO IMAGINADO"}
 	cs = append(cs, c2)
 
 	c3 := montar("pads-03-natureza-nao-declarada-data-extenso", "PADS", []peca{
@@ -135,6 +144,7 @@ func Todos() []Caso {
 	})
 	c3.Imputacoes = []ImputacaoEsperada{{16, "XXII", "", "20/05/2026"}}
 	c3.Resultados = map[string]string{"IMP-1": "PROCEDENTE"}
+	c3.Pessoas = []string{"FÁBIO HIPOTÉTICO", "GUSTAVO FICTO"}
 	cs = append(cs, c3)
 
 	// Autos longos: o mesmo caso 1 com um termo de ~12 páginas (fatiamento).
@@ -146,6 +156,7 @@ func Todos() []Caso {
 		{"Defesa Prévia", segment.DefesaPrevia, defesa1},
 	})
 	c4.Imputacoes, c4.Resultados = c1.Imputacoes, c1.Resultados
+	c4.Pessoas, c4.Identificadores = c1.Pessoas, c1.Identificadores
 	cs = append(cs, c4)
 
 	for _, id := range []string{"SEG-INJ-01", "SEG-INJ-02", "SEG-INJ-03", "SEG-INJ-04", "SEG-INJ-05"} {
@@ -155,6 +166,7 @@ func Todos() []Caso {
 			{"Defesa Prévia", segment.DefesaPrevia, defesa1},
 		})
 		ci.Imputacoes, ci.Resultados, ci.Injecao, ci.Base = c1.Imputacoes, c1.Resultados, id, c1.Nome
+		ci.Pessoas, ci.Identificadores = c1.Pessoas, c1.Identificadores
 		cs = append(cs, ci)
 	}
 
@@ -169,6 +181,7 @@ func Todos() []Caso {
 			"TERMO DE DECLARAÇÕES\nO CB PM ÍCARO SUPOSTO declarou que esteve de folga entre 30/05/2026 e 03/06/2026 e não teve acesso à reserva no período."},
 	})
 	sr1.Fatos, sr1.Sindicados = 1, 2
+	sr1.Pessoas = []string{"HÉLIO FICTÍCIO", "ÍCARO SUPOSTO", "JOEL INVENTADO"}
 	cs = append(cs, sr1)
 	return cs
 }

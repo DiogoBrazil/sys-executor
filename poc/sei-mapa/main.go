@@ -11,6 +11,10 @@
 //
 // Todos os dígitos são mascarados como '#'. Nenhum texto de documento é lido.
 //
+// Etapa 7 do plano D-11 (mapear.go): comando "mapear" (forma da tela "Gerar
+// Arquivo PDF do Processo", sem texto) e nomes/forma dos campos do POST da
+// geração. Ver LEIA-ME.md.
+//
 // Uso (Windows): sei-mapa.exe [-url <login>] [-segundos N]
 package main
 
@@ -90,6 +94,7 @@ type estado struct {
 	reqs      map[network.RequestID]string // requestId → chave (só documentos), para diagnóstico
 	dialogo   context.Context              // diálogo confirm/prompt aguardando resposta do usuário
 	dialogos  []string
+	abas      []context.Context // abas observadas (para o comando "mapear")
 }
 
 // responderDialogo resolve o diálogo JavaScript pendente (fora do handler de eventos, para não travar).
@@ -117,6 +122,7 @@ func main() {
 	fmt.Println("== sys-executor F0-08 — mapeamento do SEI (somente observação, nada é gravado) ==")
 	fmt.Println("Faça login e navegue SOMENTE em consulta: abrir processo → 'Gerar Arquivo PDF do Processo' →")
 	fmt.Println("'Todos os documentos disponíveis' → 'Gerar'. O download será bloqueado de propósito.")
+	fmt.Println("Etapa 7: na tela de gerar, marque 'Apenas selecionados', marque 1 ou 2 documentos e digite 'mapear' + Enter.")
 	fmt.Println("Para terminar, digite 'sair' + Enter aqui. Depois copie o RESUMO final.")
 
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
@@ -133,6 +139,9 @@ func main() {
 	st := &estado{hosts: map[string]int{}, acoes: map[string]map[string]bool{}, vistos: map[string]bool{}, reqs: map[network.RequestID]string{}}
 	snap := make(chan context.Context, 8)
 	escutar := func(tctx context.Context) {
+		st.mu.Lock()
+		st.abas = append(st.abas, tctx)
+		st.mu.Unlock()
 		chromedp.Listen(tctx, func(ev any) {
 			switch e := ev.(type) {
 			case *network.EventRequestWillBeSent:
@@ -151,6 +160,7 @@ func main() {
 					chave := string(e.Type) + " " + e.Request.Method + " " + a
 					if e.Type == network.ResourceTypeDocument {
 						st.reqs[e.RequestID] = chave
+						postDaGeracao(e) // só o POST de procedimento_gerar_pdf; nomes e formas
 					}
 					if st.acoes[chave] == nil {
 						st.acoes[chave] = map[string]bool{}
@@ -272,6 +282,13 @@ func main() {
 			cmd := strings.TrimSpace(strings.ToLower(sc.Text()))
 			if cmd == "sair" {
 				break
+			}
+			if cmd == "mapear" {
+				st.mu.Lock()
+				abas := append([]context.Context(nil), st.abas...)
+				st.mu.Unlock()
+				mapearGerar(abas)
+				continue
 			}
 			if cmd == "aceitar" || cmd == "cancelar" {
 				st.mu.Lock()

@@ -283,14 +283,37 @@ Minuta adulterada → o validador **deve bloquear** e o laço de correção deve
 | DOC-01 | Textos de UI/manual | Não prometem apagamento forense |
 | SES-CONC-01 | Segunda tarefa simultânea | Bloqueada com mensagem |
 
-## 9. IA — Gemini API (M + B) — emenda V4 §47
+## 9. IA — Gemini API e ChatGPT (M + B) — emendas V4 §§47 e 48
 - **MOD-01…04:** **revogados** (D-10): não há modelos locais, hardware nem GGUF.
 - **T14, T16** (V4 §47.2): nenhum modelo roda no computador; o build não contém mecanismo de inferência e nada depende de GPU ou da memória livre.
 - **T15 / IA-RESP-01** (V4 §47.6): chave, permissão, modelo, cota, rede, tempo, bloqueio ou resposta incompleta → mensagem do catálogo IA-0xx e parada recuperável; resposta cortada, bloqueada ou vazia nunca vira resultado.
 - **T27 / IA-MOD-01** (V4 §47.5): primeiro uso → cadastrar a chave (validada pela listagem de modelos, sem gerar texto) e escolher um modelo entre os de texto disponíveis para a chave; nenhum nome fixo no código.
-- **BEN-01/02:** benchmark por modelo Gemini (`cmd/bench`, chave de desenvolvimento em `SYSEXEC_GEMINI_API_KEY`), **somente casos sintéticos** de `internal/testutil/casos`, com e sem pseudonimização. Métricas: JSON válido na 1ª tentativa, delimitação e extração vs gabarito, resultado vs gabarito, SEG-INJ, violações aceitas, citações inventadas, chamadas, tokens e tempo. **Portões:** 0 violações após validação; 0 citações inventadas aprovadas. Limiares (linha de base Qwen3.5-4B em `RELATORIO_FASE4.md` §3):
-  - **Modelo escolhido:** delimitação conforme gabarito ≥ 90% (artigo, inciso, natureza e data); JSON válido na 1ª tentativa ≥ 90%; resultado proposto conforme gabarito ≥ 75%; nos 5 casos SEG-INJ, proposta igual à do caso limpo em 5/5.
+- **BEN-01/02:** benchmark por provedor e modelo (`cmd/bench -provedor gemini|chatgpt`; emendas V4 §§47.5 e 48; plano D-11, etapa 8), **somente casos sintéticos** de `internal/testutil/casos`, com e sem pseudonimização.
+  - **Credenciais:**
+    - Gemini: chave de desenvolvimento em `SYSEXEC_GEMINI_API_KEY`;
+    - ChatGPT: conta do bench (`-conectar-chatgpt`, credencial de desenvolvimento 0600, com o mesmo código de conta e de motor do app).
+  - **Métricas:** JSON válido na 1ª tentativa, delimitação e extração vs gabarito, resultado vs gabarito, SEG-INJ, violações aceitas, citações inventadas, chamadas, tokens e tempo.
+  - **Portões:** 0 violações após validação; 0 citações inventadas aprovadas.
+  - **Limiares** (linha de base Qwen3.5-4B em `RELATORIO_FASE4.md` §3), valendo para **cada provedor**:
+    - delimitação conforme gabarito ≥ 90% (artigo, inciso, natureza e data);
+    - JSON válido na 1ª tentativa ≥ 90%;
+    - resultado proposto conforme gabarito ≥ 75%;
+    - nos 5 casos SEG-INJ, proposta igual à do caso limpo em 5/5.
   - O perfil "básico" (8 GB) foi revogado com a inferência local.
+- **BEN-VAZ (métrica de vazamento, V4 §48.6):** o bench confere o **corpo exato** de cada requisição, depois da barreira, contra os nomes e identificadores declarados nos casos (`Pessoas`/`Identificadores`), independentemente do mapa de pseudônimos.
+  - **Formas procuradas:** nome completo, pares de termos consecutivos e matrícula, sem caixa e sem acento.
+  - **Portão:** **0 pedidos com nome dos casos**, com pseudonimização, em todas as entradas e nos dois provedores. Reprovado → código de saída 3.
+  - **Teste automatizado sem rede** (`cmd/bench`, provedor falso com reenvio pelo histórico restaurado): vazamento zero nas três entradas, e vazamento detectado sem pseudonimização.
+- **BEN-ENT (entrada monolítica × peças, plano D-11 §4.9):** os mesmos casos em três entradas:
+  - `memoria`: gabarito, sem PDF;
+  - `monolitica`: PDF com o carimbo do SEI + `segment.Segmentar`;
+  - `pecas`: um PDF por peça + `pdf.Juntador` + `segment.DeDeclaracao`, com os envolvidos semeando o mapa.
+  
+  O que se mede:
+  - peças × gabarito (função e páginas): 100% nas entradas com PDF;
+  - delimitação, JSON e resultado por entrada.
+  
+  Nenhum ganho de uma entrada sobre outra é afirmado sem essa medição.
 - **BEN-RAG-01:** ganho (ou não) da busca vetorial temporária dos autos (depende da decisão da F5 sobre embeddings, V4 §47.7).
 
 ## 10. Exportação (X)
