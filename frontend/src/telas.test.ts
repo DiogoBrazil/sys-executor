@@ -291,6 +291,28 @@ describe("Cadastro de peças (V4 §48.4)", () => {
     await flushPromises();
     expect(chamadas.at(-1)).toBe("concluir");
   });
+
+  it("depoente: nome direto; reaproveitar pessoa só quando já há outra cadastrada", async () => {
+    visaoAtual = visao("RECEBENDO_UPLOAD", { entrada: "UPLOAD", cadastro: cadastroPADS() });
+    const w = mount(App);
+    await flushPromises();
+    await w.find('[data-teste="passo-depoimentos"]').trigger("click");
+    await flushPromises();
+    await w.find('[data-teste="novo-depoimento"]').trigger("click");
+    expect(w.find('[data-teste="depoente-0"]').exists()).toBe(false); // ninguém para reaproveitar
+    await w.find('[data-teste="depoente-posto-0"]').setValue("Sd PM");
+    await w.find('[data-teste="depoente-nome-0"]').setValue("Diego Suposto");
+    await w.find('[data-teste="novo-depoimento"]').trigger("click");
+    const sel = w.find('[data-teste="depoente-1"]');
+    expect(sel.text()).toContain("Sim: Sd PM Diego Suposto");
+    expect(sel.text()).not.toContain("sem nome");
+    const opt = sel.findAll("option")[1].element as HTMLOptionElement;
+    await sel.setValue(opt.value);
+    expect(w.find('[data-teste="depoente-reuso-1"]').exists()).toBe(true);
+    expect(w.find('[data-teste="depoente-nome-1"]').element as HTMLInputElement).toHaveProperty("value", "Diego Suposto");
+    await sel.setValue("");
+    expect(w.find('[data-teste="depoente-nome-1"]').element as HTMLInputElement).toHaveProperty("value", "");
+  });
 });
 
 describe("T07 — tarefa em execução", () => {

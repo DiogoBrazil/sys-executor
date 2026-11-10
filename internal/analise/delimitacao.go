@@ -201,7 +201,7 @@ func delimitarBlocosPADS(ctx context.Context, x *Executor, a *autos.Autos, bloco
 				if n, ok := naturezas[im.Natureza]; ok && naturezaNoTexto(textoMemo, n) {
 					prop.Natureza = n
 				} else {
-					prop.Pendencias = append(prop.Pendencias, "Natureza da transgressão não declarada no memorando; informe-a.")
+					prop.Pendencias = append(prop.Pendencias, PendenciaNatureza)
 				}
 				prop.Data, prop.DataOrigem = dataDoTrecho(p.Trecho, im.Dia, im.Mes, im.Ano, p.OCR)
 				if prop.Data.Zero() {
@@ -235,6 +235,12 @@ func delimitarBlocosPADS(ctx context.Context, x *Executor, a *autos.Autos, bloco
 	return nil
 }
 
+// Pendências da leitura que o pipeline pode dar por resolvidas.
+const (
+	PendenciaInciso   = "Inciso não confirmado no memorando; confira o dispositivo."
+	PendenciaNatureza = "Natureza da transgressão não declarada no memorando; informe-a."
+)
+
 var (
 	reRomano = regexp.MustCompile(`^[IVXLCDM]+$`)
 	reLetra  = regexp.MustCompile(`^[a-z]$`)
@@ -254,7 +260,7 @@ func conferirDispositivo(memo string, p *ImputacaoProposta) {
 	if p.Inciso != "" {
 		re := regexp.MustCompile(`(?i)(\binc(iso)?\.?\s*` + regexp.QuoteMeta(p.Inciso) + `\b|\bart(igo)?\.?\s*` + strconv.Itoa(p.Artigo) + `\s*,\s*` + regexp.QuoteMeta(p.Inciso) + `\b)`)
 		if !reRomano.MatchString(p.Inciso) || !re.MatchString(memo) {
-			p.Pendencias = append(p.Pendencias, "Inciso não confirmado no memorando; confira o dispositivo.")
+			p.Pendencias = append(p.Pendencias, PendenciaInciso)
 			p.Inciso = ""
 		}
 	}

@@ -189,7 +189,16 @@ func perguntaImputacoes(r analise.PropostaDelimitacaoPADS, ant workflow.Resposta
 	pg.Campos = append(pg.Campos, campo)
 
 	add := func(id, titulo string, desc []string, fontes []workflow.Fonte, alertas []string, conduta, data, incluir string) {
-		alertas = append(append([]string(nil), alertas...), pre.alertas[id]...)
+		// A natureza vem do dispositivo escolhido no formulário (RDPM: a do
+		// artigo; Estatuto: campo próprio), então o aviso da leitura não se
+		// repete; o inciso confirmado pelo cadastro também não.
+		var ficam []string
+		for _, a := range alertas {
+			if a != pendNatureza && !contemTexto(pre.suprimir[id], a) {
+				ficam = append(ficam, a)
+			}
+		}
+		alertas = append(ficam, pre.alertas[id]...)
 		if msg, ok := div[id]; ok {
 			alertas = append(alertas, msg)
 		}
@@ -229,7 +238,7 @@ func perguntaImputacoes(r analise.PropostaDelimitacaoPADS, ant workflow.Resposta
 		if k <= len(pre.extras) {
 			x := pre.extras[k-1]
 			add(id, "Enquadramento do cadastro sem correspondência no Memorando",
-				[]string{"Informado no cadastro, no " + rotuloFato(x.Fato) + ". A IA não encontrou no Memorando imputação com este dispositivo: " +
+				[]string{"Informado no cadastro, no " + rotuloFato(x) + ". A IA não encontrou no Memorando imputação com este dispositivo: " +
 					"confira no Memorando se ela consta da acusação; se não constar, não a inclua."},
 				nil, nil, x.Fato.Resumo, x.Fato.Data, "sim")
 			continue
@@ -397,4 +406,13 @@ func montarObjeto(r analise.PropostaObjetoSR, resp workflow.Resposta) (*sr.Objet
 	}
 	o, err := sr.NovoObjeto(resp.Valor("portaria"), fatos, pessoas, sind)
 	return o, nomes, err
+}
+
+func contemTexto(xs []string, s string) bool {
+	for _, x := range xs {
+		if x == s {
+			return true
+		}
+	}
+	return false
 }

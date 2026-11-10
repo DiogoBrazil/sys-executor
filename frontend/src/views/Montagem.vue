@@ -46,6 +46,15 @@ function doServidor(c: Cadastro): Local {
     l.acusadoId = id;
   }
   if (l.tipo === "PADS" && l.fatos.length === 0) l.fatos.push({ id: novoId(), resumo: "", data: "", linhas: [] });
+  // Depoimento sem pessoa (o nome ainda não tinha sido digitado quando o
+  // cadastro foi salvo): volta com uma pessoa em branco, para os campos.
+  for (const p of l.pecas) {
+    if (p.tipo === "DEPOIMENTO" && p.pessoaIds.length === 0) {
+      const id = novoId();
+      l.pessoas.push({ id, nome: "", postoGrad: "", grafias: "", crianca: false });
+      p.pessoaIds = [id];
+    }
+  }
   return l;
 }
 
@@ -146,10 +155,22 @@ function novoDepoimento() {
   const papel = "TESTEMUNHA";
   novaPeca("DEPOIMENTO", { papel, pessoaIds: [novaPessoa().id] });
 }
+// Reaproveitar uma pessoa já cadastrada (outra oitiva; na SR, sindicado ou
+// ofendido da Portaria). "" volta a ser uma pessoa nova, em branco.
 function trocarDepoente(p: PecaCadastro, id: string) {
-  p.pessoaIds = id === "nova" ? [novaPessoa().id] : id ? [id] : [];
+  p.pessoaIds = id ? [id] : [novaPessoa().id];
   marcar();
 }
+function compartilhada(id: string, p: PecaCadastro): boolean {
+  return local.value.pecas.some((x) => x !== p && x.pessoaIds.includes(id)) ||
+    local.value.sindicados.includes(id) || local.value.ofendidos.includes(id);
+}
+const rotuloPessoa = (ps: PessoaLocal) => [ps.postoGrad, ps.nome].map((x) => x.trim()).filter(Boolean).join(" ");
+function opcoesReuso(p: PecaCadastro): PessoaLocal[] {
+  const atual = p.pessoaIds[0] ?? "";
+  return depoentes.value.filter((ps) => ps.nome.trim() && (ps.id !== atual || compartilhada(atual, p)));
+}
+const valorReuso = (p: PecaCadastro) => (p.pessoaIds[0] && compartilhada(p.pessoaIds[0], p) ? p.pessoaIds[0] : "");
 function acrescentarEnvolvido(lista: "sindicados" | "ofendidos") {
   local.value[lista].push(novaPessoa().id);
   if (lista === "ofendidos") local.value.semOfendido = false;
@@ -310,7 +331,7 @@ function descricaoPeca(p: PecaCadastro): string {
     <!-- Depoimentos -->
     <div v-if="atual === 'depoimentos'" class="corpo">
       <p class="ajuda">
-        Cada oitiva é uma peça. A mesma pessoa pode ter mais de uma oitiva: escolha-a de novo como depoente.
+        Cada oitiva é uma peça. Digite o posto e o nome de quem depôs. Se a mesma pessoa já foi cadastrada (outra oitiva<template v-if="local.tipo === 'SR'">, sindicado ou ofendido</template>), escolha-a em "Já cadastrada em outra parte?".
         <template v-if="local.tipo === 'PADS'">O interrogatório do acusado entra em "Outros documentos".</template>
       </p>
       <section v-for="(p, i) in doTipo('DEPOIMENTO')" :key="p.id" class="bloco" data-teste="depoimento">
@@ -319,17 +340,19 @@ function descricaoPeca(p: PecaCadastro): string {
           <legend>Papel do depoente</legend>
           <label v-for="o in papeis" :key="o.id"><input v-model="p.papel" type="radio" :value="o.id" :data-teste="'papel-' + i + '-' + o.id" @change="marcar" /> {{ o.rotulo }}</label>
         </fieldset>
-        <label>Depoente
-          <select :value="p.pessoaIds[0] ?? ''" :data-teste="'depoente-' + i" @change="trocarDepoente(p, ($event.target as HTMLSelectElement).value)">
-            <option value="">Escolha…</option>
-            <option v-for="ps in depoentes" :key="ps.id" :value="ps.id">{{ ps.nome || "(pessoa sem nome)" }}</option>
-            <option value="nova">Outra pessoa…</option>
-          </select>
-        </label>
         <div v-if="pessoa(p.pessoaIds[0])" class="linha2">
-          <label>Posto/graduação (se militar) <input v-model="pessoa(p.pessoaIds[0])!.postoGrad" @input="marcar" /></label>
+          <label>Posto/graduação (se militar) <input v-model="pessoa(p.pessoaIds[0])!.postoGrad" :data-teste="'depoente-posto-' + i" @input="marcar" /></label>
           <label class="largo">Nome do depoente <input v-model="pessoa(p.pessoaIds[0])!.nome" :data-teste="'depoente-nome-' + i" @input="marcar" /></label>
         </div>
+        <label v-if="opcoesReuso(p).length" class="reuso">Já cadastrada em outra parte? (opcional)
+          <select :value="valorReuso(p)" :data-teste="'depoente-' + i" @change="trocarDepoente(p, ($event.target as HTMLSelectElement).value)">
+            <option value="">Não: é a pessoa digitada acima</option>
+            <option v-for="ps in opcoesReuso(p)" :key="ps.id" :value="ps.id">Sim: {{ rotuloPessoa(ps) }}</option>
+          </select>
+        </label>
+        <p v-if="valorReuso(p)" class="ajuda" :data-teste="'depoente-reuso-' + i">
+          Mesma pessoa de outra parte do cadastro: o que você alterar no nome ou no posto vale para as duas.
+        </p>
         <label>Data da oitiva (opcional) <input v-model="p.data" placeholder="DD/MM/AAAA" @input="marcar" /></label>
         <ArquivosPeca :peca="p" :ocupado="estado.ocupado" :teste="'arq-dep-' + i"
           :documentos="documentosSei" @anexar="anexar(p)" @anexar-sei="(d) => anexarSei(p, d)" @remover="(a) => remover(p, a)" @mover="(a, d) => mover(p, a, d)" />

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -66,15 +67,26 @@ func fontesDe(d *Dados, s string) []workflow.Fonte {
 	if d.Autos == nil {
 		return nil
 	}
+	// Entre as palavras, qualquer espaçamento: o item junta as palavras com
+	// um espaço, e a página pode ter espaços duplos ou quebra de linha.
+	ws := strings.Fields(s)
+	if len(ws) == 0 {
+		return nil
+	}
+	for i, w := range ws {
+		ws[i] = regexp.QuoteMeta(w)
+	}
+	re := regexp.MustCompile(strings.Join(ws, `\s+`))
 	var fs []workflow.Fonte
 	for _, pg := range d.Autos.Paginas {
-		i := strings.Index(pg.Texto, s)
-		if i < 0 {
+		loc := re.FindStringIndex(pg.Texto)
+		if loc == nil {
 			continue
 		}
-		ini := utf8.RuneCountInString(pg.Texto[:i])
+		ini := utf8.RuneCountInString(pg.Texto[:loc[0]])
+		trecho := pg.Texto[loc[0]:loc[1]]
 		fs = append(fs, workflow.Fonte{Rotulo: fmt.Sprintf("pág. %d", pg.Numero), Pagina: pg.Numero,
-			Inicio: ini, Fim: ini + utf8.RuneCountInString(s), Trecho: s})
+			Inicio: ini, Fim: ini + utf8.RuneCountInString(trecho), Trecho: trecho})
 		if len(fs) == maxFontesPorItem {
 			break
 		}

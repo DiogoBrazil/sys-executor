@@ -30,12 +30,25 @@ type Mapa struct {
 	liberados map[string]bool  // chaves que o usuário disse não serem dado pessoal
 	re        *regexp.Regexp   // alternância das chaves (refeita quando surge chave nova)
 	ancorados []*regexp.Regexp // cada chave ancorada, da mais longa à mais curta (2ª tentativa)
+	// Nomes de pessoa de onde saem os pedaços ocultados por derivação.
+	origens []origem
+	fraca   map[string]bool // chaves de palavra solta derivada (fora da prova de resíduo)
+	semDono map[int]bool    // números de pedaços comuns a mais de uma pessoa
+}
+
+// origem: nome de pessoa registrado. isolar diz se as palavras soltas dele
+// também são ocultadas (cadastro e detecção com âncora; não o que o usuário
+// digitou para ocultar, que pode não ser nome de pessoa).
+type origem struct {
+	forma  string
+	isolar bool
 }
 
 // NovoMapa cria um mapa vazio.
 func NovoMapa() *Mapa {
 	return &Mapa{marcador: map[string]string{}, forma: map[string]string{}, pessoa: map[string]int{},
-		variante: map[int]int{}, conta: map[Tipo]int{}, chave: map[string]Tipo{}, liberados: map[string]bool{}}
+		variante: map[int]int{}, conta: map[Tipo]int{}, chave: map[string]Tipo{}, liberados: map[string]bool{},
+		fraca: map[string]bool{}, semDono: map[int]bool{}}
 }
 
 // Aprender detecta dados pessoais no texto e os registra.
@@ -46,6 +59,7 @@ func (m *Mapa) Aprender(texto string) {
 	for _, a := range ach {
 		m.registrar(a.tipo, a.forma)
 		if a.tipo == Pessoa {
+			m.origens = append(m.origens, origem{a.forma, true})
 			// A mesma pessoa em maiúsculas (cabeçalhos e assinaturas).
 			if up := strings.ToUpper(a.forma); up != a.forma && strings.Contains(texto, up) {
 				m.registrar(Pessoa, up)
@@ -72,6 +86,7 @@ func (m *Mapa) AcrescentarNomes(itens []string) {
 		m.registrar(tp, s)
 		if tp == Pessoa {
 			m.registrar(Pessoa, strings.ToUpper(s))
+			m.origens = append(m.origens, origem{s, false})
 		}
 	}
 	m.re = nil
@@ -89,6 +104,7 @@ func (m *Mapa) CadastrarPessoa(nome string, grafias []string) {
 	defer m.mu.Unlock()
 	m.registrar(Pessoa, nome)
 	m.registrar(Pessoa, strings.ToUpper(nome))
+	m.origens = append(m.origens, origem{nome, true})
 	n := m.pessoa[chavePessoa(nome)]
 	for _, g := range grafias {
 		g = strings.Join(strings.Fields(g), " ")
@@ -100,6 +116,7 @@ func (m *Mapa) CadastrarPessoa(nome string, grafias []string) {
 		}
 		m.registrar(Pessoa, g)
 		m.registrar(Pessoa, strings.ToUpper(g))
+		m.origens = append(m.origens, origem{g, true})
 	}
 	m.re = nil
 }
@@ -155,9 +172,11 @@ type Resumo struct {
 func (m *Mapa) Resumir() Resumo {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	r := Resumo{Pessoas: m.pessoas, Formas: len(m.marcador), PorTipo: map[Tipo]int{}}
-	if m.pessoas > 0 {
-		r.PorTipo[Pessoa] = m.pessoas
+	// Pedaço comum a duas pessoas ganha número próprio, mas não é outra pessoa.
+	np := m.pessoas - len(m.semDono)
+	r := Resumo{Pessoas: np, Formas: len(m.marcador), PorTipo: map[Tipo]int{}}
+	if np > 0 {
+		r.PorTipo[Pessoa] = np
 	}
 	for tp, n := range m.conta {
 		r.PorTipo[tp] = n
@@ -208,8 +227,12 @@ func padraoDaChave(k string) string {
 }
 
 func (m *Mapa) regex() *regexp.Regexp {
-	if m.re != nil || len(m.chave) == 0 {
+	if m.re != nil {
 		return m.re
+	}
+	m.derivar()
+	if len(m.chave) == 0 {
+		return nil
 	}
 	ks := make([]string, 0, len(m.chave))
 	for k := range m.chave {
@@ -433,4 +456,110 @@ func (m *Mapa) restaurar(texto string, escapar func(string) string) (string, err
 		return "", ErrMarcador{Marcadores: ruins}
 	}
 	return saida, nil
+}
+
+// derivar registra os pedaços dos nomes de pessoa conhecidos, para que o
+// acusado citado só pelos sobrenomes ("Beltrano da Costa"), pelo prenome e
+// o último sobrenome ("Fulano Costa") ou por uma palavra só ("Costa") também
+// seja ocultado. Antes, o pedaço não era trocado e também não ia à revisão.
+//
+//   - Pedaço de uma só pessoa vira variante dela ([PESSOA-01.3]): a IA
+//     continua sabendo de quem se trata.
+//   - Pedaço comum a duas pessoas (irmãos com o mesmo sobrenome) ganha
+//     número próprio: é ocultado, sem atribuir a ninguém.
+//   - Palavra solta só com inicial maiúscula (regra de aceitavel), com três
+//     letras ou mais, fora das paradas; e nunca do que o usuário digitou
+//     para ocultar.
+//
+// Chamado com m.mu travado, antes de montar a alternância.
+func (m *Mapa) derivar() {
+	if len(m.origens) == 0 {
+		return
+	}
+	donos := map[string]map[int]bool{}
+	formaDe := map[string]string{}
+	isolada := map[string]bool{}
+	for _, o := range m.origens {
+		n, ok := m.pessoa[chavePessoa(o.forma)]
+		if !ok {
+			continue
+		}
+		for _, f := range fragmentos(o.forma, o.isolar) {
+			k := chaveNormal(f)
+			if k == "" {
+				continue
+			}
+			if donos[k] == nil {
+				donos[k] = map[int]bool{}
+				formaDe[k] = f
+			}
+			donos[k][n] = true
+			if !strings.Contains(k, " ") {
+				isolada[k] = true
+			}
+		}
+	}
+	ks := make([]string, 0, len(donos))
+	for k := range donos {
+		if _, ok := m.chave[k]; !ok {
+			ks = append(ks, k)
+		}
+	}
+	sort.Strings(ks) // numeração estável
+	for _, k := range ks {
+		f := formaDe[k]
+		cp := chavePessoa(f)
+		_, tinha := m.pessoa[cp]
+		if len(donos[k]) == 1 && !tinha {
+			for n := range donos[k] {
+				m.pessoa[cp] = n
+			}
+		}
+		m.registrar(Pessoa, f)
+		if len(donos[k]) > 1 && !tinha {
+			m.semDono[m.pessoa[cp]] = true
+		}
+		if isolada[k] {
+			m.fraca[k] = true
+		}
+	}
+}
+
+// fragmentos de um nome: os trechos contínuos com duas palavras de nome ou
+// mais ("Beltrano da Costa"), os pares na ordem ("Fulano Costa") e, com
+// isolar, as palavras soltas ("Costa").
+func fragmentos(nome string, isolar bool) []string {
+	ws := strings.Fields(nome)
+	var idx []int // posições das palavras de nome
+	for i, w := range ws {
+		if !eConector(w) && !eConector(strings.ToLower(w)) {
+			idx = append(idx, i)
+		}
+	}
+	if len(idx) < 2 {
+		return nil
+	}
+	var out []string
+	for a := 0; a < len(idx); a++ {
+		for b := a + 1; b < len(idx); b++ {
+			if a != 0 || b != len(idx)-1 { // o nome inteiro já está registrado
+				out = append(out, strings.Join(ws[idx[a]:idx[b]+1], " "))
+			}
+			if idx[b] > idx[a]+1 { // par sem o que há entre eles ("Beltrano Costa")
+				out = append(out, ws[idx[a]]+" "+ws[idx[b]])
+			}
+		}
+	}
+	if isolar {
+		for _, i := range idx {
+			w := ws[i]
+			lw := strings.ToLower(w)
+			if utf8.RuneCountInString(w) < 3 || paradas[lw] || paradas[semAcento(lw)] || reRomano.MatchString(w) ||
+				ruido(w) || strings.IndexFunc(w, unicode.IsLetter) < 0 {
+				continue
+			}
+			out = append(out, w)
+		}
+	}
+	return out
 }

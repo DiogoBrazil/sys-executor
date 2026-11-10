@@ -2,9 +2,9 @@
 
 > **Comece por aqui.** Ponto de entrada para retomar o trabalho em qualquer máquina.
 >
-> - **Atualizado em:** 10/11/2026, depois da etapa 7 do plano D-11 (commit `0579327`) e deste guia.
+> - **Atualizado em:** 10/11/2026 (tarde), depois da etapa 7 do plano D-11 (commit `0579327`). Decisão do usuário: **sem mais bench**; os testes são manuais, no `.exe` (§3, §6.2).
 > - **Branch:** `add-mode-apikey-oauth`. O push é feito pelo usuário. Não há merge com a `main`.
-> - **Em uma linha:** as etapas 0 a 8 do plano D-11 estão **implementadas**. Para **concluir** o D-11 faltam os testes manuais do usuário (§6.1), uma bateria do bench (§6.2) e algumas decisões dele (§6.3).
+> - **Em uma linha:** as etapas 0 a 8 do plano D-11 estão **implementadas**. Para **concluir** o D-11 faltam os testes manuais do usuário (§6.1) e algumas decisões dele (§6.3).
 
 ---
 
@@ -25,10 +25,10 @@ O processamento para em **"Consultando fontes jurídicas" (TAR-004)**, que é o 
 | ChatGPT no app (login, modelo, PADS até TAR-004) | ✅ | ✅ 09/11/2026, conta Plus, `gpt-6-luna` |
 | Cadastro de peças PADS | ✅ | ✅ 09/11/2026, com ChatGPT |
 | Cadastro de peças SR | ✅ | ❌ **pendente** (§6.1-B) |
-| SEI com seleção no computador (etapa 7) | ✅ CAD-SEI-01 (simulado, pdfium real) | ❌ **pendente** (§6.1-A) |
+| SEI com seleção no computador (etapa 7) | ✅ CAD-SEI-01 (simulado, pdfium real) | ✅ 10/11/2026, processo real, ChatGPT, até TAR-004 |
 | Gemini no app, de ponta a ponta | ✅ | ⚠️ **parcial**: a cota gratuita acabou no teste de 09/11/2026. A conta está no nível pago desde 10/11 (§6.1-C) |
 | Bench Gemini `gemini-3.6-flash` (casos sintéticos) | ✅ dentro dos limiares; vazamento 0 | — |
-| Bench ChatGPT `gpt-6-luna` | ⚠️ abaixo dos limiares de JSON 1ª e de resultado; vazamento 0 | Falta repetir a bateria depois da mudança 1(a) (§6.2) |
+| Bench ChatGPT `gpt-6-luna` | ⚠️ abaixo dos limiares de JSON 1ª e de resultado; vazamento 0 | Bench encerrado por decisão do usuário (§6.2); a qualidade é avaliada nos testes manuais |
 | Barreira de privacidade e métrica de vazamento | ✅ 0 nomes em todos os pedidos, nos dois provedores e nas três entradas | — |
 
 ---
@@ -64,6 +64,10 @@ O processamento para em **"Consultando fontes jurídicas" (TAR-004)**, que é o 
 - **Máquina do usuário:** **não rodar GPU/Vulkan**, que já derrubou a máquina. Use só a CPU; o Chrome de teste roda com `--disable-gpu`.
 - **Prompts de referência:** os golden (`internal/policy/testdata/golden`) **não podem mudar**.
 - **Ao fim de cada etapa:** atualizar este guia e o relatório da etapa.
+- **Testes (decisão de 10/11/2026):** **não rodar mais o bench** com IA real. O usuário testa manualmente. Ao terminar uma implementação ou ajuste:
+  - rodar só a verificação local, sem rede (§4.4, menos o bench real);
+  - gerar o `sys-executor.exe` na pasta de teste (§4.3);
+  - passar ao usuário um roteiro curto do que abrir e conferir. Economizar tokens: nada de baterias de testes em sequência.
 - **Bibliotecas:** consultar a documentação pelo Context7 ou pela web antes de usar uma API externa.
 
 ---
@@ -149,6 +153,7 @@ git diff --stat -- internal/policy/testdata                 # golden: vazio
 | 8 | `4ec155d` | Bench:<br>• `-provedor gemini\|chatgpt\|falso`, `-entrada memoria,monolitica,pecas`, `-max-chamadas`, `-amostras`;<br>• conta ChatGPT própria;<br>• métrica de vazamento sobre o corpo exato.<br>ADR 010, README, plano de testes §9, `sei-mapa` ampliado. | Concluída. Gemini dentro dos limiares; ChatGPT abaixo (§6.2) |
 | 7 | `0579327` | SEI com seleção no computador (opção A, E2 revisado):<br>• o PDF de todos os documentos é separado pelo carimbo;<br>• os documentos vão ao cadastro, e o usuário escolhe os de cada peça.<br>V4 §48.4 revisada; TRV-ING-008; CAD-SEI-01.<br>Na extração, pessoa sem nome é descartada, sem recusa. | Implementada; **teste real pendente** (§6.1-A) |
 | — | (este commit) | Este guia reescrito para a continuidade | — |
+| — | (não commitado) | **Ajuste da revisão de nomes**, depois do teste A de 10/11 (SEI real ok; 18 "possíveis nomes", 11 falsos). Reteste: 2 itens. 2ª rodada (título com conector, "Ver no PDF", pareamento pelo artigo, aviso de natureza, acusado com posto, "fato 1", tela de depoimentos). Ver `RELATORIO_ETAPA7_SEI.md` §6 e §7 | `.exe` gerado; **reteste do usuário pendente** |
 
 ### 5.3 Onde está cada coisa (código)
 - **Provedores de IA:**
@@ -190,7 +195,9 @@ git diff --stat -- internal/policy/testdata                 # golden: vazio
 ### 6.1 Testes manuais do usuário no Windows (bloqueiam a conclusão)
 Antes, gere o `.exe` (§4.3) e os PDFs sintéticos e copie o Tesseract (§4.2). Em *Configurações de IA*, conecte o ChatGPT e cadastre a chave do Gemini.
 
-**A. SEI real (etapa 7).** Use um processo de teste ou já encerrado.
+**A. SEI real (etapa 7).** ✅ 10/11/2026: login, download, separação (17 documentos) e sugestões corretas. A revisão de nomes trouxe muitos falsos positivos → ajuste no `internal/pseudonimo` (relatório da etapa 7, §6 e §7). ✅ Reteste: 1 item (pessoa real) na revisão, delimitação sem repetições, processamento até TAR-004 (fim previsto do D-11).
+
+Use um processo de teste ou já encerrado.
 1. Escolha PADS (ou SR) e depois **"Buscar no SEI"**. Faça o login e o 2FA e informe o processo.
 2. O app gera e baixa "Todos os documentos", como antes, e **abre o cadastro** com o aviso "separado em N documento(s)".
 3. Em cada peça, anexe os documentos em **"Documento do SEI"**. Os de tipo sugerido igual ao da peça aparecem primeiro.
@@ -209,8 +216,10 @@ Antes, gere o `.exe` (§4.3) e os PDFs sintéticos e copie o Tesseract (§4.2). 
 
 **D. Opcional:** repetir um caso com o ChatGPT `gpt-6.1-sol` (decisão do usuário: "talvez, num teste manual").
 
-### 6.2 Bench pendente (só casos sintéticos)
-- **Repetir a bateria completa do ChatGPT** depois da mudança 1(a) (pessoa sem nome descartada). Na conferência rápida do pads-01, o JSON 1ª ficou em 7/8. Registre o resultado no `RELATORIO_ETAPA8_BENCH.md`.
+### 6.2 Bench — encerrado (decisão do usuário, 10/11/2026)
+> O usuário decidiu não rodar mais o bench, já feito nas duas máquinas. Os limiares abaixo ficam como referência; a avaliação segue pelos testes manuais (§6.1). O `-provedor falso` continua na verificação local, porque não usa rede.
+
+- ~~**Repetir a bateria completa do ChatGPT**~~ (não será feito) depois da mudança 1(a) (pessoa sem nome descartada). Na conferência rápida do pads-01, o JSON 1ª ficou em 7/8. Registre o resultado no `RELATORIO_ETAPA8_BENCH.md`.
   ```bash
   S=/tmp/bench && mkdir -p $S
   go run ./cmd/bench -provedor chatgpt -modelo gpt-6-luna -entrada monolitica,pecas -max-chamadas 120 -saida $S/chatgpt.md

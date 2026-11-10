@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/DiogoBrazil/sys-executor/internal/analise"
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
@@ -163,6 +165,15 @@ func mesmaPessoa(a, b string) bool {
 	if len(ta) == 0 || len(tb) == 0 {
 		return false
 	}
+	// Palavras grudadas pela leitura ("DACRUZ" = "DA CRUZ"): as letras do
+	// nome mais curto aparecem, na ordem, dentro do mais longo.
+	ja, jb := juntarNome(a), juntarNome(b)
+	if len(ja) > len(jb) {
+		ja, jb = jb, ja
+	}
+	if len(ja) >= 6 && strings.Contains(jb, ja) {
+		return true
+	}
 	if len(ta) > len(tb) {
 		ta, tb = tb, ta
 	}
@@ -178,9 +189,25 @@ func mesmaPessoa(a, b string) bool {
 	return true
 }
 
+// juntarNome: as palavras do nome, sem espaços, sem números, sem "mat."/
+// "matrícula" e sem marcas de mascaramento.
+func juntarNome(s string) string {
+	var b strings.Builder
+	for _, t := range texto.Termos(s) {
+		if t == "mat" || t == "matricula" || strings.IndexFunc(t, unicode.IsDigit) >= 0 {
+			continue
+		}
+		b.WriteString(t)
+	}
+	return b.String()
+}
+
 func termosNome(s string) []string {
 	var out []string
 	for _, t := range texto.Termos(s) {
+		if t == "mat" || t == "matricula" || strings.IndexFunc(t, unicode.IsDigit) >= 0 {
+			continue // "Mat. 100…" lido junto com o nome
+		}
 		if len([]rune(t)) > 2 { // sem "de", "da", "pm"…
 			out = append(out, t)
 		}
@@ -196,7 +223,8 @@ func nomeComPosto(ps workflow.PessoaCadastro) string {
 // fato de origem.
 type enquadramentoCadastrado struct {
 	workflow.EnquadramentoCadastro
-	Fato workflow.FatoCadastro
+	Fato    workflow.FatoCadastro
+	NumFato int // posição do fato no cadastro (1, 2…), para o rótulo
 }
 
 func enquadramentosDoCadastro(cad *workflow.Cadastro) []enquadramentoCadastrado {
@@ -204,16 +232,18 @@ func enquadramentosDoCadastro(cad *workflow.Cadastro) []enquadramentoCadastrado 
 		return nil
 	}
 	var out []enquadramentoCadastrado
-	for _, f := range cad.Fatos {
+	for i, f := range cad.Fatos {
 		for _, e := range f.Enquadramentos {
-			out = append(out, enquadramentoCadastrado{EnquadramentoCadastro: e, Fato: f})
+			out = append(out, enquadramentoCadastrado{EnquadramentoCadastro: e, Fato: f, NumFato: i + 1})
 		}
 	}
 	return out
 }
 
-func rotuloFato(f workflow.FatoCadastro) string {
-	s := f.ID
+// rotuloFato: "fato 1" (a posição; o ID interno cresce a cada fato criado).
+func rotuloFato(x enquadramentoCadastrado) string {
+	f := x.Fato
+	s := fmt.Sprintf("fato %d", x.NumFato)
 	if f.Resumo != "" {
 		s += " (" + f.Resumo + ")"
 	}
@@ -280,13 +310,21 @@ func perguntaDeclaradas(tipo workflow.Tipo, d *Dados) workflow.Pergunta {
 type conferenciaCadastro struct {
 	padroes        map[string]string   // valores iniciais por campo (o usuário confere)
 	alertas        map[string][]string // por imputação
+	suprimir       map[string][]string // pendências da leitura já resolvidas pelo cadastro, por imputação
 	alertasAcusado []string
 	acusado        string // valor inicial do acusado ("" = o lido pela IA)
 	extras         []enquadramentoCadastrado
 }
 
+// Pendências da leitura do Memorando que o formulário ou o cadastro já
+// resolvem (V4: não repetir pergunta já respondida).
+const (
+	pendInciso   = analise.PendenciaInciso
+	pendNatureza = analise.PendenciaNatureza
+)
+
 func conferirComCadastro(r analise.PropostaDelimitacaoPADS, cad *workflow.Cadastro) conferenciaCadastro {
-	out := conferenciaCadastro{padroes: map[string]string{}, alertas: map[string][]string{}}
+	out := conferenciaCadastro{padroes: map[string]string{}, alertas: map[string][]string{}, suprimir: map[string][]string{}}
 	if cad == nil {
 		return out
 	}
@@ -296,7 +334,10 @@ func conferirComCadastro(r analise.PropostaDelimitacaoPADS, cad *workflow.Cadast
 		case 0:
 			out.acusado = ps.Nome
 		case 1:
-			if !mesmaPessoa(ps.Nome, r.Acusados[0].Nome) {
+			if mesmaPessoa(ps.Nome, r.Acusados[0].Nome) {
+				// A mesma pessoa: vale a grafia do cadastro, com o posto.
+				out.acusado = nomeComPosto(ps)
+			} else {
 				out.alertasAcusado = append(out.alertasAcusado, fmt.Sprintf(
 					"O acusado informado no cadastro (%s) não coincide com o lido no Memorando (%s). Confira no Memorando.",
 					nomeComPosto(ps), strings.TrimSpace(r.Acusados[0].PostoGraduacao+" "+r.Acusados[0].Nome)))
@@ -320,6 +361,16 @@ func conferirComCadastro(r analise.PropostaDelimitacaoPADS, cad *workflow.Cadast
 		return out
 	}
 	usado := make([]bool, len(restantes))
+	// Imputações que citam só o artigo, por diploma e artigo (pareamento
+	// pelo artigo só quando não há ambiguidade).
+	soArtigo := map[string]int{}
+	for _, im := range r.Imputacoes {
+		if _, ok := citadoNoMemorando(im); !ok && im.Inciso == "" {
+			if dip := enquadramento.DiplomaDoCitado(im.Diploma, im.Artigo); dip != "" {
+				soArtigo[dip+"-"+strconv.Itoa(im.Artigo)]++
+			}
+		}
+	}
 	for _, im := range r.Imputacoes {
 		citado, ok := citadoNoMemorando(im)
 		achou := -1
@@ -327,6 +378,27 @@ func conferirComCadastro(r analise.PropostaDelimitacaoPADS, cad *workflow.Cadast
 			if ok && !usado[i] && x.DispositivoID == citado.ID {
 				achou = i
 				break
+			}
+		}
+		if achou < 0 && !ok && im.Inciso == "" {
+			if dip := enquadramento.DiplomaDoCitado(im.Diploma, im.Artigo); dip != "" && soArtigo[dip+"-"+strconv.Itoa(im.Artigo)] == 1 {
+				cand := -1
+				for i, x := range restantes {
+					if d, ok := enquadramento.PorID(x.DispositivoID); ok && !usado[i] && d.Diploma == dip && d.Artigo == im.Artigo {
+						if cand >= 0 {
+							cand = -2 // dois do mesmo artigo no cadastro: o usuário escolhe
+							break
+						}
+						cand = i
+					}
+				}
+				if cand >= 0 {
+					achou = cand
+					d, _ := enquadramento.PorID(restantes[cand].DispositivoID)
+					out.suprimir[im.ID] = append(out.suprimir[im.ID], pendInciso)
+					out.alertas[im.ID] = append(out.alertas[im.ID], fmt.Sprintf(
+						"O Memorando cita só o art. %d; o inciso %s é o informado no seu cadastro. Confira.", im.Artigo, d.Inciso))
+				}
 			}
 		}
 		if achou < 0 {

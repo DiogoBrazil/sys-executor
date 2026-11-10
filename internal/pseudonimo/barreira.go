@@ -19,7 +19,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"unicode"
 )
 
 // ErrVazamento: restou dado pessoal conhecido no conteúdo a enviar. O envio
@@ -64,7 +63,10 @@ var marcadoresDaInstrucao = func() map[string]bool {
 func (m *Mapa) residuos(t string, marcadores bool) []Tipo {
 	vistos := map[Tipo]bool{}
 	m.varrer(t, func(_, _ int, k string) {
-		if tp, ok := m.chave[k]; ok {
+		// Palavra solta derivada de um nome ("Costa", de "Fulano da Costa")
+		// é ocultada, mas não serve de prova de vazamento: pode ser palavra
+		// comum nas instruções ou no schema, e bloquear ali não teria saída.
+		if tp, ok := m.chave[k]; ok && !m.fraca[k] {
 			vistos[tp] = true
 		}
 	})
@@ -92,10 +94,11 @@ func (m *Mapa) residuos(t string, marcadores bool) []Tipo {
 	return out
 }
 
-// Possível nome sem âncora: duas a seis palavras com inicial maiúscula na
-// mesma linha (conectores permitidos). Sequências inteiras em maiúsculas só
-// contam quando a linha também tem minúsculas (títulos e cabeçalhos não).
-var reCandidato = regexp.MustCompile(palavra + `(?:[ \t]+(?:` + conector + `[ \t]+)?` + palavra + `){1,5}`)
+// Possível nome sem âncora: duas a dez palavras com inicial maiúscula na
+// mesma linha (conectores permitidos), depois divididas pelas paradas e pelo
+// "e" entre dois nomes. Sequências inteiras em maiúsculas só contam quando a
+// linha também tem minúsculas (títulos e cabeçalhos não).
+var reCandidato = regexp.MustCompile(palavra + `(?:[ \t]+(?:` + conector + `[ \t]+)?` + palavra + `){1,9}`)
 
 // Suspeitos devolve, sem repetição e na ordem em que aparecem, os possíveis
 // nomes do texto que não estão no mapa nem foram liberados pelo usuário.
@@ -110,10 +113,18 @@ func (m *Mapa) suspeitos(t string) []string {
 	var out []string
 	vistos := map[string]bool{}
 	for _, linha := range strings.Split(t, "\n") {
-		temMinuscula := strings.IndexFunc(linha, unicode.IsLower) >= 0
+		temMinuscula := temMinusculaForaConector(linha)
+		linha = mascararQualificacao(linha)
 		for _, ix := range reCandidato.FindAllStringIndex(linha, -1) {
-			for _, seg := range segmentosDeNome(linha[ix[0]:ix[1]]) {
-				if !temMinuscula && seg == strings.ToUpper(seg) {
+			cand := linha[ix[0]:ix[1]]
+			if fraseNaoNome(cand) {
+				continue
+			}
+			for _, seg := range segmentosDeNome(cand) {
+				if !temMinuscula && !temMinusculaForaConector(seg) {
+					continue
+				}
+				if fraseNaoNome(seg) {
 					continue
 				}
 				k := chaveNormal(seg)
@@ -129,7 +140,10 @@ func (m *Mapa) suspeitos(t string) []string {
 }
 
 // conhecida: a chave já é dado registrado, foi liberada, ou está contida
-// numa chave registrada ou liberada (pedaço de um nome já decidido).
+// numa chave registrada (pedaço de um dado já ocultado; os pedaços de nome
+// de pessoa são ocultados pela derivação, ver derivar). A liberação vale só
+// para a frase exata: liberar "Escola Estadual Fulano Silva" não libera
+// "Fulano Silva" sozinho.
 func (m *Mapa) conhecida(k string) bool {
 	if _, ok := m.chave[k]; ok || m.liberados[k] {
 		return true
@@ -139,17 +153,13 @@ func (m *Mapa) conhecida(k string) bool {
 			return true
 		}
 	}
-	for c := range m.liberados {
-		if strings.Contains(" "+c+" ", " "+k+" ") {
-			return true
-		}
-	}
 	return false
 }
 
 // segmentosDeNome divide a sequência nas palavras que não são nome (lista
-// de paradas: instituição, cargo, documento, lugar, mês…) e devolve os
-// pedaços com ao menos duas palavras de nome.
+// de paradas: instituição, cargo, documento, lugar, mês…; números romanos;
+// ruído de OCR) e devolve os pedaços com ao menos duas palavras de nome,
+// separando "Fulano Silva e Beltrano Costa" em dois.
 func segmentosDeNome(s string) []string {
 	var out []string
 	var atual []string
@@ -159,13 +169,13 @@ func segmentosDeNome(s string) []string {
 			atual = atual[:len(atual)-1]
 		}
 		if nomes >= 2 {
-			out = append(out, strings.Join(atual, " "))
+			out = append(out, dividirE(strings.Join(atual, " "))...)
 		}
 		atual, nomes = nil, 0
 	}
 	for _, w := range strings.Fields(s) {
 		lw := strings.ToLower(w)
-		if paradas[lw] || paradas[semAcento(lw)] || reRomano.MatchString(w) {
+		if paradas[lw] || paradas[semAcento(lw)] || reRomano.MatchString(w) || ruido(w) {
 			fechar()
 			continue
 		}

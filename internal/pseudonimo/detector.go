@@ -62,6 +62,8 @@ const (
 		`Cap|CAP|Capit[ãa]o|CAPIT[ÃA]O|[12][º°oª]?[ \t]?Ten|[12][º°oª]?[ \t]?TEN|Ten|TEN|Tenente|TENENTE|Asp(?:[ \t]?Of)?|ASP(?:[ \t]?OF)?|Aspirante|ASPIRANTE|` +
 		`Subten|SUBTEN|Subtenente|SUBTENENTE|ST|[123][º°oª]?[ \t]?Sgt|[123][º°oª]?[ \t]?SGT|Sgt|SGT|Sargento|SARGENTO|Cb|CB|Cabo|CABO|Sd|SD|Soldado|SOLDADO)`
 	quadro = `(?:(?:QOPM|QPPM|QOBM|QPBM|QOAPM|QOEPM|QPEPM)[ \t]+)?(?:PM|BM|PMRO|BMRO|RR)?\.?`
+	// Rótulo de parente na qualificação do termo.
+	parente = `(?i:pai|m[ãa]e|genitor(?:a|es)?|filia[çc][ãa]o|c[ôo]njuge|companheir[oa]|espos[oa]|convivente)`
 	// Matrícula opcional entre o posto e o nome ("Sd PM 100012345 FULANO").
 	matEntre = `(?:(?:RE|Mat\.?|MAT\.?|[Mm]atr[íi]cula)?[ \t]*(?:n[º°o.]*[ \t]*)?(\d[\d.\-/]{3,}\d)[ \t]+)?`
 )
@@ -76,6 +78,15 @@ var (
 		`[ \t]*[:,]?[ \t]*(?:(?:o|a)[ \t]+)?(?:(?i:dr|dra|sr|sra|srta)\.?[ \t]+)?(` + nome + `)`)
 
 	reFiliacao = regexp.MustCompile(`(?i:\bfilh[oa][ \t]+de)[ \t]+(` + nome + `)(?:[ \t]+(?i:e)[ \t]+(?:(?i:de)[ \t]+)?(` + nome + `))?`)
+	// Parentes da qualificação (pai, mãe, cônjuge…). O OCR troca o ":" por
+	// ".", ";" ou "-", ou o perde. No início da linha, aceita qualquer um
+	// deles ou só o espaço; no meio da linha, exige ":", ";" ou hífen, para
+	// que "o pai Fulano" de um relato não vire âncora. O nome continua
+	// exigindo inicial maiúscula ("Mãe: não declarada" não casa).
+	reParenteLinha = regexp.MustCompile(`(?m)^[ \t]*` + parente + `[ \t]*(?:[:.;\-–][ \t]*)?(` + nome + `)`)
+	reParente      = regexp.MustCompile(`\b` + parente + `[ \t]*[:;\-–][ \t]*(` + nome + `)`)
+	reConvivio     = regexp.MustCompile(`(?i:\bcasad[oa][ \t]+com|\buni[ãa]o[ \t]+est[áa]vel[ \t]+com|\bconvive[ \t]+com|\bvive[ \t]+maritalmente[ \t]+com)` +
+		`[ \t]+(?:(?i:o|a)[ \t]+)?(?:(?i:sr|sra)\.?[ \t]+)?(` + nome + `)`)
 
 	// Bloco de assinatura: linha só com nome em maiúsculas seguida de linha
 	// com posto, cargo ou identificação.
@@ -128,7 +139,20 @@ func init() {
 		fato fatos objeto escala serviço servico instauração instauracao abertura vista prazo
 		vossa vosso senhoria excelência excelencia magnificência magnificencia fica ficam
 		estatuto policiais policial decreto-lei código codigo constituição constituicao penal civil federal
-		estadual complementar emenda normativa instrução instrucao portarias regimento interno`) {
+		estadual complementar emenda normativa instrução instrucao portarias regimento interno
+		transgressão transgressao transgressões transgressoes disciplina infração infracao infrações infracoes autos
+		escolaridade ensino fundamental médio medio superior incompleto completa incompleta analfabeto analfabeta
+		profissão profissao naturalidade nacionalidade religião religiao sexo cor raça raca
+		união uniao estável estavel solteiro solteira casado casada divorciado divorciada viúvo viuvo viúva viuva
+		separado separada filiação filiacao pai mãe mae genitor genitora genitores cônjuge conjuge companheiro companheira
+		esposa esposo convivente desconhecido desconhecida ignorado ignorada falecido falecida
+		igreja cristã crista evangélica evangelica católica catolica assembleia templo paróquia paroquia
+		escola colégio colegio municipal hospital delegacia prefeitura associação associacao sindicato
+		fazenda sítio sitio chácara chacara linha ramal rodovia distrito placa veículo veiculo motocicleta moto carro
+		caminhonete automóvel automovel honda yamaha suzuki fiat volkswagen chevrolet toyota hyundai renault nissan
+		mitsubishi peugeot citroën citroen jeep kawasaki dafra shineray haojue hilux strada palio titan biz bros
+		unisp ciop patrulha patrulhamento radiopatrulha tático tatico tática tatica força forca rotam bope choque canil
+		ronda ostensivo ostensiva guarnição guarnicao equipe`) {
 		paradas[p] = true
 	}
 }
@@ -242,8 +266,13 @@ func detectar(t string) []achado {
 				if m[2*g] < 0 {
 					continue
 				}
-				if n := aparar(t[m[2*g]:m[2*g+1]]); n != "" {
-					add(Pessoa, n, m[2*g])
+				n := aparar(t[m[2*g]:m[2*g+1]])
+				if n == "" {
+					continue
+				}
+				// "Fulano Silva e Beltrano Costa": duas pessoas, dois marcadores.
+				for _, parte := range dividirE(n) {
+					add(Pessoa, parte, m[2*g]+strings.Index(n, parte))
 				}
 			}
 		}
@@ -274,6 +303,9 @@ func detectar(t string) []achado {
 	nomes(rePosto, 2)
 	nomes(rePapel, 1)
 	nomes(reFiliacao, 1, 2)
+	nomes(reParenteLinha, 1)
+	nomes(reParente, 1)
+	nomes(reConvivio, 1)
 	nomes(reAssinatura, 1)
 	return out
 }

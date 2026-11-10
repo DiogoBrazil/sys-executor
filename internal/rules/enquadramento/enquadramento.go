@@ -190,15 +190,8 @@ var (
 // DoCitado encontra no catálogo o dispositivo que o Memorando cita (como a
 // IA o extraiu), só para conferência: nunca é proposto ao usuário.
 func DoCitado(diploma string, artigo int, inciso, alinea string) (Dispositivo, bool) {
-	dip := ""
-	switch {
-	case reRDPM.MatchString(diploma):
-		dip = RDPM
-	case reEstatuto.MatchString(diploma):
-		dip = Estatuto
-	case diploma == "" && artigo >= 15 && artigo <= 17:
-		dip = RDPM // o Memorando costuma citar só "art. 17, inciso V"
-	default:
+	dip := DiplomaDoCitado(diploma, artigo)
+	if dip == "" {
 		return Dispositivo{}, false
 	}
 	id := map[string]string{RDPM: "RDPM", Estatuto: "EST"}[dip] + "-" + strconv.Itoa(artigo) + "-" + strings.ToUpper(strings.TrimSpace(inciso))
@@ -206,4 +199,19 @@ func DoCitado(diploma string, artigo int, inciso, alinea string) (Dispositivo, b
 		id += "-" + a
 	}
 	return PorID(id)
+}
+
+// DiplomaDoCitado: RDPM, Estatuto ou "" para o diploma citado no Memorando.
+// Sem diploma, os arts. 15 a 17 são do RDPM (o Memorando costuma citar só
+// "art. 17, inciso V").
+func DiplomaDoCitado(diploma string, artigo int) string {
+	switch {
+	case reRDPM.MatchString(diploma):
+		return RDPM
+	case reEstatuto.MatchString(diploma):
+		return Estatuto
+	case diploma == "" && artigo >= 15 && artigo <= 17:
+		return RDPM
+	}
+	return ""
 }
