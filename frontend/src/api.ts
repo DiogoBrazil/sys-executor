@@ -86,6 +86,8 @@ export type { Cadastro, DispositivoVisao };
 export const cadastro = {
   salvar: (c: Cadastro): Promise<Resposta> => Tarefa.SalvarCadastro(c),
   anexar: (pecaID: string): Promise<Resposta> => Tarefa.AnexarArquivos(pecaID),
+  // Documentos separados do PDF do SEI (V4 §48.4, revisão de 10/11/2026).
+  anexarSEI: (pecaID: string, documentos: string[]): Promise<Resposta> => Tarefa.AnexarDocumentosSEI(pecaID, documentos),
   remover: (pecaID: string, arquivoID: string): Promise<Resposta> => Tarefa.RemoverArquivo(pecaID, arquivoID),
   mover: (pecaID: string, arquivoID: string, delta: number): Promise<Resposta> => Tarefa.MoverArquivo(pecaID, arquivoID, delta),
   concluir: (): Promise<Resposta> => Tarefa.ConcluirCadastro(),

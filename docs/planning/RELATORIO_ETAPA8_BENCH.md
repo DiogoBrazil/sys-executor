@@ -75,6 +75,31 @@
 - **Resultado:** varia entre rodadas no mesmo caso (pads-01 por peças: PROCEDENTE numa rodada, IMPROCEDENTE em outra).
 - **Outra recusa:** na análise, um fundamento passou dos 700 caracteres. O json_schema strict aceita o `maxLength`, mas não o impõe; quem impõe é o validador em Go.
 
+### 2.3-A ChatGPT depois da correção da mensagem do validador (10/11/2026, mesma configuração)
+| Métrica | Antes | Depois |
+|---|---|---|
+| JSON válido na 1ª tentativa | 56/76 (74%) | 57/76 (75%) |
+| Chamadas, com os reenvios | 104 | **95** (−9%) |
+| Resultado conforme gabarito | 12/18 | 11/18 |
+| Delimitação / violações / vazamento | 20/20 / 0 / 0 em 104 | 20/20 / 0 / **0 em 95** |
+
+- **O que mudou:** a mensagem nova (`extracao.go`, "a pessoa N está sem nome…") reduz os reenvios, porque o modelo passa a corrigir o que está errado.
+- **O que não mudou:** a mensagem só chega ao modelo no reenvio e **não altera a 1ª tentativa**. Eu tinha previsto melhora nesse indicador, e a previsão estava errada.
+- **Para melhorar a 1ª tentativa, há duas saídas, ambas dependentes de decisão:**
+  - instruir o modelo a listar só pessoas nomeadas, o que muda o pack da extração e **altera os golden**, hoje proibido;
+  - ou o validador **descartar**, sem recusar, a pessoa sem nome. Nada falso seria aceito, e o item sem nome seria só ignorado.
+- **Resultado abaixo do limiar:** é julgamento do modelo. O pads-01, em que a defesa admite a falta, saiu IMPROCEDENTE em várias rodadas, e o pads-03 também. Não há falha do pipeline (0 violações, delimitação 20/20). Proposta: testar outro modelo da conta (por exemplo, `gpt-6.1-sol`) ou `-pensamento high`, consumindo o limite do Plus.
+
+### 2.3-B Pessoa sem nome descartada, sem recusa (decisão 1(a) do usuário, 10/11/2026)
+- **Mudança:** o validador da extração passou a **descartar** a pessoa sem nome em vez de recusar a resposta. Nada falso é aceito; o item só é ignorado. Teste: `TestExtracaoPessoaSemNome`, sem reenvio. Golden sem diff.
+- **Conferência rápida** (ChatGPT `gpt-6-luna`, pads-01, entradas monolítica e por peças, 9 pedidos):
+  - JSON 1ª: **7/8**, contra 5/8 e 6/8 nas baterias anteriores;
+  - resultado: 2/2;
+  - vazamento: 0.
+  
+  É uma amostra só, então serve de indicação. A bateria completa fica para quando houver limite do Plus.
+- **Modelo:** o usuário decidiu não testar outro modelo agora. O `gpt-6.1-sol` talvez entre num teste manual.
+
 ### 2.4 Entrada monolítica × por peças
 | Provedor | Peças × gabarito | Delimitação | JSON 1ª | Resultado |
 |---|---|---|---|---|
@@ -103,7 +128,7 @@ Os casos sintéticos têm carimbo correto e títulos claros, que é o cenário f
 | Vitest e build do frontend | Sem mudança no frontend nesta etapa (30/30 na preparação da máquina) |
 
 ## 4. Pendências e propostas (decisão do usuário)
-1. **Mensagem do validador para pessoa sem nome** (`analise/extracao.go:223`). Proposta: separar as duas falhas, por exemplo "a pessoa N está sem nome; liste só pessoas nomeadas no documento".
+1. ~~**Mensagem do validador para pessoa sem nome**~~: **feito** em 10/11/2026, com autorização do usuário (§2.3-A). Reduziu os reenvios, mas não a 1ª tentativa. Depois, por decisão do usuário (1(a)), a pessoa sem nome passou a ser **descartada** sem recusa (§2.3-B).
    - É a causa provável da maior parte do JSON 1ª abaixo do limiar no ChatGPT.
    - Não muda as políticas, e os golden continuam iguais, mas muda o validador. **Exige autorização.**
 2. **ChatGPT abaixo do limiar** em JSON 1ª e no resultado. Depois do item 1, repetir a bateria e, se preciso, testar `-pensamento high` ou outro modelo da conta (há 8). O app não fixa modelo, e a escolha continua do usuário.

@@ -180,3 +180,40 @@ func TestJuntarPreservaOrdemETexto(t *testing.T) {
 		t.Fatalf("contar: %d %v", n, err)
 	}
 }
+
+// Separar divide o PDF por faixas, na ordem e com o texto de cada página;
+// faixa fora do documento é recusada (documentos do SEI, V4 §48.4).
+func TestSepararPorFaixas(t *testing.T) {
+	e := NovoExtrator()
+	defer e.Fechar()
+	s := e.(Separador)
+	src := pdfsint.Gerar([]pdfsint.Pagina{{Linhas: []string{"DOC A pagina um"}}, {Linhas: []string{"DOC A pagina dois"}}, {Linhas: []string{"DOC B unica"}}})
+	partes, err := s.Separar(context.Background(), src, []Faixa{{1, 2}, {3, 3}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	quer := [][]string{{"DOC A pagina um", "DOC A pagina dois"}, {"DOC B unica"}}
+	for k, parte := range partes {
+		d, err := e.Abrir(context.Background(), parte)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if d.Paginas() != len(quer[k]) {
+			t.Fatalf("parte %d: %d páginas", k, d.Paginas())
+		}
+		for i, q := range quer[k] {
+			p, err := d.Pagina(context.Background(), i)
+			var txt strings.Builder
+			for _, c := range p.Caracteres {
+				txt.WriteRune(c.Runa)
+			}
+			if err != nil || !strings.Contains(txt.String(), q) {
+				t.Fatalf("parte %d página %d: %q %v", k, i+1, txt.String(), err)
+			}
+		}
+		d.Fechar()
+	}
+	if _, err := s.Separar(context.Background(), src, []Faixa{{2, 4}}); err == nil {
+		t.Fatal("faixa fora do documento deveria falhar")
+	}
+}

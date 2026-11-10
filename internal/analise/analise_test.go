@@ -261,6 +261,27 @@ func TestExtracaoComInjecao(t *testing.T) {
 	}
 }
 
+// Pessoa sem nome é descartada sem recusar a resposta (sem reenvio) e nunca
+// entra no resultado; os demais itens valem.
+func TestExtracaoPessoaSemNome(t *testing.T) {
+	a, ps := autosTeste()
+	ponto := []map[string]any{{"alvo_id": "IMP-1", "quem": "CICLANO", "trecho_literal": "o acusado não compareceu ao quartel no dia dos fatos e que ninguém o viu na escala", "sentido": "ACUSACAO", "resumo": "testemunha afirma a ausência"}}
+	semNome := js(map[string]any{"pontos": ponto, "midias": []any{}, "fora_do_objeto": []any{},
+		"pessoas": []map[string]any{{"nome": "", "papel": "TESTEMUNHA", "militar": "INCERTO", "posto_graduacao": "", "trecho_literal": "A testemunha CICLANO declarou"}}})
+	m := &motorFalso{ctx: 16384, filas: map[string][]string{"extracao": {semNome}}}
+	r, err := ExtrairPeca(context.Background(), executor(t, m, policy.FluxoPADS), a, ps[1], congeladas,
+		[]AlvoExtracao{{"IMP-1", ""}}, nil, &Registro{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m.pedidos) != 1 {
+		t.Fatalf("pessoa sem nome não deveria provocar reenvio: %d pedidos", len(m.pedidos))
+	}
+	if len(r.Pessoas) != 0 || len(r.Pontos) != 1 {
+		t.Fatalf("pessoas %+v, pontos %d", r.Pessoas, len(r.Pontos))
+	}
+}
+
 func pontosTeste() []Ponto {
 	return []Ponto{
 		{ID: "EV-0001", Alvo: "IMP-1", Sentido: "ACUSACAO", Trecho: "o acusado não compareceu ao quartel no dia dos fatos", Pagina: 2},

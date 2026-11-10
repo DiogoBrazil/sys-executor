@@ -143,6 +143,13 @@ vi.mock("./api", () => ({
       const pecas = cad.pecas.map((p: any) => (p.id === id ? { ...p, arquivos: [...p.arquivos, { id: "ARQ-90", nome: "memorando.pdf", paginas: 3, hash: "abc", origem: "UPLOAD" }] } : p));
       return resp({ ...visaoAtual, cadastro: { ...cad, pecas }, pendenciasCadastro: [] });
     },
+    anexarSEI: (id: string, docs: string[]) => {
+      chamadas.push(`anexarSEI:${id}:${docs.join(",")}`);
+      const cad = visaoAtual.cadastro;
+      const documentosSei = visaoAtual.documentosSei.map((d: any) => (docs.includes(d.id) ? { ...d, usado: id } : d));
+      const pecas = cad.pecas.map((p: any) => (p.id === id ? { ...p, arquivos: [...p.arquivos, { id: "ARQ-91", nome: "SEI 0010000 – Memorando 101", paginas: 1, hash: "def", origem: "SEI" }] } : p));
+      return resp({ ...visaoAtual, cadastro: { ...cad, pecas }, documentosSei });
+    },
     remover: (p: string, a: string) => { chamadas.push(`remover:${p}:${a}`); return resp(visaoAtual); },
     mover: (p: string, a: string, d: number) => { chamadas.push(`mover:${p}:${a}:${d}`); return resp(visaoAtual); },
     concluir: () => { chamadas.push("concluir"); return resp(visao("VERIFICANDO")); },
@@ -216,6 +223,25 @@ describe("T02 — cadastro de peças sem credencial", () => {
 });
 
 describe("Cadastro de peças (V4 §48.4)", () => {
+  it("SEI: documentos separados do PDF são escolhidos por peça; a sugestão vem primeiro", async () => {
+    const doc = (id: string, sei: string, titulo: string, sugestao: string) => ({ id, sei, titulo, paginas: 1, sugestao, papel: "", usado: "" });
+    visaoAtual = visao("RECEBENDO_UPLOAD", { entrada: "SEI", cadastro: cadastroPADS(), pendenciasCadastro: [],
+      documentosSei: [doc("DOC-01", "0010001", "Despacho 5", "OUTRO"), doc("DOC-02", "0010000", "Memorando 101", "MEMORANDO")] });
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="aviso-sei"]').text()).toContain("2 documento(s)");
+    const sel = w.find('[data-teste="arq-memorando-sei"]');
+    const opcoes = sel.findAll("option").map((o) => o.element.value);
+    expect(opcoes).toEqual(["", "DOC-02", "DOC-01"]); // o Memorando sugerido primeiro
+    await sel.setValue("DOC-02");
+    await w.find('[data-teste="arq-memorando-anexar-sei"]').trigger("click");
+    await flushPromises();
+    expect(chamadas.at(-1)).toBe("anexarSEI:PEC-01:DOC-02");
+    expect(w.find('[data-teste="arq-memorando-arquivo"]').text()).toContain("Memorando 101");
+    // O documento escolhido sai das listas; o outro continua disponível.
+    expect(w.find('[data-teste="arq-memorando-sei"]').findAll("option").map((o) => o.element.value)).toEqual(["", "DOC-01"]);
+  });
+
   it("grava acusado e enquadramento antes de anexar; o Estatuto exige a natureza", async () => {
     visaoAtual = visao("RECEBENDO_UPLOAD", { entrada: "UPLOAD", cadastro: cadastroPADS(), pendenciasCadastro: ["Anexe o Memorando Disciplinar."] });
     const w = mount(App);

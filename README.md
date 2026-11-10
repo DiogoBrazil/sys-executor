@@ -17,6 +17,7 @@ Não há troca automática entre eles. A especificação é `docs/rules/sys-exec
   - Estatuto arts. 29 e 32, com a natureza escolhida pelo usuário.
   
   Um dispositivo diferente do citado no Memorando exige confirmação expressa (§22.1).
+- **Pelo SEI:** o app gera e baixa o PDF de todos os documentos do processo e o separa, no computador, em um documento por número SEI. Em cada peça, escolha em "Documento do SEI" os documentos que a compõem; o tipo vem sugerido pelo título. Os documentos não escolhidos não entram nos autos, não vão à IA e são apagados ao final.
 - O cadastro existe só durante a tarefa (sessão efêmera). Não há rascunho salvo.
 
 ## IA: Gemini ou ChatGPT

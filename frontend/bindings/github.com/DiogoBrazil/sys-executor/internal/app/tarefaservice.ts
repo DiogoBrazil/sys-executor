@@ -28,6 +28,16 @@ export function AnexarArquivos(pecaID: string): $CancellablePromise<$models.Resp
 }
 
 /**
+ * AnexarDocumentosSEI acrescenta à peça os documentos do SEI escolhidos
+ * (separados do PDF gerado pelo SEI; V4 §48.4, revisão de 10/11/2026).
+ */
+export function AnexarDocumentosSEI(pecaID: string, documentos: string[]): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(1923799989, pecaID, documentos).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
  * Atual devolve a tarefa atual (nula se não houver).
  */
 export function Atual(): $CancellablePromise<$models.Resposta> {

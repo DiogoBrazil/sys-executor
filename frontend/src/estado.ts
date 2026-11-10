@@ -140,6 +140,8 @@ async function comSalvar(c: Cadastro | null, cmd: () => Promise<Resposta>) {
   return executar(cmd);
 }
 export const anexarArquivos = (c: Cadastro | null, pecaID: string) => comSalvar(c, () => cadastroApi.anexar(pecaID));
+export const anexarDocumentosSEI = (c: Cadastro | null, pecaID: string, documentos: string[]) =>
+  comSalvar(c, () => cadastroApi.anexarSEI(pecaID, documentos));
 export const removerArquivo = (c: Cadastro | null, pecaID: string, arqID: string) => comSalvar(c, () => cadastroApi.remover(pecaID, arqID));
 export const moverArquivo = (c: Cadastro | null, pecaID: string, arqID: string, delta: number) =>
   comSalvar(c, () => cadastroApi.mover(pecaID, arqID, delta));

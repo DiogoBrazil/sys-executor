@@ -266,6 +266,74 @@ export class Condicao {
 }
 
 /**
+ * DocumentoSEI é um documento separado do PDF do SEI (o conteúdo fica
+ * cifrado na sessão; a interface vê só estes metadados).
+ */
+export class DocumentoSEI {
+    /**
+     * DOC-nn
+     */
+    "id": string;
+
+    /**
+     * número SEI do carimbo ("" se a página não tinha)
+     */
+    "sei": string;
+    "titulo": string;
+    "paginas": number;
+
+    /**
+     * tipo de peça sugerido pelo título (PecaMemorando…); o usuário confere
+     */
+    "sugestao": string;
+
+    /**
+     * depoimento: papel sugerido pelo título
+     */
+    "papel": string;
+
+    /**
+     * ID da peça em que foi anexado ("" = não escolhido)
+     */
+    "usado": string;
+
+    /** Creates a new DocumentoSEI instance. */
+    constructor($$source: Partial<DocumentoSEI> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("sei" in $$source)) {
+            this["sei"] = "";
+        }
+        if (!("titulo" in $$source)) {
+            this["titulo"] = "";
+        }
+        if (!("paginas" in $$source)) {
+            this["paginas"] = 0;
+        }
+        if (!("sugestao" in $$source)) {
+            this["sugestao"] = "";
+        }
+        if (!("papel" in $$source)) {
+            this["papel"] = "";
+        }
+        if (!("usado" in $$source)) {
+            this["usado"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DocumentoSEI instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DocumentoSEI {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new DocumentoSEI($$parsedSource as Partial<DocumentoSEI>);
+    }
+}
+
+/**
  * EnquadramentoCadastro: dispositivo do catálogo e, no Estatuto, a natureza.
  */
 export class EnquadramentoCadastro {
@@ -1339,6 +1407,12 @@ export class Visao {
     "cadastro": Cadastro | null;
     "pendenciasCadastro": string[];
 
+    /**
+     * DocumentosSEI: documentos separados do PDF do SEI, para o usuário
+     * escolher os de cada peça (só no computador; nunca vão à IA).
+     */
+    "documentosSei": DocumentoSEI[];
+
     /** Creates a new Visao instance. */
     constructor($$source: Partial<Visao> = {}) {
         if (!("id" in $$source)) {
@@ -1404,6 +1478,9 @@ export class Visao {
         if (!("pendenciasCadastro" in $$source)) {
             this["pendenciasCadastro"] = [];
         }
+        if (!("documentosSei" in $$source)) {
+            this["documentosSei"] = [];
+        }
 
         Object.assign(this, $$source);
     }
@@ -1423,6 +1500,7 @@ export class Visao {
         const $$createField17_0 = $$createType46;
         const $$createField19_0 = $$createType48;
         const $$createField20_0 = $$createType4;
+        const $$createField21_0 = $$createType50;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("etapas" in $$parsedSource) {
             $$parsedSource["etapas"] = $$createField6_0($$parsedSource["etapas"]);
@@ -1456,6 +1534,9 @@ export class Visao {
         }
         if ("pendenciasCadastro" in $$parsedSource) {
             $$parsedSource["pendenciasCadastro"] = $$createField20_0($$parsedSource["pendenciasCadastro"]);
+        }
+        if ("documentosSei" in $$parsedSource) {
+            $$parsedSource["documentosSei"] = $$createField21_0($$parsedSource["documentosSei"]);
         }
         return new Visao($$parsedSource as Partial<Visao>);
     }
@@ -1511,3 +1592,5 @@ const $$createType45 = RespostaVisao.createFrom;
 const $$createType46 = $Create.Array($$createType45);
 const $$createType47 = Cadastro.createFrom;
 const $$createType48 = $Create.Nullable($$createType47);
+const $$createType49 = DocumentoSEI.createFrom;
+const $$createType50 = $Create.Array($$createType49);

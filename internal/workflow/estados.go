@@ -77,7 +77,10 @@ var transicoes = map[Estado][]Estado{
 	SEILocalizando:    {TipoEscolhido, SEIReautenticacao, SEIGerandoPDF},
 	SEIReautenticacao: {TipoEscolhido, SEIGerandoPDF},
 	SEIGerandoPDF:     {TipoEscolhido, SEIBaixando},
-	SEIBaixando:       {TipoEscolhido, Verificando},
+	// Baixado: os documentos vão ao cadastro, onde o usuário escolhe os de
+	// cada peça (V4 §48.4, revisão de 10/11/2026); Verificando fica para o
+	// PDF único (uso interno e testes).
+	SEIBaixando: {TipoEscolhido, Verificando, RecebendoUpload},
 
 	// Upload: o usuário pode voltar e escolher o SEI enquanto não enviou o PDF.
 	RecebendoUpload: {TipoEscolhido, Verificando},

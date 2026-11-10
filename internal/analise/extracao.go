@@ -219,8 +219,15 @@ func extrairBlocos(ctx context.Context, x *Executor, a *autos.Autos, blocos []Bl
 				}
 			}
 			for k, ps := range s.Pessoas {
+				if strings.TrimSpace(ps.Nome) == "" {
+					// Pessoa sem nome é descartada, sem recusar a resposta
+					// (decisão do usuário de 10/11/2026, RELATORIO_ETAPA8_BENCH
+					// §2.3-A): nada falso é aceito, o item só é ignorado. Com a
+					// recusa, o modelo repetia o nome vazio nos reenvios.
+					continue
+				}
 				p, ok := localizarNoBloco(a, b, ps.Trecho)
-				if !ok || strings.TrimSpace(ps.Nome) == "" {
+				if !ok {
 					falha("a pessoa %d não tem trecho literal no documento", k+1)
 					continue
 				}

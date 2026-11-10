@@ -258,3 +258,31 @@ func cinza(img image.Image) image.Image {
 	}
 	return g
 }
+
+// LerTextoNativo lê só o texto nativo de cada página, sem OCR, e os carimbos
+// do SEI (que são texto mesmo em página escaneada). Serve para separar o PDF
+// gerado pelo SEI em documentos por número SEI antes do cadastro de peças
+// (V4 §48.4, revisão de 10/11/2026): a leitura completa, com OCR, acontece
+// depois, só nos documentos escolhidos.
+func LerTextoNativo(ctx context.Context, ext pdf.Extrator, dados []byte) (*Autos, error) {
+	doc, err := ext.Abrir(ctx, dados)
+	if err != nil {
+		return nil, err
+	}
+	defer doc.Fechar()
+	n := doc.Paginas()
+	a := &Autos{Paginas: make([]Pagina, n)}
+	for i := 0; i < n; i++ {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		p, err := doc.Pagina(ctx, i)
+		if err != nil {
+			return nil, err
+		}
+		texto, _ := montarTextoNativo(p)
+		a.Paginas[i] = Pagina{Numero: i + 1, Largura: p.Largura, Altura: p.Altura, Texto: texto,
+			Carimbos: LerCarimbos(texto), Origem: OrigemNativo, Situacao: Lida}
+	}
+	return a, nil
+}

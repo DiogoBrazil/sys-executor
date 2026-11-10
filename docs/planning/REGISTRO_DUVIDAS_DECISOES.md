@@ -102,6 +102,13 @@
 - **Decisões do usuário nesta sessão:**
   1. **Escopo (E1):** este trabalho vai até a análise: ChatGPT, entrada por peças, enquadramento, e pseudonimização/restauração em todas as saídas de IA que já existem. Biblioteca (F5), composição, DOCX/PDF, revisão e instalador (F6–F8) ficam fora, cada um com autorização própria. O contrato de restauração fica pronto para a F6/F7.
   2. **SEI (E2):** o app lista os documentos do processo (título e nº SEI, só localmente). O usuário escolhe; o app gera o PDF pela opção "Apenas selecionados" (já permitida pela guarda) e o separa pelo carimbo SEI. Nenhuma ação nova na guarda.
+     - **E2 revisado (10/11/2026):** o mapeamento real com o `poc/sei-mapa` mostrou que "Apenas selecionados" não lista os documentos na tela de gerar. A escolha é feita por uma lupa (`infraLupaSelect`), que abre a tela `documento_selecionar`, fora da lista permitida da guarda.
+     - Opções apresentadas:
+       - (A) gerar "Todos" e selecionar no app (recomendada);
+       - (B) liberar `documento_selecionar` na guarda;
+       - (C) montar a lista pela árvore imitando o formato da lupa.
+     - **Decisão: A.** O app gera o PDF de todos os documentos (fluxo validado desde a Fase 2), separa-o pelo carimbo em um documento por nº SEI e o usuário escolhe, no computador, os documentos de cada peça. Os não escolhidos não entram nos autos nem vão à IA. Continua sem nenhuma ação nova na guarda.
+     - Texto da V4 §48.4 revisado e aprovado ("Aprovo o texto").
   3. **Rascunhos (E3):** **não há** rascunho persistente; a V4 §29 continua valendo.
   4. **Pseudonimização (E4):** a política da §47.3 é mantida (nº SEI, nº de processo, datas dos fatos e posto/graduação ficam em claro). Somam-se uma **barreira obrigatória** antes do envio (identificador conhecido que sobrar bloqueia sem exceção) e uma **revisão item a item** dos nomes suspeitos não cadastrados.
   5. **Imputações do assistente (E5):** servem para conferência. A IA continua extraindo do Memorando o fato/conduta e a data; o formulário de congelamento (PADS-ESC-001) continua sendo a fonte do que será julgado.
@@ -218,3 +225,4 @@ Se o usuário discordar de alguma interpretação I-xx, ela será corrigida nest
 - 08/11/2026: Fase 2 implementada e testada com Edge, Tesseract e pdfium reais (`RELATORIO_FASE2.md`). PT-F2-01…05 registradas. Fechamento aguarda `acao_ajax`, `autos-mapa` sobre PDF real e teste com o SEI real.
 - 08/11/2026: Fase 2 concluída. Fluxo completo validado pelo usuário no SEI/RO real (login, 2FA, sigiloso, geração e download do PDF) e com PDF real (30 peças conferidas com a árvore). Próxima: Fase 3, que exige autorização expressa.
 - 08/11/2026: Fase 3 (motor determinístico) concluída com autorização do usuário (`RELATORIO_FASE3.md`). Catálogo YAML semeado da matriz (185 regras); `rulescov -estrito` verde. PT-F3-01…06 registradas. Próxima: Fase 4, que exige autorização expressa.
+- 10/11/2026: etapa 8 do D-11 concluída (`RELATORIO_ETAPA8_BENCH.md`). E2 revisado (SEI com seleção no computador, opção A), com revisão aprovada da V4 §48.4.

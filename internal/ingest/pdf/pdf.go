@@ -17,6 +17,7 @@ import (
 	pdfiumerr "github.com/klippa-app/go-pdfium/errors"
 	"github.com/klippa-app/go-pdfium/references"
 	"github.com/klippa-app/go-pdfium/requests"
+	"github.com/klippa-app/go-pdfium/responses"
 	"github.com/klippa-app/go-pdfium/webassembly"
 	"github.com/tetratelabs/wazero"
 
@@ -285,6 +286,68 @@ func (e *extratorPdfium) Juntar(ctx context.Context, arquivos [][]byte) ([]byte,
 		return nil, nil, erros.Com(erros.InternoInesperado, fmt.Errorf("salvar o PDF juntado: %v", err))
 	}
 	return *salvo.FileBytes, paginas, nil
+}
+
+// Faixa de páginas (base 1, inclusiva).
+type Faixa struct{ Inicio, Fim int }
+
+// Separador divide um PDF em vários, um por faixa de páginas, em memória
+// (documentos do PDF gerado pelo SEI, V4 §48.4, revisão de 10/11/2026).
+type Separador interface {
+	Separar(ctx context.Context, dados []byte, faixas []Faixa) ([][]byte, error)
+}
+
+// Separar usa uma única instância do pdfium e não grava nada em disco.
+// Faixa fora do documento é recusada.
+func (e *extratorPdfium) Separar(ctx context.Context, dados []byte, faixas []Faixa) ([][]byte, error) {
+	if len(faixas) == 0 {
+		return nil, erros.Novo(erros.PDFVazio)
+	}
+	if err := e.iniciar(); err != nil {
+		return nil, erros.Com(erros.InternoInesperado, err)
+	}
+	inst, err := e.pool.GetInstance(30 * time.Second)
+	if err != nil {
+		return nil, erros.Com(erros.InternoInesperado, err)
+	}
+	defer inst.Close()
+	d, err := inst.OpenDocument(&requests.OpenDocument{File: &dados})
+	if err != nil {
+		return nil, classificarErro(err)
+	}
+	defer inst.FPDF_CloseDocument(&requests.FPDF_CloseDocument{Document: d.Document})
+	pc, err := inst.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: d.Document})
+	if err != nil {
+		return nil, erros.Com(erros.PDFCorrompido, err)
+	}
+	out := make([][]byte, 0, len(faixas))
+	for _, f := range faixas {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		if f.Inicio < 1 || f.Fim < f.Inicio || f.Fim > pc.PageCount {
+			return nil, erros.Com(erros.InternoInesperado, fmt.Errorf("faixa %d–%d fora de %d páginas", f.Inicio, f.Fim, pc.PageCount))
+		}
+		idx := make([]int, 0, f.Fim-f.Inicio+1)
+		for i := f.Inicio; i <= f.Fim; i++ {
+			idx = append(idx, i-1)
+		}
+		novo, err := inst.FPDF_CreateNewDocument(&requests.FPDF_CreateNewDocument{})
+		if err != nil {
+			return nil, erros.Com(erros.InternoInesperado, err)
+		}
+		_, err = inst.FPDF_ImportPagesByIndex(&requests.FPDF_ImportPagesByIndex{Source: d.Document, Destination: novo.Document, PageIndices: idx, Index: 0})
+		var salvo *responses.FPDF_SaveAsCopy
+		if err == nil {
+			salvo, err = inst.FPDF_SaveAsCopy(&requests.FPDF_SaveAsCopy{Document: novo.Document})
+		}
+		inst.FPDF_CloseDocument(&requests.FPDF_CloseDocument{Document: novo.Document})
+		if err != nil || salvo == nil || salvo.FileBytes == nil {
+			return nil, erros.Com(erros.InternoInesperado, fmt.Errorf("separar páginas %d–%d: %v", f.Inicio, f.Fim, err))
+		}
+		out = append(out, *salvo.FileBytes)
+	}
+	return out, nil
 }
 
 // ContarPaginas abre o PDF só para conferir que é legível e contar as páginas.

@@ -1731,7 +1731,7 @@ O usuário aprovou **avaliar tecnicamente** as seguintes escolhas, sem necessida
 
 | Seção | Efeito da emenda |
 |---|---|
-| 1, 1.1, 2 (tabela), 2.1, 30.1, 30.3, 31.4, 35 e "Estado final" | Onde se lê "upload manual do PDF completo/consolidado", vale o cadastro de peças (48.4). A modalidade SEI passa a obter só os documentos selecionados pelo usuário |
+| 1, 1.1, 2 (tabela), 2.1, 30.1, 30.3, 31.4, 35 e "Estado final" | Onde se lê "upload manual do PDF completo/consolidado", vale o cadastro de peças (48.4). A modalidade SEI passa a usar só os documentos selecionados pelo usuário, escolhidos no computador após a geração do PDF completo |
 | 2.2 e 16.1 (A01, A02, D1, D2) | O tipo e a função de cada peça são **declarados pelo usuário** no cadastro. A classificação automática por conteúdo e cronologia passa a servir de **conferência**: divergência gera pergunta, nunca troca silenciosa |
 | 17.4 (A12) | A distinção entre peça de origem SEI e material complementar se faz pela origem registrada no cadastro (SEI ou envio pelo usuário) |
 | 16.4, 39 | "Página do PDF consolidado" passa a ser a página dos autos montados a partir das peças, com o vínculo peça → arquivo → página preservado |
@@ -1783,12 +1783,14 @@ O usuário aprovou **avaliar tecnicamente** as seguintes escolhas, sem necessida
   - arquivos repetidos são apontados.
 - **Conferência antes da análise:** o usuário pode adicionar, excluir, substituir, renomear, reordenar e corrigir vínculos antes de iniciar a análise.
 - **Pela modalidade SEI:**
-  - o aplicativo apresenta a lista de documentos do processo (título e número SEI), lida somente no computador;
-  - o usuário escolhe os documentos;
-  - o aplicativo gera o PDF somente dos selecionados, pela própria opção do SEI, e o separa pelo carimbo SEI;
-  - o usuário classifica e agrupa as peças no assistente.
+  - o aplicativo gera no SEI o PDF de **todos** os documentos disponíveis (a mesma opção usada desde a Fase 2) e o separa, no computador, pelo carimbo SEI, em um documento por número SEI;
+  - apresenta a lista desses documentos (título e número SEI), lida somente no computador;
+  - o usuário escolhe quais documentos entram em cada peça, com o tipo sugerido pelo título e sempre conferido por ele;
+  - documentos não escolhidos não entram nos autos da tarefa, não vão à IA e são apagados com a sessão.
   
   Não se ampliam as ações permitidas no SEI (seção 2.1 e guarda), e os títulos lidos do SEI não são enviados à IA.
+
+  > **[Revisão de 10/11/2026]** A geração "Apenas selecionados" foi abandonada: o mapeamento real mostrou que ela exige a tela de seleção `documento_selecionar`, fora das ações permitidas.
 - **Cruzamento com o conteúdo:** os dados declarados pelo usuário (tipo da peça, acusado, sindicados, ofendidos, depoentes) são cruzados com o conteúdo extraído. Divergência relevante gera pergunta. Os campos preenchidos pelo usuário **não ampliam** as acusações do Memorando nem o objeto da Portaria.
 - A ausência de defesa prévia ou de alegações finais é registrada como tal e **não** é interpretada como confissão, concordância ou renúncia.
 - O cadastro existe **somente na sessão efêmera** (seção 29). Não há rascunho persistente nem retomada após o fechamento do aplicativo.

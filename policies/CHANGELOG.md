@@ -106,3 +106,14 @@ O CI falha enquanto o SHA-256 da V4 divergir do lock (GOV-LOCK-01).
 - **Testes:** CAD-PEC-01, CAD-PEC-02 e CAD-PEC-03; T01–T04 e T06 passam a ser verificados no sentido da seção 48.2.
 - **Golden:** sem alteração.
 - **Aprovação:** usuário, por meio do plano D-11 aprovado (etapas 5–8 autorizadas em 09/11/2026).
+
+### 10/11/2026 — Revisão da Emenda 2 (§48.4): SEI com seleção no computador
+- **O que mudou na V4:**
+  - §48.4, item "Pela modalidade SEI": o app gera no SEI o PDF de **todos** os documentos disponíveis, separa-o pelo carimbo em um documento por nº SEI e o usuário escolhe, no computador, os documentos de cada peça;
+  - os documentos não escolhidos não entram nos autos, não vão à IA e são apagados com a sessão;
+  - §48.2, linha 1, ajustada no mesmo sentido;
+  - nota **[Revisão de 10/11/2026]** com o motivo: o mapeamento real (`poc/sei-mapa`) mostrou que "Apenas selecionados" exige a tela `documento_selecionar`, fora das ações permitidas.
+- **Regras jurídicas:** nenhuma alteração. A guarda do SEI e as ações permitidas não mudam.
+- **Regras do catálogo afetadas:** nova TRV-ING-008 (seleção local dos documentos do SEI), que entra com o código que a garante (etapa 7).
+- **Registro:** D-11, E2 revisado, em `docs/planning/REGISTRO_DUVIDAS_DECISOES.md`.
+- **Aprovação:** usuário, em 10/11/2026 ("Aprovo o texto").

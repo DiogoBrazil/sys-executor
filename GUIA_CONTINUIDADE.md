@@ -21,7 +21,7 @@ Em 10/11/2026 (etapa 8), o bench rodou nos dois provedores com os casos sintéti
 - **Gemini dentro dos limiares**, e o 400 da análise está confirmado como corrigido;
 - **ChatGPT abaixo dos limiares** de JSON na 1ª tentativa e de resultado. A causa principal foi achada: a mensagem do validador para pessoa sem nome. A correção depende de decisão do usuário.
 
-Falta a etapa 7 (SEI), que depende do mapeamento do usuário.
+A etapa 7 (SEI com seleção dos documentos no computador) foi implementada em 10/11/2026 e aguarda o teste real do usuário.
 
 ---
 
@@ -34,7 +34,7 @@ Falta a etapa 7 (SEI), que depende do mapeamento do usuário.
 5. Relatórios por etapa em `docs/planning/`:
    - `RELATORIO_POC_CHATGPT.md`;
    - `RELATORIO_ETAPA2_BARREIRA.md`, `RELATORIO_ETAPA3_MULTIPROVEDOR.md` e `RELATORIO_ETAPA4_CHATGPT.md`;
-   - `RELATORIO_ETAPA6_CADASTRO.md` e `RELATORIO_ETAPA8_BENCH.md`;
+   - `RELATORIO_ETAPA6_CADASTRO.md`, `RELATORIO_ETAPA7_SEI.md` e `RELATORIO_ETAPA8_BENCH.md`;
    - `ADR_010_chatgpt_pecas_barreira.md` (decisões de arquitetura do D-11).
 6. `CONTINUIDADE_MIGRACAO_GEMINI.md`: histórico detalhado da migração para o Gemini e as pendências dela.
 
@@ -143,7 +143,8 @@ git diff --stat -- internal/policy/testdata   # golden: deve ficar vazio
 | 5 | `76df133` | Catálogo de enquadramento com 130 dispositivos (RDPM arts. 15–17 com natureza fixa; Estatuto arts. 29 e 32 com natureza escolhida); formulário PADS-ESC-001 com divergência e confirmação da §22.1 | Concluída; **curadoria a revisar pelo usuário** |
 | 6 | `e6f40d6` | Cadastro peça por peça (PADS/SR), junção dos PDFs em memória, peças declaradas conferidas pelo conteúdo, semente de pseudônimos, conferência com a delimitação, assistente `Montagem.vue` | **Testada pelo usuário** com ChatGPT até TAR-004 |
 | — | `f001fdd` | Este guia e o gerador versionado de PDFs sintéticos | — |
-| 8 | (a commitar) | Bench:<br>• `-provedor gemini\|chatgpt\|falso`, `-entrada`, `-max-chamadas`, `-amostras`;<br>• login do ChatGPT próprio;<br>• métrica de vazamento sobre o corpo exato.<br>ADR 010, README, plano de testes §9, `sei-mapa` ampliado para a etapa 7. | Concluída. Gemini dentro dos limiares; ChatGPT abaixo (§6.2) |
+| 7 | este commit | SEI com seleção no computador (opção A):<br>• o PDF de todos os documentos é separado pelo carimbo;<br>• os documentos vão ao cadastro, e o usuário escolhe os de cada peça.<br>V4 §48.4 revisada; TRV-ING-008.<br>Validador: pessoa sem nome é descartada, sem recusa. | Implementada; teste real do SEI pendente |
+| 8 | `4ec155d` | Bench:<br>• `-provedor gemini\|chatgpt\|falso`, `-entrada`, `-max-chamadas`, `-amostras`;<br>• login do ChatGPT próprio;<br>• métrica de vazamento sobre o corpo exato.<br>ADR 010, README, plano de testes §9, `sei-mapa` ampliado para a etapa 7. | Concluída. Gemini dentro dos limiares; ChatGPT abaixo (§6.2) |
 
 ### 5.3 Onde está cada coisa (código)
 - **Provedores de IA:**
@@ -159,6 +160,7 @@ git diff --stat -- internal/policy/testdata   # golden: deve ficar vazio
   - `internal/pipeline/cadastro.go`;
   - `internal/app/cadastro.go`;
   - `frontend/src/views/Montagem.vue`, `components/ArquivosPeca.vue` e `components/EditorEnquadramento.vue`.
+- **SEI → cadastro:** `internal/pipeline/sei.go` (`separarSEI`), `internal/workflow/documentos_sei.go`, `internal/ingest/pdf` (`Separador`), `internal/ingest/autos` (`LerTextoNativo`) e `frontend/src/components/ArquivosPeca.vue`.
 - **Enquadramento:** `internal/rules/enquadramento/` (o YAML embutido) e `internal/pipeline/{enquadramento,delimitar}.go`.
 - **Bench:** `cmd/bench/`:
   - `provedores.go`: os três provedores e a conta de desenvolvimento;
@@ -176,27 +178,22 @@ git diff --stat -- internal/policy/testdata   # golden: deve ficar vazio
 
 ## 6. O que falta — próximos passos (em ordem sugerida)
 
-### 6.1 Etapa 7 do D-11: SEI pelos documentos selecionados (autorizada, mas **bloqueada pelo usuário**)
+### 6.1 Etapa 7 do D-11: SEI com seleção no computador (implementada; **falta o teste real do usuário**)
+- **Mapeamento real (10/11/2026, `poc/sei-mapa`):** "Apenas selecionados" exige a tela `documento_selecionar` (lupa), fora da guarda.
+- **Decisão (E2 revisado, opção A):**
+  - o app gera "Todos" (fluxo da Fase 2), separa o PDF pelo carimbo em um documento por nº SEI e leva a tarefa ao **cadastro**;
+  - o usuário anexa a cada peça os documentos escolhidos, em "Documento do SEI";
+  - os não escolhidos não entram nos autos nem vão à IA.
+- **V4 §48.4 revisada e aprovada.** Detalhes em `RELATORIO_ETAPA7_SEI.md`.
+- **Código:** `autos.LerTextoNativo`, `pdf.Separador`, `pipeline.separarSEI`/`sugestaoPeca`, `workflow/documentos_sei.go`, `TarefaService.AnexarDocumentosSEI`, `ArquivosPeca.vue`/`Montagem.vue`. Regra TRV-ING-008 e teste CAD-SEI-01.
+- **Falta:** o teste no SEI real com o executável novo (roteiro no relatório da etapa 7, §5).
+  - Se o número de documentos ou os títulos não baterem com a árvore, o ajuste é em `segment.Segmentar` ou em `autos.LerCarimbos`, nunca na guarda.
 
-**Pré-requisito do usuário.** Rodar `poc/sei-mapa` no SEI real para mapear a tela **"Gerar Arquivo PDF do Processo"** (`procedimento_gerar_pdf`, já liberada na guarda) com "Apenas selecionados".
-- O `sei-mapa` foi **ampliado em 10/11/2026**:
-  - comando `mapear`;
-  - linhas `[post-gerar]`;
-  - textos reduzidos à forma (`Aa`, `AA`, `#`), com só os tipos documentais em claro.
-- O roteiro está em `poc/sei-mapa/LEIA-ME.md`, seção "Etapa 7".
-- O executável fica em `C:\Users\diogo\Documents\testes-sys-executor\sei-mapa.exe`.
-- Da F0, já se sabe que a tela tem `selDocumentosApenas` (*select*) e o oculto `hdnDocumentosApenas`. Falta a forma das opções e o separador da lista.
-
-Depois do mapeamento, a implementação prevista (plano §4.8):
-1. `jsDocumentos` em `internal/sei/telas.go` lê a tabela (nº SEI, título, tipo) da própria tela de gerar. Isso quebra o invariante "só booleanos": registrar no ADR e no catálogo. Os títulos ficam só no app e não vão à IA.
-2. Um `PedidoSelecao` com a lista em `workflow/pedido.go`. O usuário marca os documentos; o app marca as caixas ("Apenas selecionados"), gera, baixa e **fecha o navegador**.
-3. O PDF baixado é separado pelo carimbo (`autos.LerCarimbos`) em arquivos virtuais por nº SEI, que entram no **cadastro** (`ArquivoEntrada{Origem: "SEI"}`) com o tipo pré-preenchido pelo título, para o usuário conferir no assistente.
-4. Atualizar o simulador `internal/testutil/seisim` (`rdoTipo=A`, tabela, PDF parcial) e os testes.
-5. Não ampliar as ações permitidas na guarda (`internal/sei/guarda.go`).
-
-### 6.2 Depois da etapa 8: pendências de decisão (detalhes em `RELATORIO_ETAPA8_BENCH.md` §4)
-1. **Mensagem do validador para pessoa sem nome** (`internal/analise/extracao.go:223`). Hoje, um nome vazio é recusado com a mensagem "não tem trecho literal". O ChatGPT corrige o trecho, nunca o nome, e repete o erro. A proposta é separar as duas mensagens. **Exige autorização**: muda o validador, não as políticas.
-2. **ChatGPT `gpt-6-luna` abaixo dos limiares** (JSON 1ª 74%, resultado 67%). Repetir a bateria depois do item 1; se preciso, testar `-pensamento high` ou outro modelo da conta.
+### 6.2 Depois da etapa 8: pendências de decisão (detalhes em `RELATORIO_ETAPA8_BENCH.md` §§2.3-A e 4)
+1. **Pessoa sem nome na extração (ChatGPT): resolvido em 10/11/2026.**
+   - O validador descarta a pessoa sem nome, sem recusar (decisão 1(a)).
+   - Na conferência rápida do pads-01, o JSON 1ª ficou em 7/8. Falta repetir a bateria completa quando houver limite do Plus.
+2. **ChatGPT `gpt-6-luna` abaixo do limiar de resultado** (11/18 a 12/18). É julgamento do modelo. O usuário decidiu não testar outro modelo agora; talvez use o `gpt-6.1-sol` num teste manual.
 3. **Variação entre rodadas:** repetir cada caso 3 vezes e usar a mediana antes de afirmar qualidade.
 4. **Comandos das rodadas reais** (só casos sintéticos):
    ```bash

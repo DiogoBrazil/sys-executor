@@ -6,7 +6,7 @@
 // Nada é persistido aqui: o cadastro vive na sessão da tarefa, no Go.
 import { computed, onMounted, ref, watch } from "vue";
 import {
-  anexarArquivos, catalogoEnquadramento, concluirCadastro, estado, moverArquivo, removerArquivo, salvarCadastro, voltarParaEntrada,
+  anexarArquivos, anexarDocumentosSEI, catalogoEnquadramento, concluirCadastro, estado, moverArquivo, removerArquivo, salvarCadastro, voltarParaEntrada,
 } from "../estado";
 import type { Cadastro, DispositivoVisao } from "../api";
 import type { PecaCadastro } from "../../bindings/github.com/DiogoBrazil/sys-executor/internal/workflow/models";
@@ -164,9 +164,9 @@ function novoFato() {
 }
 
 // Comandos de arquivo: os metadados editados são gravados antes.
-async function anexar(p: PecaCadastro) {
+async function comPeca(p: PecaCadastro, acao: (c: Cadastro | null, pecaID: string) => Promise<unknown>) {
   if (!p.id.startsWith("NOVO-")) {
-    await anexarArquivos(paraSalvar(), p.id);
+    await acao(paraSalvar(), p.id);
     return;
   }
   // Peça nova, ainda sem ID definitivo: grava e anexa à peça na mesma
@@ -174,8 +174,13 @@ async function anexar(p: PecaCadastro) {
   const i = local.value.pecas.indexOf(p);
   if (!(await salvarCadastro(paraServidor()))) return;
   const real = estado.visao?.cadastro?.pecas?.[i];
-  if (real) await anexarArquivos(null, real.id);
+  if (real) await acao(null, real.id);
 }
+const anexar = (p: PecaCadastro) => comPeca(p, anexarArquivos);
+const anexarSei = (p: PecaCadastro, doc: string) => comPeca(p, (c, id) => anexarDocumentosSEI(c, id, [doc]));
+// Documentos separados do PDF do SEI (V4 §48.4, revisão de 10/11/2026).
+const documentosSei = computed(() => estado.visao?.documentosSei ?? []);
+const seiNaoEscolhidos = computed(() => documentosSei.value.filter((d) => !d.usado).length);
 const remover = (p: PecaCadastro, a: string) => removerArquivo(paraSalvar(), p.id, a);
 const mover = (p: PecaCadastro, a: string, d: number) => moverArquivo(paraSalvar(), p.id, a, d);
 const concluir = () => concluirCadastro(paraSalvar());
@@ -211,6 +216,11 @@ function descricaoPeca(p: PecaCadastro): string {
         Indique cada peça e anexe os arquivos PDF dela (pode haver mais de um). Os arquivos são copiados de forma cifrada para a área
         temporária desta tarefa e apagados ao final. O tipo que você indica para cada peça é o que vale: o conteúdo só é conferido.
       </p>
+      <p v-if="documentosSei.length" class="aviso-sei" data-teste="aviso-sei">
+        O PDF do processo foi baixado do SEI e separado em {{ documentosSei.length }} documento(s). Em cada peça, use
+        "Documento do SEI" para escolher os que a compõem (o tipo sugerido vem do título e deve ser conferido). Os documentos não
+        escolhidos não entram nos autos, não são enviados à IA e são apagados ao final.
+      </p>
     </header>
 
     <nav class="passos" aria-label="Passos do cadastro">
@@ -225,7 +235,7 @@ function descricaoPeca(p: PecaCadastro): string {
       <section class="bloco">
         <h3>Memorando Disciplinar</h3>
         <ArquivosPeca v-if="pecaDo('MEMORANDO')" :peca="pecaDo('MEMORANDO')!" :ocupado="estado.ocupado" teste="arq-memorando"
-          @anexar="anexar(pecaDo('MEMORANDO')!)" @remover="(a) => remover(pecaDo('MEMORANDO')!, a)" @mover="(a, d) => mover(pecaDo('MEMORANDO')!, a, d)" />
+          :documentos="documentosSei" @anexar="anexar(pecaDo('MEMORANDO')!)" @anexar-sei="(d) => anexarSei(pecaDo('MEMORANDO')!, d)" @remover="(a) => remover(pecaDo('MEMORANDO')!, a)" @mover="(a, d) => mover(pecaDo('MEMORANDO')!, a, d)" />
       </section>
       <section v-if="pessoa(local.acusadoId)" class="bloco">
         <h3>Acusado</h3>
@@ -262,7 +272,7 @@ function descricaoPeca(p: PecaCadastro): string {
         <h3>Portaria de instauração</h3>
         <label class="largo">Identificação (número, autoridade e data) <input v-model="local.portaria" data-teste="portaria-ident" @input="marcar" /></label>
         <ArquivosPeca v-if="pecaDo('PORTARIA')" :peca="pecaDo('PORTARIA')!" :ocupado="estado.ocupado" teste="arq-portaria"
-          @anexar="anexar(pecaDo('PORTARIA')!)" @remover="(a) => remover(pecaDo('PORTARIA')!, a)" @mover="(a, d) => mover(pecaDo('PORTARIA')!, a, d)" />
+          :documentos="documentosSei" @anexar="anexar(pecaDo('PORTARIA')!)" @anexar-sei="(d) => anexarSei(pecaDo('PORTARIA')!, d)" @remover="(a) => remover(pecaDo('PORTARIA')!, a)" @mover="(a, d) => mover(pecaDo('PORTARIA')!, a, d)" />
       </section>
       <section v-for="lista in (['sindicados', 'ofendidos'] as const)" :key="lista" class="bloco">
         <h3>{{ lista === "sindicados" ? "Sindicados" : "Ofendidos" }}</h3>
@@ -291,7 +301,7 @@ function descricaoPeca(p: PecaCadastro): string {
         </label>
         <ArquivosPeca v-if="!pecaDo(t === 'defesa' ? 'DEFESA_PREVIA' : 'ALEGACOES_FINAIS')!.naoApresentada"
           :peca="pecaDo(t === 'defesa' ? 'DEFESA_PREVIA' : 'ALEGACOES_FINAIS')!" :ocupado="estado.ocupado" :teste="'arq-' + t"
-          @anexar="anexar(pecaDo(t === 'defesa' ? 'DEFESA_PREVIA' : 'ALEGACOES_FINAIS')!)"
+          :documentos="documentosSei" @anexar="anexar(pecaDo(t === 'defesa' ? 'DEFESA_PREVIA' : 'ALEGACOES_FINAIS')!)" @anexar-sei="(d) => anexarSei(pecaDo(t === 'defesa' ? 'DEFESA_PREVIA' : 'ALEGACOES_FINAIS')!, d)"
           @remover="(a) => remover(pecaDo(t === 'defesa' ? 'DEFESA_PREVIA' : 'ALEGACOES_FINAIS')!, a)"
           @mover="(a, d) => mover(pecaDo(t === 'defesa' ? 'DEFESA_PREVIA' : 'ALEGACOES_FINAIS')!, a, d)" />
       </section>
@@ -322,7 +332,7 @@ function descricaoPeca(p: PecaCadastro): string {
         </div>
         <label>Data da oitiva (opcional) <input v-model="p.data" placeholder="DD/MM/AAAA" @input="marcar" /></label>
         <ArquivosPeca :peca="p" :ocupado="estado.ocupado" :teste="'arq-dep-' + i"
-          @anexar="anexar(p)" @remover="(a) => remover(p, a)" @mover="(a, d) => mover(p, a, d)" />
+          :documentos="documentosSei" @anexar="anexar(p)" @anexar-sei="(d) => anexarSei(p, d)" @remover="(a) => remover(p, a)" @mover="(a, d) => mover(p, a, d)" />
         <div><button type="button" class="botao discreto" @click="retirarPeca(p)">Retirar este depoimento</button></div>
       </section>
       <div><button type="button" class="botao" data-teste="novo-depoimento" @click="novoDepoimento">Acrescentar depoimento</button></div>
@@ -334,7 +344,7 @@ function descricaoPeca(p: PecaCadastro): string {
       <section v-for="(p, i) in doTipo('OUTRO')" :key="p.id" class="bloco" data-teste="outro">
         <label class="largo">Nome do documento <input v-model="p.titulo" :data-teste="'outro-titulo-' + i" @input="marcar" /></label>
         <ArquivosPeca :peca="p" :ocupado="estado.ocupado" :teste="'arq-outro-' + i"
-          @anexar="anexar(p)" @remover="(a) => remover(p, a)" @mover="(a, d) => mover(p, a, d)" />
+          :documentos="documentosSei" @anexar="anexar(p)" @anexar-sei="(d) => anexarSei(p, d)" @remover="(a) => remover(p, a)" @mover="(a, d) => mover(p, a, d)" />
         <div><button type="button" class="botao discreto" @click="retirarPeca(p)">Retirar este documento</button></div>
       </section>
       <div><button type="button" class="botao" data-teste="novo-outro" @click="novaPeca('OUTRO')">Acrescentar documento</button></div>
@@ -351,6 +361,10 @@ function descricaoPeca(p: PecaCadastro): string {
             <span v-else>{{ p.arquivos.length }} arquivo(s), {{ totalPaginas(p) }} página(s)</span>
           </li>
         </ul>
+        <p v-if="documentosSei.length" class="ajuda" data-teste="conferencia-sei">
+          Documentos do SEI: {{ documentosSei.length - seiNaoEscolhidos }} escolhido(s) e {{ seiNaoEscolhidos }} não escolhido(s), que não
+          entram nos autos.
+        </p>
       </section>
       <section class="bloco">
         <h3>Envolvidos</h3>
@@ -388,6 +402,7 @@ function descricaoPeca(p: PecaCadastro): string {
 </template>
 
 <style scoped>
+.aviso-sei { border-left: 3px solid var(--linha-forte); padding-left: 0.6rem; }
 .montagem { display: grid; gap: 1.2rem; }
 header h2 { font-size: var(--t-lg); }
 header p, .ajuda { color: var(--tinta-suave); max-width: 72ch; }

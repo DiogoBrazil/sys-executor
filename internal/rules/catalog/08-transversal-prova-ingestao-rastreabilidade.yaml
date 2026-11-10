@@ -67,6 +67,18 @@
   testes: ["CAD-PEC-01", "CAD-PEC-03"]
   versao: 1
 
+- id: TRV-ING-008
+  origem: "§48.4 (revisão de 10/11/2026)"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [DETERMINISTICA, UI, SEGURANCA]
+  enunciado: "Pelo SEI, o PDF de todos os documentos disponíveis (a opção já permitida na guarda) é separado no computador pelo carimbo, um documento por número SEI; a lista (título e número SEI) só existe no computador; o usuário escolhe os documentos de cada peça do cadastro, com o tipo sugerido pelo título e conferido por ele; o mesmo documento não entra em duas peças; os não escolhidos não entram nos autos da tarefa, não vão à IA e são apagados com a sessão; nenhuma ação nova no SEI"
+  modulo: "pipeline (obterSEI, separarSEI); ingest/autos (LerTextoNativo); ingest/pdf (Separador); workflow (documentos do SEI); frontend ArquivosPeca"
+  enforced_by: [workflow.DocumentoSEI, pdf.Separador, autos.LerTextoNativo]
+  falha: "PDF sem documentos → SEI-00x e volta à escolha da entrada; documento repetido → ARQ-004; nada é enviado à IA antes de concluir o cadastro"
+  testes: ["CAD-SEI-01"]
+  versao: 1
+
 - id: TRV-ING-006
   origem: "§39"
   fluxo: TRV

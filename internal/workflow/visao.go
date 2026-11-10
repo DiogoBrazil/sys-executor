@@ -38,6 +38,9 @@ type Visao struct {
 	// Cadastro das peças (entrada por upload, V4 §48.4) e o que falta nele.
 	Cadastro           *Cadastro `json:"cadastro"`
 	PendenciasCadastro []string  `json:"pendenciasCadastro"`
+	// DocumentosSEI: documentos separados do PDF do SEI, para o usuário
+	// escolher os de cada peça (só no computador; nunca vão à IA).
+	DocumentosSEI []DocumentoSEI `json:"documentosSei"`
 }
 
 // Situacao de uma etapa da linha do tempo.

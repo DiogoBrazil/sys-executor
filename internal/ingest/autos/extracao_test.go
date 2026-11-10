@@ -189,3 +189,22 @@ func TestTextoLetraALetra(t *testing.T) {
 		t.Fatalf("situação: %s", p.Situacao)
 	}
 }
+
+// LerTextoNativo não chama OCR: página que só tem o carimbo (escaneada) volta com
+// o carimbo do rodapé e sem falhar (separação dos documentos do SEI).
+func TestLerTextoNativoSemOCR(t *testing.T) {
+	b := pdfsint.Gerar([]pdfsint.Pagina{
+		{Linhas: []string{"MEMORANDO DISCIPLINAR Nº 1/2026"}, Rodape: "Memorando 1 (0010000) SEI 0000.000001/2026-00 / pg. 1"},
+		{Rodape: "Termo 2 (0010001) SEI 0000.000001/2026-00 / pg. 2"}, // só o carimbo (escaneada)
+	})
+	a, err := LerTextoNativo(context.Background(), extrator(), b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(a.Paginas) != 2 || len(a.Paginas[0].Carimbos) != 1 || len(a.Paginas[1].Carimbos) != 1 {
+		t.Fatalf("%+v", a.Paginas)
+	}
+	if a.Paginas[1].Carimbos[0].SEI != "0010001" || !strings.Contains(a.Paginas[0].Texto, "MEMORANDO") {
+		t.Fatalf("carimbos %+v", a.Paginas[1].Carimbos)
+	}
+}

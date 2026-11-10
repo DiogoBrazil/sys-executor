@@ -159,7 +159,8 @@ type tarefa struct {
 	sessao         *session.Sessao
 	contexto       *Contexto
 	cancelar       context.CancelFunc
-	cadastro       *Cadastro // entrada por peças (V4 §48.4); nil = PDF único (SEI)
+	cadastro       *Cadastro      // entrada por peças (V4 §48.4); nil = PDF único (uso interno e testes)
+	documentosSEI  []DocumentoSEI // documentos separados do PDF do SEI (V4 §48.4, revisão de 10/11/2026)
 }
 
 type respondida struct {
@@ -238,6 +239,7 @@ func (g *Gerenciador) visaoLocked() *Visao {
 		v.Cadastro = t.cadastro.copia()
 		v.PendenciasCadastro = t.cadastro.Pendencias()
 	}
+	v.DocumentosSEI = t.documentosVisao()
 	for _, rr := range t.respondidas {
 		resumo := ""
 		if rr.p.Resumir != nil {

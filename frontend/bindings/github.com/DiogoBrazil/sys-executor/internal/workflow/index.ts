@@ -6,6 +6,7 @@ export {
     Cadastro,
     Campo,
     Condicao,
+    DocumentoSEI,
     EnquadramentoCadastro,
     Entrada,
     ErroVisao,

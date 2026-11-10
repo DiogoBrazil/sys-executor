@@ -363,6 +363,8 @@ Cadastro{Tipo PADS|SR; Pessoas[]{ID PES-nn, Nome, Grafias[], PostoGrad, Militar 
 
 ### 4.8 SEI (`internal/sei`, `pipeline/sei.go`, `workflow/pedido.go`, `testutil/seisim`)
 
+> **[Revisado em 10/11/2026 — E2 revisado]** O mapeamento real mostrou que "Apenas selecionados" exige a tela `documento_selecionar`, fora da guarda. Foi implementada a opção A: gerar "Todos", separar pelo carimbo no computador e o usuário escolher os documentos no cadastro. Ver `RELATORIO_ETAPA7_SEI.md`. Os itens abaixo ficam como registro do plano original.
+
 1. **Mapeamento pelo usuário, antes de codificar.** Rodar `poc/sei-mapa` no SEI real (só estrutura) para mapear a tabela de documentos da tela "Gerar Arquivo PDF do Processo" (`procedimento_gerar_pdf`, já liberada na guarda).
 2. **`jsDocumentos`:** devolve JSON `{sei, titulo, tipo}`. Lê a tabela da própria tela de gerar, e não a árvore, porque é a mesma tela da seleção e evita carregar pastas da árvore com ações fora da lista permitida. **Isso quebra o invariante "só booleanos" de `telas.go:128-132`**: os títulos ficam só no app e não vão à IA. Isso é registrado no ADR e no catálogo.
 3. **`PedidoSelecao` com conteúdo** em `PedidoVisao`. O usuário marca os documentos; o app marca as caixas pela página (o JS do SEI preenche `hdnDocumentosApenas`), gera, baixa e **fecha o navegador**.

@@ -152,6 +152,7 @@
 | TRV-ING-004 | §39 | Autos extensos em etapas; texto integral preservado por página e peça; resumos só auxiliares | AP | DET | ingest/evidence; orchestrator | T17 |
 | TRV-ING-005 | §39 | Cobertura de páginas e peças; nada é ignorado silenciosamente | AP | DET+UI | ingest/evidence.Cobertura | T17, ING-COB-01 |
 | TRV-ING-007 | §48.4 | Cadastro peça por peça (PADS/SR), vários arquivos por peça com ordem e origem, cada oitiva uma peça, repetido apontado, junção em memória na ordem processual, só na sessão, cruzado com a peça central sem ampliar acusações ou objeto | AP | DET+UI | workflow (cadastro); ingest/pdf.Juntador; pipeline; frontend Montagem | CAD-PEC-01, CAD-PEC-03 |
+| TRV-ING-008 | §48.4 (rev. 10/11/2026) | SEI: PDF de todos os documentos separado pelo carimbo no computador; o usuário escolhe os documentos de cada peça; os não escolhidos não entram nos autos nem vão à IA; nenhuma ação nova no SEI | AP | DET+UI+SEG | pipeline (separarSEI); ingest/autos.LerTextoNativo; ingest/pdf.Separador; workflow (documentos do SEI); frontend ArquivosPeca | CAD-SEI-01 |
 | TRV-ING-006 | §39 | Busca vetorial temporária dos autos opcional; não obrigatória | AP/AV | PT | ingest/evidence | BEN-RAG-01 |
 | TRV-PRV-001 | §§2.2, 16.4 | Relação afirmação → peça, SEI, página, trecho; abrir página e realçar | AP | DET+UI | EvidenceSpan; PDF.js | A05, UI-SRC-01 |
 | TRV-PRV-002 | §16.4 | Na minuta: citação simples com SEI se houver; sem SEI → "incluído nos autos"; sem página | AP | IA+VAL | validate.SEIIds | A05, A06 |

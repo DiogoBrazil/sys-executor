@@ -61,6 +61,12 @@ func (s *TarefaService) AnexarArquivos(pecaID string) Resposta {
 	return s.responder(s.g.AnexarArquivos(pecaID, as))
 }
 
+// AnexarDocumentosSEI acrescenta à peça os documentos do SEI escolhidos
+// (separados do PDF gerado pelo SEI; V4 §48.4, revisão de 10/11/2026).
+func (s *TarefaService) AnexarDocumentosSEI(pecaID string, documentos []string) Resposta {
+	return s.responder(s.g.AnexarDocumentosSEI(pecaID, documentos))
+}
+
 // RemoverArquivo tira o arquivo da peça (e da sessão).
 func (s *TarefaService) RemoverArquivo(pecaID, arquivoID string) Resposta {
 	return s.responder(s.g.RemoverArquivo(pecaID, arquivoID))

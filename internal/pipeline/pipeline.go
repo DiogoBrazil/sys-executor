@@ -51,6 +51,8 @@ type Pipeline struct {
 	DPI          int
 	// SEI obtém o PDF pelo SEI/RO (nil: modalidade indisponível).
 	SEI ObterSEI
+	// Separador divide o PDF do SEI por documento (nil = o do Extrator).
+	Separador pdf.Separador
 	// IA prepara o motor de IA local (nil: etapas de IA indisponíveis).
 	IA FonteMotor
 	// Juntador monta os autos a partir do cadastro de peças (nil: usa o

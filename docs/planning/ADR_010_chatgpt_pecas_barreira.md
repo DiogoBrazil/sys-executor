@@ -61,7 +61,14 @@
   - Estatuto arts. 29 e 32, com a natureza escolhida pelo usuário;
   - uma imputação por dispositivo, com a divergência em relação ao Memorando confirmada pela §22.1;
   - o motor de conexão não muda.
-- **Monolítico:** a separação por carimbo fica só para o PDF que o próprio SEI gera com os documentos selecionados (E6).
+- **Monolítico:** a separação por carimbo fica só para o PDF que o próprio SEI gera (E6).
+- **SEI (etapa 7, E2 revisado em 10/11/2026):**
+  - o app gera no SEI o PDF de **todos** os documentos, a opção já permitida;
+  - separa-o no computador pelo carimbo (`autos.LerTextoNativo`, sem OCR, e `pdf.Separador`);
+  - os documentos vão ao cadastro, onde o usuário escolhe os de cada peça, com o tipo sugerido pelo título;
+  - os não escolhidos não entram nos autos nem vão à IA.
+  
+  A geração "Apenas selecionados" foi descartada porque exige `documento_selecionar`, fora da guarda (mapeamento real com o `poc/sei-mapa`).
 
 ### 5. Medição sem dados reais (`cmd/bench`)
 - `-provedor gemini|chatgpt|falso`.
@@ -77,11 +84,13 @@
 - **Function tool forçada para a saída estruturada:** desnecessária, porque o json_schema strict foi aceito. Usá-la exigiria rever a §47.3 ("sem ferramentas").
 - **Barreira só sobre o pedido (camada 1):** não cobre o que o transporte serializa (histórico, schema, instruções). A camada 2 sobre os bytes cobre.
 - **Juntar as peças só na leitura (sem `autos.pdf`):** obrigaria a mudar extração, índice, evidências e visualizador. A junção em memória mantém tudo como estava.
+- **SEI por "Apenas selecionados" ou montando a lista pela árvore:** a primeira exige liberar `documento_selecionar` na guarda e emendar a §48.4. A segunda imita um formato interno do SEI (`id±texto¥…`) e não enxerga documentos de pastas fechadas. A seleção no computador sobre o PDF completo não exige ação nova no SEI.
 - **Bench reaproveitando a credencial do app (DPAPI) ou da PoC:** a do app exige o app fechado, porque dois processos renovando ao mesmo tempo invalidam a sessão. A da PoC acopla o bench a um módulo descartável.
 
 ## Consequências
 - Há duas rotas de envio a terceiros. As ressalvas das §§1.1(9), 11, 47.3 e 48.7 valem para as duas, e a confirmação do usuário não substitui a autorização institucional.
 - O limite de 5 h do Plus é compartilhado com os outros apps da conta. O bench consome esse limite (há o `-max-chamadas`).
 - O ChatGPT trouxe dependências novas: `go-oidc/v3`, `go-jose/v4` (Apache-2.0) e `x/oauth2` (BSD-3-Clause).
-- A interface não aceita mais o PDF único (E6). `ReceberUpload` continua no backend só para os testes legados e o SEI atual, até a etapa 7.
+- A interface não aceita mais o PDF único (E6). `ReceberUpload` continua no backend só para os testes legados. O SEI passou ao cadastro na etapa 7.
+- Pelo SEI, o processo inteiro é baixado e separado, o que é mais lento em processos grandes. Os documentos não escolhidos ficam só na sessão cifrada até o fim da tarefa.
 - A barreira pode pedir revisão de textos que não são nomes. O bench registra esses itens. Nas rodadas sem rede da etapa 8, nenhum item apareceu depois que o eco do provedor falso passou a citar a evidência, como faz um modelo real (relatório da etapa 8).

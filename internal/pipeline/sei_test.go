@@ -51,6 +51,10 @@ func responderPedido(t *testing.T, g *workflow.Gerenciador, tipo workflow.TipoPe
 }
 
 // SEG13-01/02: OTP e reautenticação pedidos ao usuário; credenciais nunca na visão.
+// Depois do download, os documentos separados vão ao cadastro e só os
+// escolhidos entram nos autos (V4 §48.4, revisão de 10/11/2026).
+// Cobre: CAD-SEI-01
+// Regra: TRV-ING-008
 func TestSEIComOTPEReautenticacao(t *testing.T) {
 	pdfBytes := fixtureSEI(t)
 	var senhaVista string
@@ -95,15 +99,60 @@ func TestSEIComOTPEReautenticacao(t *testing.T) {
 	responderPedido(t, g, workflow.PedidoCredenciais, map[string]string{"usuario": "u", "orgao": "PM", "processo": "0000.000001/2026-01"}, sentinela)
 	responderPedido(t, g, workflow.PedidoOTP, nil, "123456")
 	responderPedido(t, g, workflow.PedidoReautenticacao, nil, sentinela)
-	v := esperar(t, g, func(v *workflow.Visao) bool { return v.Parada || v.Terminal })
-	if v.Estado != workflow.Delimitando || v.Autos == nil || v.Autos.Compatibilidade != "COMPATIVEL" {
-		t.Fatalf("%+v", v)
+	// V4 §48.4 (revisão de 10/11/2026): o PDF do SEI é separado pelo carimbo
+	// e vai ao cadastro; o usuário escolhe os documentos de cada peça.
+	v := esperar(t, g, func(v *workflow.Visao) bool {
+		return v.Estado == workflow.RecebendoUpload || v.Parada || v.Terminal
+	})
+	if v.Estado != workflow.RecebendoUpload || v.Cadastro == nil || len(v.DocumentosSEI) != 7 {
+		t.Fatalf("documentos do SEI: %+v", v)
+	}
+	ds := v.DocumentosSEI
+	var err error
+	if ds[0].Sugestao != workflow.PecaMemorando || ds[2].Sugestao != workflow.PecaDefesa || ds[6].Sugestao != workflow.PecaAlegacoes || ds[0].SEI == "" {
+		t.Fatalf("sugestões: %+v", ds)
+	}
+	c := *v.Cadastro
+	c.Pessoas = []workflow.PessoaCadastro{{Nome: "Carlos Inventado", PostoGrad: "CB PM"}}
+	if v, err = g.SalvarCadastro(c); err != nil {
+		t.Fatal(err)
+	}
+	c = *v.Cadastro
+	c.AcusadoID = c.Pessoas[0].ID
+	if v, err = g.SalvarCadastro(c); err != nil {
+		t.Fatal(err)
+	}
+	memo, defesa, alegacoes := v.Cadastro.Pecas[0].ID, v.Cadastro.Pecas[1].ID, v.Cadastro.Pecas[2].ID
+	for peca, doc := range map[string]string{memo: ds[0].ID, defesa: ds[2].ID, alegacoes: ds[6].ID} {
+		if v, err = g.AnexarDocumentosSEI(peca, []string{doc}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := g.AnexarDocumentosSEI(defesa, []string{ds[0].ID}); err == nil {
+		t.Fatal("o mesmo documento do SEI não pode entrar em duas peças (ARQ-004)")
+	}
+	usados := 0
+	for _, d := range v.DocumentosSEI {
+		if d.Usado != "" {
+			usados++
+		}
+	}
+	if usados != 3 || v.Cadastro.Pecas[0].SEI != ds[0].SEI || v.Cadastro.Pecas[0].Arquivos[0].Origem != "SEI" {
+		t.Fatalf("anexados: %+v / %+v", v.DocumentosSEI, v.Cadastro.Pecas[0])
+	}
+	if _, err := g.ConcluirCadastro(); err != nil {
+		t.Fatal(err)
+	}
+	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada || v.Terminal })
+	paginas := ds[0].Paginas + ds[2].Paginas + ds[6].Paginas
+	if v.Estado != workflow.Delimitando || v.Autos == nil || len(v.Autos.Pecas) != 3 || v.Autos.TotalPaginas != paginas {
+		t.Fatalf("só os documentos escolhidos entram nos autos: %+v", v.Autos)
 	}
 	if senhaVista != sentinela {
 		t.Fatal("a senha não chegou ao cliente SEI")
 	}
 	h := g.Historico()
-	for _, e := range []workflow.Estado{workflow.SEIConectividade, workflow.SEILogin, workflow.SEIOTP, workflow.SEILocalizando, workflow.SEIReautenticacao, workflow.SEIGerandoPDF, workflow.SEIBaixando, workflow.Verificando} {
+	for _, e := range []workflow.Estado{workflow.SEIConectividade, workflow.SEILogin, workflow.SEIOTP, workflow.SEILocalizando, workflow.SEIReautenticacao, workflow.SEIGerandoPDF, workflow.SEIBaixando, workflow.RecebendoUpload, workflow.Verificando} {
 		achou := false
 		for _, x := range h {
 			achou = achou || x == e

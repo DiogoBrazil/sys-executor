@@ -7,6 +7,9 @@ import (
 	"strings"
 
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
+	"github.com/DiogoBrazil/sys-executor/internal/ingest/autos"
+	"github.com/DiogoBrazil/sys-executor/internal/ingest/pdf"
+	"github.com/DiogoBrazil/sys-executor/internal/ingest/segment"
 	"github.com/DiogoBrazil/sys-executor/internal/sei"
 	"github.com/DiogoBrazil/sys-executor/internal/session"
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
@@ -39,10 +42,84 @@ func (p *Pipeline) obterSEI(ctx context.Context, c *workflow.Contexto) (workflow
 		return workflow.TipoEscolhido, err
 	}
 	_ = c.Avancar(workflow.SEIBaixando)
-	if err := c.Sessao.Gravar(workflow.NomeAutos, b); err != nil {
+	// V4 §48.4 (revisão de 10/11/2026): o PDF de todos os documentos é
+	// separado pelo carimbo, um documento por número SEI, e vai ao cadastro,
+	// onde o usuário escolhe os de cada peça. O PDF completo não é gravado.
+	docs, err := p.separarSEI(ctx, c.Tipo, b)
+	if err != nil {
+		if ctx.Err() != nil {
+			return "", ctx.Err()
+		}
+		return workflow.TipoEscolhido, err
+	}
+	if err := c.ReceberDocumentosSEI(docs); err != nil {
 		return "", err
 	}
-	return workflow.Verificando, nil
+	return workflow.RecebendoUpload, nil
+}
+
+// separarSEI lê só o texto nativo (o carimbo do SEI é texto mesmo em página
+// escaneada; o OCR fica para os documentos escolhidos), separa pelo carimbo
+// e sugere o tipo de peça pelo título do documento na árvore. A sugestão é
+// conferida pelo usuário no cadastro; a classificação pelo conteúdo continua
+// sendo a conferência depois (TRV-ING-001).
+func (p *Pipeline) separarSEI(ctx context.Context, tipo workflow.Tipo, b []byte) ([]workflow.DocumentoSEIEntrada, error) {
+	sep, ok := p.Extrator.(pdf.Separador)
+	if p.Separador != nil {
+		sep, ok = p.Separador, true
+	}
+	if !ok {
+		return nil, erros.Com(erros.InternoInesperado, errors.New("separação de PDF indisponível"))
+	}
+	a, err := autos.LerTextoNativo(ctx, p.Extrator, b)
+	if err != nil {
+		return nil, err
+	}
+	pecas := segment.Segmentar(a)
+	faixas := make([]pdf.Faixa, len(pecas))
+	for i, pc := range pecas {
+		faixas[i] = pdf.Faixa{Inicio: pc.PaginaInicial, Fim: pc.PaginaFinal}
+	}
+	partes, err := sep.Separar(ctx, b, faixas)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]workflow.DocumentoSEIEntrada, len(pecas))
+	for i, pc := range pecas {
+		sug, papel := sugestaoPeca(tipo, pc.Funcao)
+		titulo := pc.Titulo
+		if titulo == "" {
+			titulo = "Documento sem título"
+		}
+		out[i] = workflow.DocumentoSEIEntrada{SEI: pc.SEI, Titulo: titulo, Sugestao: sug, Papel: papel,
+			Paginas: pc.PaginaFinal - pc.PaginaInicial + 1, Dados: partes[i]}
+	}
+	return out, nil
+}
+
+// sugestaoPeca traduz a função lida do título para o tipo do cadastro. No
+// PADS, o interrogatório do acusado vai em "Outros documentos" (plano D-11
+// §8.1, decisão pendente); na SR, é o depoimento do sindicado.
+func sugestaoPeca(tipo workflow.Tipo, f segment.Funcao) (string, string) {
+	switch f {
+	case segment.MemorandoDisciplinar:
+		return workflow.PecaMemorando, ""
+	case segment.PortariaSR:
+		return workflow.PecaPortaria, ""
+	case segment.DefesaPrevia:
+		return workflow.PecaDefesa, ""
+	case segment.AlegacoesFinais:
+		return workflow.PecaAlegacoes, ""
+	case segment.TermoInquiricao:
+		return workflow.PecaDepoimento, workflow.PapelTestemunha
+	case segment.TermoDeclaracoes:
+		return workflow.PecaDepoimento, workflow.PapelDeclarante
+	case segment.Interrogatorio:
+		if tipo == workflow.TipoSR {
+			return workflow.PecaDepoimento, workflow.PapelSindicado
+		}
+	}
+	return workflow.PecaOutro, ""
 }
 
 // interlocutor traduz os pedidos do cliente SEI em pedidos da tarefa.
