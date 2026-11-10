@@ -12,7 +12,13 @@ Relatório: `docs/planning/RELATORIO_ETAPA2_BARREIRA.md`. O teste no Windows con
 - **400 do Gemini**: `maxItems` recusado; o schema vai sem limites de lista e é conferido no Go;
 - cota diária classificada como IA-005.
 
-O 400 só pode ser reconfirmado ponta a ponta quando a cota diária gratuita (20/dia) renovar. **Etapas 2 e 3 commitadas** (`ab14035`, `0c5335c`). **Etapa 4 implementada** (provedor ChatGPT; relatório em `docs/planning/RELATORIO_ETAPA4_CHATGPT.md`). O `.exe` de teste está em `Documents\testes-sys-executor\sys-executor-chatgpt.exe`. **Próximo passo:** o usuário testa com a conta Plus; depois, etapa 5 (enquadramento), que depende de autorização expressa. **Nenhum código** foi alterado; cada etapa do plano depende de autorização expressa.
+O 400 só pode ser reconfirmado ponta a ponta quando a cota diária gratuita (20/dia) renovar. **Etapas 2, 3 e 4 commitadas** (`ab14035`, `0c5335c`, `e53a815`). O ChatGPT foi **testado pelo usuário no Windows** com a conta Plus: PADS sintético até TAR-004, IMP-1 procedente e IMP-2 improcedente. Relatório em `docs/planning/RELATORIO_ETAPA4_CHATGPT.md`.
+
+Pendências:
+- confirmar o 400 do Gemini quando a cota gratuita renovar; a chave de desenvolvimento está em `~/.config/sys-executor/gemini-dev.key`;
+- etapas 5 a 8.
+
+**Próximo passo:** etapa 5 (catálogo de enquadramento e formulário PADS-ESC-001), que depende de autorização expressa. **Nenhum código** foi alterado; cada etapa do plano depende de autorização expressa.
 
 Leia junto: `docs/planning/RELATORIO_MIGRACAO_GEMINI.md` (relatório técnico), `docs/planning/ADR_009_gemini_api.md` (arquitetura), V4 §47 (`docs/rules/sys-executor_especificacao_consolidada_V4.md`) e D-10 (`docs/planning/REGISTRO_DUVIDAS_DECISOES.md`).
 
