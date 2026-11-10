@@ -165,3 +165,15 @@
   falha: "ChatGPT sem conta conectada → IA-015; nenhum serviço escolhido → IA-004"
   testes: ["IA-PROV-01"]
   versao: 1
+
+- id: TRV-IA-015
+  origem: "§48.7"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [ARQUITETURA, DETERMINISTICA]
+  enunciado: "ChatGPT pela Responses API pública: corpo só com model, instructions, input, store=false, stream=true, text.format json_schema strict e reasoning opcional (campos recusados nesse modo nunca existem); resposta só vale com response.completed; incompleta por tamanho → reenvio com concisão; limite do plano e conta não elegível não se repetem nem se contornam; modelos da lista da conta, nada fixo no código"
+  modulo: "inference.MotorChatGPT; app.FonteChatGPT"
+  enforced_by: [inference.MotorChatGPT, inference.NovoMotorChatGPT, inference.ListarModelosChatGPT]
+  falha: "IA-004…010, IA-017…020 conforme a causa"
+  testes: ["IA-SIWC-01"]
+  versao: 1

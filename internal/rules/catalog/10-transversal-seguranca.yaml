@@ -124,15 +124,15 @@
   versao: 2
 
 - id: TRV-SEG-012
-  origem: "§47.3"
+  origem: "§§47.3, 48.7"
   fluxo: TRV
   rotulo: [APROVADO]
   tipo: [SEGURANCA]
-  enunciado: "Envio só a generativelanguage.googleapis.com (base fixa, sem redirecionamento), store=false, sem ferramentas, sem Files API nem armazenamento de contexto no provedor"
-  modulo: "inference.MotorGemini"
-  enforced_by: [inference.TransporteRestrito, inference.HostGemini]
+  enunciado: "Destinos de rede fixos e de origem única, sem redirecionamento nem cookies: Gemini API só em generativelanguage.googleapis.com; ChatGPT só em api.openai.com (inferência e modelos) e auth.openai.com (login); nunca endpoints privados do ChatGPT; store=false, sem ferramentas, sem Files API nem armazenamento de contexto no provedor"
+  modulo: "inference.MotorGemini; inference.MotorChatGPT; chatgpt"
+  enforced_by: [inference.TransporteRestrito, inference.HostGemini, inference.OrigemAPIOpenAI, chatgpt.EmissorOpenAI]
   testes: ["SEG-NET-01"]
-  versao: 1
+  versao: 2
 
 - id: TRV-SEG-013
   origem: "§48.6"
@@ -144,4 +144,40 @@
   enforced_by: [pseudonimo.ErrVazamento, pseudonimo.ErrRevisao, inference.ErrInspecao]
   falha: "Resíduo → IA-014, nada enviado; revisão recusada → IA-011, parada recuperável"
   testes: ["SEG-BAR-01"]
+  versao: 1
+
+- id: TRV-SEG-014
+  origem: "§48.3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA]
+  enunciado: "Credencial do ChatGPT (registro, identidade, refresh token, ID token) cifrada com DPAPI na conta do usuário, com arquivo e entropia próprios; access token só em memória; nenhum token na interface, em eventos, preferências, URLs de páginas, erros ou logs; renovação em série com o refresh novo gravado antes do uso; falha de rede não apaga a credencial; desconectar revoga (quando possível) e apaga"
+  modulo: "chatgpt.Conta; app.IAService"
+  enforced_by: [chatgpt.Conta, chatgpt.EntropiaCredencial, app.VisaoChatGPT]
+  falha: "Sessão encerrada → IA-018 (reconectar com o mesmo registro); DPAPI → IA-012"
+  testes: ["SEG-SIWC-01"]
+  versao: 1
+
+- id: TRV-SEG-015
+  origem: "§48.3"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA, UI]
+  enunciado: "Conexão da conta só pelo fluxo oficial Sign in with ChatGPT no navegador padrão do sistema: Authorization Code com PKCE S256, state, nonce, retorno só em 127.0.0.1 (um único GET, Host conferido), ID token validado (JWKS, emissor, destinatário, validade, nonce), nome do aplicativo sys-executor; sem a permissão de uso do plano o provedor não gera texto; aviso de privacidade antes da primeira conexão; botão só em texto, sem logotipo nem sugestão de endosso"
+  modulo: "chatgpt.Conta; frontend (Configurações de IA)"
+  enforced_by: [chatgpt.Conta, chatgpt.EscopoPlano, chatgpt.NomeAplicativo]
+  falha: "Negado, cancelado, prazo, conta sem plano elegível → IA-016; sem permissão do plano → IA-017"
+  testes: ["SEG-SIWC-02"]
+  versao: 1
+
+- id: TRV-SEG-016
+  origem: "§48.6"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA, PERGUNTA]
+  enunciado: "Na confirmação de envio ao ChatGPT, pergunta obrigatória sobre dados pessoais de criança menor de 13 anos; resposta diferente de não bloqueia o ChatGPT na tarefa, sem envio; a análise só segue com outro serviço escolhido pelo usuário, com nova confirmação"
+  modulo: "pipeline (envio_ia)"
+  enforced_by: [pipeline.PerguntaEnvioIA, erros.IACriancaChatGPT]
+  falha: "IA-021, parada recuperável"
+  testes: ["SEG-CRI-01"]
   versao: 1

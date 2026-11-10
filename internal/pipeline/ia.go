@@ -70,6 +70,9 @@ type EstadoIA struct {
 	suspeitosEnvio []suspeito
 	revisao        *revisaoPendente
 	revisoes       int
+	// criancaSemChatGPT: o usuário declarou dados de criança menor de 13
+	// anos nesta tarefa; o ChatGPT não pode receber o conteúdo (V4 §48.6).
+	criancaSemChatGPT bool
 }
 
 func novoEstadoIA() *EstadoIA {

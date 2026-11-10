@@ -46,8 +46,9 @@ import { IaVisao } from "../bindings/events";
 
 export type { VisaoIA };
 
-// Configurações de IA (Gemini API). A chave só vai ao Go em salvarChave e
-// nunca volta: VisaoIA não a contém (V4 §47.4).
+// Configurações de IA (V4 §§47, 48): Gemini API (chave do usuário) e
+// ChatGPT (plano do usuário). A chave só vai ao Go em salvarChave e nunca
+// volta; nenhum token do ChatGPT chega aqui: VisaoIA não os contém.
 export const ia = {
   estado: (): Promise<VisaoIA> => IA.Estado(),
   salvarChave: (chave: string): Promise<VisaoIA> => IA.SalvarChave(chave),
@@ -56,6 +57,14 @@ export const ia = {
   selecionarModelo: (id: string): Promise<VisaoIA> => IA.SelecionarModelo(id),
   testarModelo: (id: string): Promise<VisaoIA> => IA.TestarModelo(id),
   abrirPaginaChaves: (): Promise<VisaoIA> => IA.AbrirPaginaChaves(),
+  selecionarProvedor: (p: string): Promise<VisaoIA> => IA.SelecionarProvedor(p),
+  entrarChatGPT: (): Promise<VisaoIA> => IA.EntrarChatGPT(),
+  cancelarEntradaChatGPT: (): Promise<VisaoIA> => IA.CancelarEntradaChatGPT(),
+  desconectarChatGPT: (): Promise<VisaoIA> => IA.DesconectarChatGPT(),
+  atualizarModelosChatGPT: (): Promise<VisaoIA> => IA.AtualizarModelosChatGPT(),
+  selecionarModeloChatGPT: (id: string): Promise<VisaoIA> => IA.SelecionarModeloChatGPT(id),
+  testarModeloChatGPT: (id: string): Promise<VisaoIA> => IA.TestarModeloChatGPT(id),
+  abrirUsoChatGPT: (): Promise<VisaoIA> => IA.AbrirUsoChatGPT(),
   aoMudar(cb: (v: VisaoIA) => void): () => void {
     return Events.On(IaVisao, (ev) => cb(ev.data as VisaoIA));
   },

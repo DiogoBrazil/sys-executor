@@ -20,6 +20,8 @@ const (
 	opcaoAutorizar = "autorizar"
 	opcaoNaoEnviar = "nao_enviar"
 	campoOcultar   = "ocultar"
+	// campoCrianca: só no ChatGPT (V4 §48.6; Termos do Sign in with ChatGPT).
+	campoCrianca = "crianca"
 	// fatorEstimativa cobre instruções das etapas, dados estruturados e
 	// eventuais reenvios sobre o texto dos autos (estimativa aproximada).
 	fatorEstimativa = 1.5
@@ -39,6 +41,10 @@ func (p *Pipeline) autorizarEnvio(c *workflow.Contexto, d *Dados) (aguardar bool
 	alvo, err := p.IA.Alvo()
 	if err != nil {
 		return false, err // IA-001 / IA-004 / IA-012 / IA-015: configurar e tentar de novo
+	}
+	if alvo.Provedor == inference.ProvedorChatGPT && e.criancaSemChatGPT {
+		// Declarado na tarefa: dados de criança não vão ao ChatGPT.
+		return false, erros.Novo(erros.IACriancaChatGPT)
 	}
 	if e.autorizado != nil {
 		if *e.autorizado == alvo {
@@ -72,6 +78,13 @@ func (p *Pipeline) autorizarEnvio(c *workflow.Contexto, d *Dados) (aguardar bool
 		// Recusa: nada é enviado; "Tentar novamente" pergunta de novo.
 		c.Esquecer(PerguntaEnvioIA)
 		return false, erros.Novo(erros.IAEnvioNaoAutorizado)
+	}
+	if alvo.Provedor == inference.ProvedorChatGPT && resp.Valor(campoCrianca) != "nao" {
+		// Sem a resposta "não", o ChatGPT fica bloqueado nesta tarefa; a
+		// análise só segue com outro serviço escolhido pelo usuário.
+		e.criancaSemChatGPT = true
+		c.Esquecer(PerguntaEnvioIA)
+		return false, erros.Novo(erros.IACriancaChatGPT)
 	}
 	aplicarDecisoes(e.mapa, e.suspeitosEnvio, resp)
 	var extras []string
@@ -108,6 +121,11 @@ func perguntaEnvio(alvo inference.Alvo, d *Dados, r pseudonimo.Resumo, ss []susp
 		"para tratar os dados em serviço externo.",
 		alvo.Rotulo, alvo.Modelo, len(d.Pecas), paginas, est, r.Texto())
 	gs, cs := camposRevisao(ss)
+	if alvo.Provedor == inference.ProvedorChatGPT {
+		cs = append(cs, workflow.Campo{ID: campoCrianca, Tipo: workflow.CampoSimNao, Obrigatorio: true,
+			Rotulo: "Os autos contêm dados pessoais de criança menor de 13 anos?",
+			Ajuda:  "Os termos do uso do plano ChatGPT em outros aplicativos proíbem enviar esses dados, mesmo com os nomes ocultados. Se houver, o ChatGPT fica bloqueado nesta tarefa."})
+	}
 	if len(ss) > 0 {
 		ctx += fmt.Sprintf("\n\nHá %d possível(is) nome(s) não reconhecido(s) abaixo: decida cada um antes de autorizar.", len(ss))
 	}

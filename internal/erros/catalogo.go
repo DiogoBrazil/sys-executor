@@ -57,6 +57,9 @@ const (
 	IASessaoExpirada     Codigo = "IA-018"
 	IALimitePlano        Codigo = "IA-019"
 	IAContaNaoElegivel   Codigo = "IA-020"
+	// Dados de criança menor de 13 anos: os Termos do Sign in with ChatGPT
+	// proíbem o envio (V4 §48.6).
+	IACriancaChatGPT Codigo = "IA-021"
 
 	// Biblioteca jurídica e referências
 	BibliotecaIndisponivel Codigo = "BIB-001"
@@ -224,6 +227,10 @@ func init() {
 	def(IAContaNaoElegivel, CatModelo, "Conta ChatGPT sem uso do plano disponível",
 		"O uso do plano ChatGPT em outros aplicativos não está disponível para esta conta, espaço de trabalho ou região.",
 		"Use outra conta com plano elegível ou escolha outro serviço em Configurações de IA.")
+
+	def(IACriancaChatGPT, CatModelo, "ChatGPT bloqueado para esta tarefa",
+		"Você informou que os autos contêm dados pessoais de criança menor de 13 anos. Os termos do uso do plano ChatGPT em outros aplicativos proíbem enviar esses dados, mesmo com os nomes ocultados. Nada foi enviado.",
+		"Para analisar esta tarefa por IA, escolha outro serviço em Configurações de IA e use Tentar novamente, ou cancele a tarefa.")
 
 	def(BibliotecaIndisponivel, CatBiblioteca, "Biblioteca jurídica indisponível",
 		"A biblioteca jurídica local não pôde ser aberta.",

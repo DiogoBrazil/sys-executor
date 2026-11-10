@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"log/slog"
 	"net/url"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/DiogoBrazil/sys-executor/frontend"
 	"github.com/DiogoBrazil/sys-executor/internal/app"
+	"github.com/DiogoBrazil/sys-executor/internal/chatgpt"
 	"github.com/DiogoBrazil/sys-executor/internal/credencial"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/ocr"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/pdf"
@@ -79,7 +81,22 @@ func main() {
 	// %LOCALAPPDATA%\sys-executor\credenciais. ChatGPT: etapa 4 do plano D-11.
 	// Sem inferência local e sem fallback local (D-10).
 	fonteIA := &app.FonteGemini{Credenciais: credencial.NovaLojaArquivo(p.Credenciais()), Loja: loja}
-	pipe.IA = &app.FonteIA{Loja: loja, Gemini: fonteIA}
+	// ChatGPT (V4 §48.3): conta conectada pelo Sign in with ChatGPT; a
+	// credencial fica cifrada com DPAPI em credenciais\chatgpt.dpapi, com
+	// entropia própria; o login abre o navegador padrão do sistema (nunca a
+	// WebView do aplicativo).
+	var wappRef *application.App
+	contaChatGPT := chatgpt.Nova(chatgpt.Config{
+		Loja: credencial.NovaLojaNomeada(p.Credenciais(), chatgpt.ArquivoCredencial, chatgpt.EntropiaCredencial),
+		AbrirURL: func(u string) error {
+			if wappRef == nil {
+				return errors.New("aplicativo ainda não iniciado")
+			}
+			return wappRef.Browser.OpenURL(u)
+		},
+	})
+	fonteChatGPT := &app.FonteChatGPT{Conta: contaChatGPT, Loja: loja}
+	pipe.IA = &app.FonteIA{Loja: loja, Gemini: fonteIA, ChatGPT: fonteChatGPT}
 
 	// SEI/RO pelo Microsoft Edge instalado (Fase 2). Sem Edge, só o envio do PDF.
 	navegador, errNav := sei.LocalizarNavegador()
@@ -117,7 +134,7 @@ func main() {
 	}
 
 	fontes := app.NovaFontesService(ger)
-	servIA := &app.IAService{Fonte: fonteIA,
+	servIA := &app.IAService{Fonte: fonteIA, ChatGPT: fonteChatGPT,
 		Emitir: func(v *app.VisaoIA) {
 			if wapp != nil {
 				wapp.Event.Emit(app.EventoIA, v)
@@ -164,11 +181,13 @@ func main() {
 		},
 		// Fechar o app descarta a tarefa em andamento (V4 §29.1: sem retomada).
 		OnShutdown: func() {
+			servIA.CancelarEntradaChatGPT() // fecha o servidor de retorno do login, se aberto
 			ger.Encerrar()
 			_ = extrator.Fechar()
 			faxina.Do(agendarFaxina)
 		},
 	})
+	wappRef = wapp
 
 	janela = wapp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:            "sys-executor",

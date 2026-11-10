@@ -189,13 +189,23 @@ type VisaoIA struct {
 	Uso               *UsoIA              `json:"uso"`
 	URLChaves         string              `json:"urlChaves"`
 	Erro              *workflow.ErroVisao `json:"erro"`
+	// Provedor usado nas análises ("" = nenhum escolhido; V4 §48.1).
+	Provedor string        `json:"provedor"`
+	ChatGPT  *VisaoChatGPT `json:"chatgpt"`
+	Aviso    string        `json:"aviso"`
 }
 
 // IAService expõe as configurações de IA (substitui a tela Modelos local).
 type IAService struct {
 	Fonte    *FonteGemini
+	ChatGPT  *FonteChatGPT // nil = ChatGPT indisponível nesta montagem
 	Emitir   func(*VisaoIA)
 	AbrirURL func(string) error
+
+	cModelos        []inference.ModeloChatGPT
+	cTestes         map[string]ModeloChatGPTIA
+	cancelarEntrada context.CancelFunc
+	aviso           string
 
 	mu      sync.Mutex
 	status  string
@@ -246,6 +256,13 @@ func (s *IAService) visaoLocked() VisaoIA {
 	if s.erro != nil {
 		v.Erro = workflow.VisaoErro(s.erro)
 	}
+	p := s.Fonte.Loja.Obter()
+	v.Provedor = p.ProvedorIA
+	if v.Provedor == "" && p.ModeloGemini != "" {
+		v.Provedor = prefs.ProvedorGemini
+	}
+	v.ChatGPT = s.visaoChatGPTLocked()
+	v.Aviso = s.aviso
 	return v
 }
 

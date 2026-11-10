@@ -195,8 +195,11 @@
 | TRV-SEG-009 | §47.4 | Chave da Gemini API cifrada com DPAPI; nunca na interface, eventos, preferências, erros ou logs; validada sem gerar texto; substituível e removível | AP | SEG | credencial; app.IAService | SEG-KEY-01 |
 | TRV-SEG-010 | §§47.3, 48.1 | Confirmação de envio à IA em cada tarefa, antes da 1ª etapa de IA; vale para um provedor e um modelo (troca → nova confirmação); sem autorização nada é enviado (v2) | AP | SEG+UI | pipeline (envio_ia) | SEG-ENV-01, SEG-ENV-02 |
 | TRV-SEG-011 | §47.3 | Pseudonimização de dados pessoais antes do envio e restauração exata (melhor esforço; sem diferença de caixa/acento; v2) | AP | SEG | pseudonimo | SEG-PSEUDO-01 |
-| TRV-SEG-012 | §47.3 | Envio só a generativelanguage.googleapis.com; store=false; sem ferramentas, Files API nem cache no provedor | AP | SEG | inference.MotorGemini | SEG-NET-01 |
+| TRV-SEG-012 | §§47.3, 48.7 | Destinos fixos de origem única: Gemini (generativelanguage), ChatGPT (api.openai.com; auth.openai.com no login); store=false; sem ferramentas, Files API nem cache no provedor (v2) | AP | SEG | inference; chatgpt | SEG-NET-01 |
 | TRV-SEG-013 | §48.6 | Barreira obrigatória antes do envio (pedido e bytes da requisição); revisão item a item de possíveis nomes; resíduo bloqueia (IA-014) | AP | SEG+UI | pseudonimo; inference.TransporteRestrito; pipeline | SEG-BAR-01 |
+| TRV-SEG-014 | §48.3 | Credencial do ChatGPT com DPAPI (entropia própria); access token só em memória; nenhum token na interface/erros/logs; renovação em série; desconectar revoga e apaga | AP | SEG | chatgpt.Conta | SEG-SIWC-01 |
+| TRV-SEG-015 | §48.3 | Login oficial Sign in with ChatGPT (PKCE, state, nonce, 127.0.0.1, ID token validado); permissão do plano exigida; aviso de privacidade; botão só texto | AP | SEG+UI | chatgpt.Conta; frontend | SEG-SIWC-02 |
+| TRV-SEG-016 | §48.6 | Dados de criança < 13 anos bloqueiam o ChatGPT na tarefa (pergunta obrigatória na confirmação) | AP | SEG+PERG | pipeline (envio_ia) | SEG-CRI-01 |
 
 ## 11. Transversal — IA (Gemini API desde a emenda §47; regras da IA local revogadas)
 
@@ -216,6 +219,7 @@
 | TRV-IA-012 | §§47.6, 38.4 | Resposta só vale íntegra; cortada, bloqueada ou vazia nunca vira resultado; falhas → parada recuperável | AP | DET | inference.MotorGemini | T15, IA-RESP-01 |
 | TRV-IA-013 | §§47.2, 38 | Nenhum modelo roda no computador; sem requisitos de GPU/RAM para a IA; janela de trabalho mantém o fatiamento | AP | PT | inference | T14, T16 |
 | TRV-IA-014 | §48.1 | Dois provedores (Gemini API; ChatGPT pelo plano) por escolha explícita; motor abre o alvo autorizado; sem troca automática | AP | ARQ+SEG | app.FonteIA; prefs v3 | IA-PROV-01 |
+| TRV-IA-015 | §48.7 | ChatGPT pela Responses API: corpo restrito, sucesso só com response.completed, limite do plano não se repete | AP | ARQ | inference.MotorChatGPT | IA-SIWC-01 |
 
 ## 12. Transversal — biblioteca jurídica e pesquisa web
 

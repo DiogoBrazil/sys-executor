@@ -11,7 +11,7 @@ import (
 // InstrucaoMarcadores é acrescentada às instruções de sistema quando há
 // pseudonimização (TRV-SEG-011). Não altera nenhuma regra jurídica: só diz
 // à IA como tratar os marcadores.
-const InstrucaoMarcadores = `MARCADORES DE DADOS PESSOAIS: nomes de pessoas e dados pessoais dos autos foram substituídos por marcadores entre colchetes, como [PESSOA-01], [PESSOA-01.2] (outra grafia da mesma pessoa), [CPF-01], [RG-01], [MATRICULA-01], [TELEFONE-01], [ENDERECO-01]. Marcadores com o mesmo número antes do ponto são a mesma pessoa. Ao copiar trechos ou mencionar essas pessoas e dados, reproduza os marcadores exatamente como aparecem, com os colchetes. Não tente deduzir, completar nem inventar os dados reais.`
+const InstrucaoMarcadores = `MARCADORES DE DADOS PESSOAIS: nomes de pessoas e dados pessoais dos autos foram substituídos por marcadores entre colchetes, como [PESSOA-01], [PESSOA-01.2] (outra grafia da mesma pessoa), [CPF-01], [RG-01], [MATRICULA-01], [TELEFONE-01], [ENDERECO-01]. Marcadores com o mesmo número antes do ponto são a mesma pessoa. Ao copiar trechos ou mencionar essas pessoas e dados, reproduza os marcadores exatamente como aparecem, com os colchetes. Não tente deduzir, completar nem inventar os dados reais. Nos textos que você redigir, use cada marcador como se fosse o próprio nome ou dado: não comente, não explique e não mencione a existência de marcadores, nem diga que dois marcadores são a mesma pessoa.`
 
 // reenviosMarcador: correções pedidas à IA quando ela altera marcadores.
 const reenviosMarcador = 2

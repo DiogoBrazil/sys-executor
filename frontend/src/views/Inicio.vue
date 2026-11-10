@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { TIPOS } from "../tipos";
 import { computed } from "vue";
-import { abrirConfigIA, escolherTipo, estado } from "../estado";
+import { abrirConfigIA, escolherTipo, estado, iaPronta } from "../estado";
 import AvisoErro from "../components/AvisoErro.vue";
 
 const opcoes = [TIPOS.PADS, TIPOS.SR];
-// Primeiro uso: falta a chave ou o modelo da Gemini API.
-const faltaIA = computed(() => !!estado.ia && (!estado.ia.chaveCadastrada || !estado.ia.modeloSelecionado));
+// Primeiro uso: o serviço de IA escolhido ainda não está pronto (ChatGPT
+// conectado com modelo, ou Gemini com chave e modelo).
+const faltaIA = computed(() => !!estado.ia && !iaPronta());
 </script>
 
 <template>
@@ -38,10 +39,11 @@ const faltaIA = computed(() => !!estado.ia && (!estado.ia.chaveCadastrada || !es
     <AvisoErro v-if="estado.erro" :erro="estado.erro" />
 
     <div v-if="faltaIA" class="primeiro-uso" role="status" data-teste="primeiro-uso">
-      <h2>Configure a IA (Gemini API)</h2>
+      <h2>Configure a IA</h2>
       <p>
-        A leitura e a análise dos autos usam a Gemini API, do Google, com a sua chave de API. Cadastre a chave e escolha
-        o modelo; isso é feito uma vez só. A análise por IA exige internet.
+        A leitura e a análise dos autos usam um serviço de IA: o ChatGPT, com o seu plano Plus ou Pro, ou a Gemini API,
+        do Google, com a sua chave. Escolha o serviço, conecte a conta ou cadastre a chave e escolha o modelo; isso é feito
+        uma vez só. A análise por IA exige internet.
       </p>
       <button class="botao primario" data-teste="configurar-ia" @click="abrirConfigIA">Configurar a IA</button>
     </div>

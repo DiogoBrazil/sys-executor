@@ -52,6 +52,69 @@ export class Caixa {
 }
 
 /**
+ * ModeloChatGPTIA é um modelo na tela, com o resultado do último teste.
+ */
+export class ModeloChatGPTIA {
+    /**
+     * slug
+     */
+    "id": string;
+    "nome": string;
+    "contexto": number;
+
+    /**
+     * níveis aceitos em reasoning.effort
+     */
+    "raciocinio": string[];
+    "raciocinioPadrao": string;
+    "teste": string;
+    "testeErro": workflow$0.ErroVisao | null;
+
+    /** Creates a new ModeloChatGPTIA instance. */
+    constructor($$source: Partial<ModeloChatGPTIA> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("nome" in $$source)) {
+            this["nome"] = "";
+        }
+        if (!("contexto" in $$source)) {
+            this["contexto"] = 0;
+        }
+        if (!("raciocinio" in $$source)) {
+            this["raciocinio"] = [];
+        }
+        if (!("raciocinioPadrao" in $$source)) {
+            this["raciocinioPadrao"] = "";
+        }
+        if (!("teste" in $$source)) {
+            this["teste"] = "";
+        }
+        if (!("testeErro" in $$source)) {
+            this["testeErro"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ModeloChatGPTIA instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ModeloChatGPTIA {
+        const $$createField3_0 = $$createType0;
+        const $$createField6_0 = $$createType2;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("raciocinio" in $$parsedSource) {
+            $$parsedSource["raciocinio"] = $$createField3_0($$parsedSource["raciocinio"]);
+        }
+        if ("testeErro" in $$parsedSource) {
+            $$parsedSource["testeErro"] = $$createField6_0($$parsedSource["testeErro"]);
+        }
+        return new ModeloChatGPTIA($$parsedSource as Partial<ModeloChatGPTIA>);
+    }
+}
+
+/**
  * ModeloIA é um modelo na tela, com o resultado do último teste.
  */
 export class ModeloIA {
@@ -109,7 +172,7 @@ export class ModeloIA {
      * Creates a new ModeloIA instance from a string or object.
      */
     static createFrom($$source: any = {}): ModeloIA {
-        const $$createField8_0 = $$createType1;
+        const $$createField8_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("testeErro" in $$parsedSource) {
             $$parsedSource["testeErro"] = $$createField8_0($$parsedSource["testeErro"]);
@@ -141,8 +204,8 @@ export class Resposta {
      * Creates a new Resposta instance from a string or object.
      */
     static createFrom($$source: any = {}): Resposta {
-        const $$createField0_0 = $$createType3;
-        const $$createField1_0 = $$createType1;
+        const $$createField0_0 = $$createType4;
+        const $$createField1_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("visao" in $$parsedSource) {
             $$parsedSource["visao"] = $$createField0_0($$parsedSource["visao"]);
@@ -177,8 +240,8 @@ export class RespostaBusca {
      * Creates a new RespostaBusca instance from a string or object.
      */
     static createFrom($$source: any = {}): RespostaBusca {
-        const $$createField0_0 = $$createType5;
-        const $$createField1_0 = $$createType1;
+        const $$createField0_0 = $$createType6;
+        const $$createField1_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("ocorrencias" in $$parsedSource) {
             $$parsedSource["ocorrencias"] = $$createField0_0($$parsedSource["ocorrencias"]);
@@ -225,8 +288,8 @@ export class RespostaDestaque {
      * Creates a new RespostaDestaque instance from a string or object.
      */
     static createFrom($$source: any = {}): RespostaDestaque {
-        const $$createField3_0 = $$createType7;
-        const $$createField4_0 = $$createType1;
+        const $$createField3_0 = $$createType8;
+        const $$createField4_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("caixas" in $$parsedSource) {
             $$parsedSource["caixas"] = $$createField3_0($$parsedSource["caixas"]);
@@ -261,7 +324,7 @@ export class RespostaEndereco {
      * Creates a new RespostaEndereco instance from a string or object.
      */
     static createFrom($$source: any = {}): RespostaEndereco {
-        const $$createField1_0 = $$createType1;
+        const $$createField1_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("erro" in $$parsedSource) {
             $$parsedSource["erro"] = $$createField1_0($$parsedSource["erro"]);
@@ -293,8 +356,8 @@ export class RespostaPreferencias {
      * Creates a new RespostaPreferencias instance from a string or object.
      */
     static createFrom($$source: any = {}): RespostaPreferencias {
-        const $$createField0_0 = $$createType8;
-        const $$createField1_0 = $$createType1;
+        const $$createField0_0 = $$createType9;
+        const $$createField1_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("preferencias" in $$parsedSource) {
             $$parsedSource["preferencias"] = $$createField0_0($$parsedSource["preferencias"]);
@@ -355,6 +418,79 @@ export class UsoIA {
 }
 
 /**
+ * VisaoChatGPT é a parte do ChatGPT na tela de configurações. Nunca contém
+ * tokens (TRV-SEG-014).
+ */
+export class VisaoChatGPT {
+    "disponivel": boolean;
+    "conectada": boolean;
+    "email": string;
+    "planoAutorizado": boolean;
+    "reconectar": boolean;
+    "entrando": boolean;
+    "modelos": ModeloChatGPTIA[];
+    "modeloSelecionado": string;
+    "modeloForaDaLista": boolean;
+    "uso": UsoIA | null;
+    "urlUso": string;
+
+    /** Creates a new VisaoChatGPT instance. */
+    constructor($$source: Partial<VisaoChatGPT> = {}) {
+        if (!("disponivel" in $$source)) {
+            this["disponivel"] = false;
+        }
+        if (!("conectada" in $$source)) {
+            this["conectada"] = false;
+        }
+        if (!("email" in $$source)) {
+            this["email"] = "";
+        }
+        if (!("planoAutorizado" in $$source)) {
+            this["planoAutorizado"] = false;
+        }
+        if (!("reconectar" in $$source)) {
+            this["reconectar"] = false;
+        }
+        if (!("entrando" in $$source)) {
+            this["entrando"] = false;
+        }
+        if (!("modelos" in $$source)) {
+            this["modelos"] = [];
+        }
+        if (!("modeloSelecionado" in $$source)) {
+            this["modeloSelecionado"] = "";
+        }
+        if (!("modeloForaDaLista" in $$source)) {
+            this["modeloForaDaLista"] = false;
+        }
+        if (!("uso" in $$source)) {
+            this["uso"] = null;
+        }
+        if (!("urlUso" in $$source)) {
+            this["urlUso"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new VisaoChatGPT instance from a string or object.
+     */
+    static createFrom($$source: any = {}): VisaoChatGPT {
+        const $$createField6_0 = $$createType11;
+        const $$createField9_0 = $$createType13;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("modelos" in $$parsedSource) {
+            $$parsedSource["modelos"] = $$createField6_0($$parsedSource["modelos"]);
+        }
+        if ("uso" in $$parsedSource) {
+            $$parsedSource["uso"] = $$createField9_0($$parsedSource["uso"]);
+        }
+        return new VisaoChatGPT($$parsedSource as Partial<VisaoChatGPT>);
+    }
+}
+
+/**
  * VisaoIA é o que a tela de configurações de IA recebe. NUNCA contém a
  * chave nem parte dela (TRV-SEG-009).
  */
@@ -368,6 +504,13 @@ export class VisaoIA {
     "uso": UsoIA | null;
     "urlChaves": string;
     "erro": workflow$0.ErroVisao | null;
+
+    /**
+     * Provedor usado nas análises ("" = nenhum escolhido; V4 §48.1).
+     */
+    "provedor": string;
+    "chatgpt": VisaoChatGPT | null;
+    "aviso": string;
 
     /** Creates a new VisaoIA instance. */
     constructor($$source: Partial<VisaoIA> = {}) {
@@ -398,6 +541,15 @@ export class VisaoIA {
         if (!("erro" in $$source)) {
             this["erro"] = null;
         }
+        if (!("provedor" in $$source)) {
+            this["provedor"] = "";
+        }
+        if (!("chatgpt" in $$source)) {
+            this["chatgpt"] = null;
+        }
+        if (!("aviso" in $$source)) {
+            this["aviso"] = "";
+        }
 
         Object.assign(this, $$source);
     }
@@ -406,9 +558,10 @@ export class VisaoIA {
      * Creates a new VisaoIA instance from a string or object.
      */
     static createFrom($$source: any = {}): VisaoIA {
-        const $$createField2_0 = $$createType10;
-        const $$createField6_0 = $$createType12;
-        const $$createField8_0 = $$createType1;
+        const $$createField2_0 = $$createType15;
+        const $$createField6_0 = $$createType13;
+        const $$createField8_0 = $$createType2;
+        const $$createField10_0 = $$createType17;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("modelos" in $$parsedSource) {
             $$parsedSource["modelos"] = $$createField2_0($$parsedSource["modelos"]);
@@ -419,21 +572,29 @@ export class VisaoIA {
         if ("erro" in $$parsedSource) {
             $$parsedSource["erro"] = $$createField8_0($$parsedSource["erro"]);
         }
+        if ("chatgpt" in $$parsedSource) {
+            $$parsedSource["chatgpt"] = $$createField10_0($$parsedSource["chatgpt"]);
+        }
         return new VisaoIA($$parsedSource as Partial<VisaoIA>);
     }
 }
 
 // Private type creation functions
-const $$createType0 = workflow$0.ErroVisao.createFrom;
-const $$createType1 = $Create.Nullable($$createType0);
-const $$createType2 = workflow$0.Visao.createFrom;
-const $$createType3 = $Create.Nullable($$createType2);
-const $$createType4 = autos$0.Ocorrencia.createFrom;
-const $$createType5 = $Create.Array($$createType4);
-const $$createType6 = Caixa.createFrom;
-const $$createType7 = $Create.Array($$createType6);
-const $$createType8 = prefs$0.Preferencias.createFrom;
-const $$createType9 = ModeloIA.createFrom;
-const $$createType10 = $Create.Array($$createType9);
-const $$createType11 = UsoIA.createFrom;
-const $$createType12 = $Create.Nullable($$createType11);
+const $$createType0 = $Create.Array($Create.Any);
+const $$createType1 = workflow$0.ErroVisao.createFrom;
+const $$createType2 = $Create.Nullable($$createType1);
+const $$createType3 = workflow$0.Visao.createFrom;
+const $$createType4 = $Create.Nullable($$createType3);
+const $$createType5 = autos$0.Ocorrencia.createFrom;
+const $$createType6 = $Create.Array($$createType5);
+const $$createType7 = Caixa.createFrom;
+const $$createType8 = $Create.Array($$createType7);
+const $$createType9 = prefs$0.Preferencias.createFrom;
+const $$createType10 = ModeloChatGPTIA.createFrom;
+const $$createType11 = $Create.Array($$createType10);
+const $$createType12 = UsoIA.createFrom;
+const $$createType13 = $Create.Nullable($$createType12);
+const $$createType14 = ModeloIA.createFrom;
+const $$createType15 = $Create.Array($$createType14);
+const $$createType16 = VisaoChatGPT.createFrom;
+const $$createType17 = $Create.Nullable($$createType16);

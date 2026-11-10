@@ -15,7 +15,7 @@ function abrir(pagina: number, inicio: number, fim: number) {
   fonte.value = { pagina, inicio, fim };
 }
 
-// Falhas da Gemini API (chave, modelo, cota, conexão): atalho para as configurações.
+// Falhas do serviço de IA (chave, conta, modelo, cota, conexão): atalho para as configurações.
 const erroDeIA = computed(() => (v.value.erro?.codigo ?? "").startsWith("IA-"));
 
 const percentual = computed(() => {

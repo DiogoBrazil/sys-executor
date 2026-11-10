@@ -173,6 +173,11 @@ func TestMotorOcultaNaIdaERestauraNaVolta(t *testing.T) {
 			t.Fatalf("%q foi enviado à IA", sentinela)
 		}
 	}
+	// A IA não pode comentar os marcadores na redação (visto no teste real de
+	// 09/11/2026: "O marcador X identifica a mesma pessoa que Y").
+	if !strings.Contains(enviado.Sistema, "não mencione a existência de marcadores") {
+		t.Fatal("instrução contra comentar marcadores ausente")
+	}
 	if !strings.HasPrefix(enviado.Sistema, "REGRAS") || !strings.Contains(enviado.Sistema, "MARCADORES DE DADOS PESSOAIS") {
 		t.Fatal("instrução dos marcadores ausente ou regras alteradas")
 	}

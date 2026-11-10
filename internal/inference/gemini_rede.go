@@ -117,3 +117,12 @@ func novoClienteHTTP(origem string, inspecionar func([]byte) error) (*http.Clien
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}, nil
 }
+
+// NovoClienteRestrito devolve um cliente HTTP que só fala com a origem dada
+// (esquema + host), sem seguir redirecionamento e sem armazenar cookies.
+// inspecionar (opcional) recebe o corpo exato de cada requisição antes de
+// sair (barreira de privacidade, camada 2). Usado também pelo OAuth do
+// ChatGPT, com um cliente por origem (TRV-SEG-012).
+func NovoClienteRestrito(origem string, inspecionar func([]byte) error) (*http.Client, error) {
+	return novoClienteHTTP(origem, inspecionar)
+}

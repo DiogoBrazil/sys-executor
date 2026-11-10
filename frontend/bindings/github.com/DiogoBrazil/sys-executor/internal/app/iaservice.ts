@@ -24,6 +24,53 @@ export function AbrirPaginaChaves(): $CancellablePromise<$models.VisaoIA> {
 }
 
 /**
+ * AbrirUsoChatGPT abre as configurações do ChatGPT (uso do plano e
+ * aplicativos conectados) no navegador do sistema.
+ */
+export function AbrirUsoChatGPT(): $CancellablePromise<$models.VisaoIA> {
+    return $Call.ByID(2347350523).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * AtualizarModelosChatGPT lista os modelos da conta (sem gerar texto).
+ */
+export function AtualizarModelosChatGPT(): $CancellablePromise<$models.VisaoIA> {
+    return $Call.ByID(1778434784).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * CancelarEntradaChatGPT interrompe a espera pelo navegador.
+ */
+export function CancelarEntradaChatGPT(): $CancellablePromise<$models.VisaoIA> {
+    return $Call.ByID(1760028702).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * DesconectarChatGPT revoga a sessão (quando possível) e apaga a credencial.
+ */
+export function DesconectarChatGPT(): $CancellablePromise<$models.VisaoIA> {
+    return $Call.ByID(3140535267).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * EntrarChatGPT abre o login no navegador do sistema e volta na hora; o
+ * resultado chega pelo evento ia:visao. Uma entrada por vez.
+ */
+export function EntrarChatGPT(): $CancellablePromise<$models.VisaoIA> {
+    return $Call.ByID(1521907762).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
  * Estado monta a visão sem acessar a rede.
  */
 export function Estado(): $CancellablePromise<$models.VisaoIA> {
@@ -61,11 +108,39 @@ export function SelecionarModelo(id: string): $CancellablePromise<$models.VisaoI
 }
 
 /**
+ * SelecionarModeloChatGPT grava o modelo e escolhe o ChatGPT como serviço.
+ */
+export function SelecionarModeloChatGPT(id: string): $CancellablePromise<$models.VisaoIA> {
+    return $Call.ByID(2288375073, id).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * SelecionarProvedor grava o serviço de IA usado nas análises (escolha
+ * explícita, V4 §48.1; não há troca automática).
+ */
+export function SelecionarProvedor(provedor: string): $CancellablePromise<$models.VisaoIA> {
+    return $Call.ByID(3870433875, provedor).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
  * TestarModelo faz uma geração mínima, sem dados dos autos, para saber se a
  * chave tem acesso e cota para o modelo.
  */
 export function TestarModelo(id: string): $CancellablePromise<$models.VisaoIA> {
     return $Call.ByID(3154276072, id).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * TestarModeloChatGPT faz uma geração mínima, sem dados dos autos.
+ */
+export function TestarModeloChatGPT(id: string): $CancellablePromise<$models.VisaoIA> {
+    return $Call.ByID(1540360815, id).then(($result: any) => {
         return $$createType0($result);
     });
 }

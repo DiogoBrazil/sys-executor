@@ -113,20 +113,24 @@ func (m *motorRoteiro) Gerar(_ context.Context, p inference.Pedido) (inference.R
 }
 
 type fonteFalsa struct {
-	m       *motorRoteiro
-	falhas  int
-	aberto  int
-	fechado int
-	modelo  string           // "" = gemini-teste
-	abertos []inference.Alvo // alvos para os quais o motor foi aberto
+	m        *motorRoteiro
+	falhas   int
+	aberto   int
+	fechado  int
+	modelo   string           // "" = gemini-teste
+	provedor string           // "" = Gemini
+	abertos  []inference.Alvo // alvos para os quais o motor foi aberto
 }
 
 func (f *fonteFalsa) Alvo() (inference.Alvo, error) {
-	m := f.modelo
+	m, p := f.modelo, f.provedor
 	if m == "" {
 		m = "gemini-teste"
 	}
-	return inference.Alvo{Provedor: inference.ProvedorGemini, Rotulo: inference.RotuloProvedor(inference.ProvedorGemini), Modelo: m}, nil
+	if p == "" {
+		p = inference.ProvedorGemini
+	}
+	return inference.Alvo{Provedor: p, Rotulo: inference.RotuloProvedor(p), Modelo: m}, nil
 }
 
 func (f *fonteFalsa) Abrir(ctx context.Context, alvo inference.Alvo, atividade func(string), _ func([]byte) error) (inference.Motor, func(), error) {
@@ -685,5 +689,51 @@ func TestAutorizacaoVinculadaAoAlvo(t *testing.T) {
 	}
 	if n := len(fonte.abertos); n != 2 || fonte.abertos[0].Modelo != "gemini-teste" || fonte.abertos[1].Modelo != "gemini-outro" {
 		t.Fatalf("motores abertos: %+v", fonte.abertos)
+	}
+}
+
+// V4 §48.6 (Termos do Sign in with ChatGPT): com o ChatGPT, a confirmação
+// pergunta por dados de criança menor de 13 anos; "sim" bloqueia o ChatGPT
+// na tarefa (IA-021), sem enviar nada, e a análise só segue com outro
+// serviço escolhido explicitamente.
+// Cobre: SEG-CRI-01
+// Regra: TRV-SEG-016
+func TestCriancaBloqueiaChatGPT(t *testing.T) {
+	m := &motorRoteiro{pedidos: map[string]int{}, usuario: map[string][]string{}}
+	fonte := &fonteFalsa{m: m, provedor: inference.ProvedorChatGPT, modelo: "gpt-teste"}
+	g := gerenciadorIA(t, fonte)
+	_, _ = g.Iniciar()
+	_, _ = g.EscolherTipo(workflow.TipoPADS)
+	_, _ = g.EscolherEntrada(workflow.EntradaUpload)
+	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
+
+	p := perguntaAtual(t, g)
+	if p == nil || p.ID != PerguntaEnvioIA || campo(p, campoCrianca).ID == "" || !campo(p, campoCrianca).Obrigatorio {
+		t.Fatalf("a confirmação do ChatGPT deve perguntar por crianças: %+v", p)
+	}
+	if _, err := g.Responder(PerguntaEnvioIA, opcaoAutorizar, decisoesRevisao(t, g, decManter, nil)); err == nil {
+		t.Fatal("sem responder sobre crianças não pode autorizar")
+	}
+	responder(t, g, PerguntaEnvioIA, opcaoAutorizar, decisoesRevisao(t, g, decManter, map[string]string{campoCrianca: "sim"}))
+	v := esperar(t, g, func(v *workflow.Visao) bool { return v.Parada })
+	if v.Erro == nil || v.Erro.Codigo != "IA-021" || !v.Retomavel || fonte.aberto != 0 || len(m.pedidos) != 0 {
+		t.Fatalf("bloqueio: %+v aberto=%d pedidos=%v", v.Erro, fonte.aberto, m.pedidos)
+	}
+	// Tentar de novo com o ChatGPT continua bloqueado, sem perguntar.
+	_, _ = g.Retomar()
+	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada })
+	if v.Erro == nil || v.Erro.Codigo != "IA-021" || fonte.aberto != 0 {
+		t.Fatalf("continua bloqueado: %+v", v.Erro)
+	}
+	// O usuário escolhe a Gemini API: nova confirmação, sem a pergunta do ChatGPT.
+	fonte.provedor, fonte.modelo = "", ""
+	_, _ = g.Retomar()
+	p = perguntaAtual(t, g)
+	if p == nil || p.ID != PerguntaEnvioIA || campo(p, campoCrianca).ID != "" || !strings.Contains(p.Contexto, "Gemini") {
+		t.Fatalf("confirmação com a Gemini: %+v", p)
+	}
+	autorizarEnvio(t, g)
+	if p := perguntaAtual(t, g); p.ID != perguntaDelimitacao || len(fonte.abertos) != 1 || fonte.abertos[0].Provedor != inference.ProvedorGemini {
+		t.Fatalf("depois de trocar: %+v %+v", p, fonte.abertos)
 	}
 }

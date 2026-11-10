@@ -14,6 +14,7 @@ export {
 
 export {
     Caixa,
+    ModeloChatGPTIA,
     ModeloIA,
     Resposta,
     RespostaBusca,
@@ -21,5 +22,6 @@ export {
     RespostaEndereco,
     RespostaPreferencias,
     UsoIA,
+    VisaoChatGPT,
     VisaoIA
 } from "./models.js";

@@ -10,6 +10,9 @@ const { iaBase } = vi.hoisted(() => ({
   iaBase: {
     chaveCadastrada: false, status: "sem_chave", modelos: [], modeloSelecionado: "", modeloForaDaLista: false,
     ocupado: false, uso: null, urlChaves: "https://aistudio.google.com/api-keys", erro: null,
+    provedor: "", aviso: "",
+    chatgpt: { disponivel: true, conectada: false, email: "", planoAutorizado: false, reconectar: false, entrando: false,
+      modelos: [], modeloSelecionado: "", modeloForaDaLista: false, uso: null, urlUso: "https://chatgpt.com/#settings" },
   },
 }));
 const iaModelos = [
@@ -81,6 +84,23 @@ vi.mock("./api", () => ({
       return Promise.resolve(iaAtual);
     },
     abrirPaginaChaves: () => { chamadas.push("abrirPaginaChaves"); return Promise.resolve(iaAtual); },
+    selecionarProvedor: (p: string) => { chamadas.push("provedor:" + p); iaAtual = { ...iaAtual, provedor: p }; return Promise.resolve(iaAtual); },
+    entrarChatGPT: () => {
+      chamadas.push("entrarChatGPT");
+      iaAtual = { ...iaAtual, chatgpt: { ...iaAtual.chatgpt, conectada: true, planoAutorizado: true, email: "fulano@exemplo.invalid",
+        modelos: [{ id: "gpt-a", nome: "GPT A", contexto: 500000, raciocinio: ["low", "high"], raciocinioPadrao: "low", teste: "", testeErro: null }] } };
+      return Promise.resolve(iaAtual);
+    },
+    cancelarEntradaChatGPT: () => { chamadas.push("cancelarEntrada"); return Promise.resolve(iaAtual); },
+    desconectarChatGPT: () => { chamadas.push("desconectar"); iaAtual = { ...iaAtual, chatgpt: { ...iaBase.chatgpt } }; return Promise.resolve(iaAtual); },
+    atualizarModelosChatGPT: () => { chamadas.push("atualizarModelosChatGPT"); return Promise.resolve(iaAtual); },
+    selecionarModeloChatGPT: (id: string) => {
+      chamadas.push("chatgpt-modelo:" + id);
+      iaAtual = { ...iaAtual, provedor: "CHATGPT", chatgpt: { ...iaAtual.chatgpt, modeloSelecionado: id } };
+      return Promise.resolve(iaAtual);
+    },
+    testarModeloChatGPT: (id: string) => { chamadas.push("chatgpt-testar:" + id); return Promise.resolve(iaAtual); },
+    abrirUsoChatGPT: () => { chamadas.push("abrirUso"); return Promise.resolve(iaAtual); },
     aoMudar: () => () => {},
   },
   credenciais: {
@@ -423,6 +443,7 @@ describe("T27 — configuração da Gemini API", () => {
     expect(w.find('[data-teste="primeiro-uso"]').text()).toContain("Gemini API");
     await w.find('[data-teste="configurar-ia"]').trigger("click");
     await flushPromises();
+    await w.find('[data-teste="aba-gemini"]').trigger("click");
     const tela = w.find('[data-teste="tela-config-ia"]');
     expect(tela.find('[data-teste="situacao-chave"]').text()).toContain("Nenhuma chave");
     const campo = w.find('[data-teste="campo-chave"]');
@@ -455,6 +476,7 @@ describe("T27 — configuração da Gemini API", () => {
     await flushPromises();
     await w.find('[data-teste="link-config-ia"]').trigger("click");
     await flushPromises();
+    expect(w.find('[data-teste="painel-gemini"]').exists()).toBe(true); // provedor Gemini abre a aba Gemini
     await w.find('[data-teste="remover-chave"]').trigger("click");
     expect(chamadas).not.toContain("removerChave");
     await w.find('[data-teste="confirmar-remover-chave"]').trigger("click");
@@ -491,5 +513,67 @@ describe("Ordem das visões", () => {
     // outra tarefa (id diferente) sempre substitui
     ganchos.ouvinte?.({ ...visao("NOVA"), id: "t2", sequencia: 1 });
     expect(estado.visao?.id).toBe("t2");
+  });
+});
+
+// V4 §48.3 (Termos do Sign in with ChatGPT): aviso de privacidade antes da
+// conexão; botão só em texto; escolha explícita do serviço.
+describe("ChatGPT nas configurações de IA", () => {
+  it("o aviso de privacidade precede a conexão; entrar, escolher e testar o modelo", async () => {
+    const w = mount(App);
+    await flushPromises();
+    await w.find('[data-teste="link-config-ia"]').trigger("click");
+    await flushPromises();
+    const painel = w.find('[data-teste="painel-chatgpt"]');
+    expect(painel.exists()).toBe(true); // aba padrão sem serviço escolhido
+    expect(painel.find('[data-teste="aviso-privacidade"]').text()).toContain("menor de 13 anos");
+    const entrar = w.find('[data-teste="entrar-chatgpt"]');
+    expect(entrar.text()).toBe("Entrar com ChatGPT");
+    expect(entrar.find("img, svg").exists()).toBe(false);
+    expect(entrar.attributes("disabled")).toBeDefined();
+    await entrar.trigger("click");
+    expect(chamadas).not.toContain("entrarChatGPT");
+    await w.find('[data-teste="li-aviso"]').setValue(true);
+    await w.find('[data-teste="entrar-chatgpt"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain("entrarChatGPT");
+    expect(w.find('[data-teste="conta-conectada"]').text()).toContain("fulano@exemplo.invalid");
+    await w.find('[data-teste="chatgpt-usar-gpt-a"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain("chatgpt-modelo:gpt-a");
+    expect(w.find('[data-teste="usando-plano"]').exists()).toBe(true);
+    expect(w.find('[data-teste="chatgpt-modelo-gpt-a"]').text()).toContain("Em uso");
+    await w.find('[data-teste="chatgpt-testar-gpt-a"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain("chatgpt-testar:gpt-a");
+    await w.find('[data-teste="desconectar"]').trigger("click");
+    expect(chamadas).not.toContain("desconectar");
+    await w.find('[data-teste="confirmar-desconectar"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain("desconectar");
+    expect(w.find('[data-teste="aviso-privacidade"]').exists()).toBe(true);
+  });
+
+  it("o serviço é escolhido explicitamente; ChatGPT pronto dispensa o aviso de primeiro uso", async () => {
+    iaAtual = { ...iaBase, provedor: "CHATGPT", chatgpt: { ...iaBase.chatgpt, conectada: true, planoAutorizado: true, modeloSelecionado: "gpt-a" } };
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="primeiro-uso"]').exists()).toBe(false);
+    await w.find('[data-teste="link-config-ia"]').trigger("click");
+    await flushPromises();
+    await w.find('[data-teste="provedor-GEMINI"] input').setValue(true);
+    await flushPromises();
+    expect(chamadas).toContain("provedor:GEMINI");
+  });
+
+  it("conta conectada sem permissão do plano mostra o alerta e oferece entrar de novo", async () => {
+    iaAtual = { ...iaBase, provedor: "CHATGPT", chatgpt: { ...iaBase.chatgpt, conectada: true, planoAutorizado: false } };
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="primeiro-uso"]').exists()).toBe(true);
+    await w.find('[data-teste="link-config-ia"]').trigger("click");
+    await flushPromises();
+    expect(w.find('[data-teste="plano-nao-autorizado"]').exists()).toBe(true);
+    expect(w.find('[data-teste="chatgpt-sem-lista"]').exists()).toBe(false);
   });
 });

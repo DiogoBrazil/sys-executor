@@ -66,3 +66,17 @@ O CI falha enquanto o SHA-256 da V4 divergir do lock (GOV-LOCK-01).
 - **Testes:** novos SEG-ENV-02 e IA-PROV-01.
 - **Golden:** sem alteração.
 - **Aprovação:** usuário, por meio do plano D-11 aprovado (etapa 3 autorizada em 09/11/2026).
+
+### 09/11/2026 — Catálogo: provedor ChatGPT (etapa 4 do plano D-11; V4 §§48.3, 48.6, 48.7)
+- **V4:** sem alteração; o lock não muda.
+- **TRV-SEG-012 v2:** destinos de origem única dos dois provedores. ChatGPT só em `api.openai.com` e `auth.openai.com`, nunca em endpoints privados.
+- **Novas regras:**
+  - TRV-SEG-014: credencial do ChatGPT;
+  - TRV-SEG-015: login oficial, permissão do plano, aviso de privacidade e marca;
+  - TRV-SEG-016: dados de criança bloqueiam o ChatGPT;
+  - TRV-IA-015: Responses API.
+- **Erro novo:** IA-021.
+- **Testes:** SEG-SIWC-01/02, SEG-CRI-01, IA-SIWC-01.
+- **Dependências novas:** `github.com/coreos/go-oidc/v3` e `github.com/go-jose/go-jose/v4` (Apache-2.0); `golang.org/x/oauth2` (BSD-3-Clause, indireta).
+- **Golden:** sem alteração.
+- **Aprovação:** usuário, por meio do plano D-11 aprovado (etapa 4 autorizada em 09/11/2026).

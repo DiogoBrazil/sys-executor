@@ -62,7 +62,7 @@ export async function carregar() {
   await atualizarIA();
 }
 
-// ---- configurações de IA (Gemini API) ----
+// ---- configurações de IA (Gemini API e ChatGPT) ----
 export async function atualizarIA() {
   try {
     estado.ia = await iaApi.estado();
@@ -91,6 +91,29 @@ export const verificarIA = () => comandoIA(iaApi.verificar);
 export const selecionarModelo = (id: string) => comandoIA(() => iaApi.selecionarModelo(id));
 export const testarModelo = (id: string) => comandoIA(() => iaApi.testarModelo(id));
 export const abrirPaginaChaves = () => comandoIA(iaApi.abrirPaginaChaves);
+// ChatGPT (V4 §48.3): a entrada abre o navegador do sistema e volta na hora;
+// o resultado chega pelo evento ia:visao.
+export const selecionarProvedor = (p: string) => comandoIA(() => iaApi.selecionarProvedor(p));
+export const entrarChatGPT = () => comandoIA(iaApi.entrarChatGPT);
+export const cancelarEntradaChatGPT = () => comandoIA(iaApi.cancelarEntradaChatGPT);
+export const desconectarChatGPT = () => comandoIA(iaApi.desconectarChatGPT);
+export const atualizarModelosChatGPT = () => comandoIA(iaApi.atualizarModelosChatGPT);
+export const selecionarModeloChatGPT = (id: string) => comandoIA(() => iaApi.selecionarModeloChatGPT(id));
+export const testarModeloChatGPT = (id: string) => comandoIA(() => iaApi.testarModeloChatGPT(id));
+export const abrirUsoChatGPT = () => comandoIA(iaApi.abrirUsoChatGPT);
+
+// iaPronta: o serviço escolhido está configurado para analisar.
+export function iaPronta(): boolean {
+  const m = estado.ia;
+  if (!m) return false;
+  const provedor = m.provedor || (m.modeloSelecionado ? "GEMINI" : "");
+  if (provedor === "CHATGPT") {
+    const c = m.chatgpt;
+    return !!c && c.conectada && c.planoAutorizado && !!c.modeloSelecionado;
+  }
+  if (provedor === "GEMINI") return m.chaveCadastrada && !!m.modeloSelecionado;
+  return false;
+}
 
 export async function escolherTipo(tipo: "PADS" | "SR") {
   if (!estado.visao || estado.visao.terminal) {
