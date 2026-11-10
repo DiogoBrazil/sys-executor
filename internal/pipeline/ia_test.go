@@ -251,27 +251,32 @@ func TestFluxoPADSComIA(t *testing.T) {
 	}
 	_, _ = g.Retomar()
 
-	// Etapa 4: imputações propostas; IMP-2 sem natureza declarada e sem data → campos vazios (T08).
+	// Etapa 4: condutas e datas propostas; IMP-2 sem data → campo vazio (T08).
+	// O enquadramento é do usuário (V4 §48.5): diploma e dispositivo não vêm
+	// preenchidos; o citado no Memorando aparece só para conferência.
 	p := perguntaAtual(t, g)
 	if p == nil || p.ID != perguntaDelimitacao {
 		t.Fatalf("%+v", p)
 	}
-	if campo(p, "natureza_IMP-1").Valor != "MEDIA" || campo(p, "data_IMP-1").Valor != "07/11/2026" ||
-		campo(p, "natureza_IMP-2").Valor != "" || campo(p, "data_IMP-2").Valor != "" {
+	if campo(p, "data_IMP-1").Valor != "07/11/2026" || campo(p, "data_IMP-2").Valor != "" ||
+		campo(p, "diploma_IMP-1").Valor != "" || campo(p, "disp_rdpm_IMP-1").Valor != "" || campo(p, "disp_rdpm_IMP-1").Tipo != workflow.CampoBusca {
 		t.Fatalf("campos propostos: %+v", p.Campos)
 	}
+	if g1 := p.Grupos[1]; !strings.Contains(strings.Join(g1.Descricao, " "), "citado no Memorando (para conferência): art. 16, inciso XVI, do RDPM") {
+		t.Fatalf("dispositivo citado deve aparecer só para conferência: %+v", g1)
+	}
 	base := map[string]string{"acusado": "FULANO DE TAL", "incluir_IMP-1": "sim", "conduta_IMP-1": "deixar de comparecer ao serviço",
-		"dispositivo_IMP-1": "art. 16, inciso XVI, do RDPM", "natureza_IMP-1": "MEDIA", "data_IMP-1": "07/11/2026",
-		"incluir_IMP-2": "sim", "conduta_IMP-2": "faltar com a verdade", "dispositivo_IMP-2": "art. 17, inciso II, do RDPM",
-		"natureza_IMP-2": "", "data_IMP-2": "", "incluir_IMP-X1": "nao"}
+		"diploma_IMP-1": "RDPM", "disp_rdpm_IMP-1": "RDPM-16-XVI", "data_IMP-1": "07/11/2026",
+		"incluir_IMP-2": "sim", "conduta_IMP-2": "faltar com a verdade", "diploma_IMP-2": "RDPM", "disp_rdpm_IMP-2": "RDPM-17-II",
+		"data_IMP-2": "", "incluir_IMP-X1": "nao"}
 	if _, err := g.Responder(perguntaDelimitacao, "confirmar", base); err == nil {
-		t.Fatal("natureza/data obrigatórias vazias deveriam ser recusadas (T08)")
+		t.Fatal("data obrigatória vazia deveria ser recusada (T08)")
 	}
 	semNenhuma := map[string]string{"acusado": "x", "incluir_IMP-1": "nao", "incluir_IMP-2": "nao", "incluir_IMP-X1": "nao"}
 	if _, err := g.Responder(perguntaDelimitacao, "confirmar", semNenhuma); err == nil {
 		t.Fatal("confirmar sem nenhuma imputação")
 	}
-	base["natureza_IMP-2"], base["data_IMP-2"] = "MEDIA", "07/11/2026"
+	base["data_IMP-2"] = "07/11/2026"
 	responder(t, g, perguntaDelimitacao, "confirmar", base)
 
 	// Mídia citada e não juntada (A08): descrição do usuário vira evidência.
@@ -344,7 +349,7 @@ func TestFluxoPADSComIA(t *testing.T) {
 		t.Fatal(err)
 	}
 	p = perguntaAtual(t, g)
-	if p.ID != perguntaDelimitacao || campo(p, "natureza_IMP-2").Valor != "MEDIA" || m.conta("delimitacao_pads") != delim {
+	if p.ID != perguntaDelimitacao || campo(p, "disp_rdpm_IMP-2").Valor != "RDPM-17-II" || m.conta("delimitacao_pads") != delim {
 		t.Fatalf("delimitação revista: %+v", p)
 	}
 	base["incluir_IMP-2"] = "nao"
@@ -509,7 +514,7 @@ func TestMotorMortoRecarregaAoRetomar(t *testing.T) {
 	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
 	autorizarEnvio(t, g)
 	responder(t, g, perguntaDelimitacao, "confirmar", map[string]string{"acusado": "FULANO DE TAL", "incluir_IMP-1": "sim",
-		"conduta_IMP-1": "x", "dispositivo_IMP-1": "art. 16", "natureza_IMP-1": "MEDIA", "data_IMP-1": "07/11/2026",
+		"conduta_IMP-1": "x", "diploma_IMP-1": "RDPM", "disp_rdpm_IMP-1": "RDPM-16-XVI", "data_IMP-1": "07/11/2026",
 		"incluir_IMP-2": "nao", "incluir_IMP-X1": "nao"})
 	v := esperar(t, g, func(v *workflow.Visao) bool { return v.Parada })
 	if v.Estado != workflow.Analisando || !v.Retomavel || v.Erro.Codigo != "IA-007" || fonte.fechado != 1 {
@@ -583,8 +588,8 @@ func TestRevisaoNoMeioDaEtapaENenhumMarcadorNoEstado(t *testing.T) {
 	autorizarEnvio(t, g)
 
 	base := map[string]string{"acusado": "FULANO DE TAL", "incluir_IMP-1": "sim",
-		"conduta_IMP-1":     "deixar de comparecer ao serviço, segundo Lucas Imaginário",
-		"dispositivo_IMP-1": "art. 16, inciso XVI, do RDPM", "natureza_IMP-1": "MEDIA", "data_IMP-1": "07/11/2026",
+		"conduta_IMP-1": "deixar de comparecer ao serviço, segundo Lucas Imaginário",
+		"diploma_IMP-1": "RDPM", "disp_rdpm_IMP-1": "RDPM-16-XVI", "data_IMP-1": "07/11/2026",
 		"incluir_IMP-2": "nao", "incluir_IMP-X1": "nao"}
 	responder(t, g, perguntaDelimitacao, "confirmar", base)
 
@@ -672,7 +677,7 @@ func TestAutorizacaoVinculadaAoAlvo(t *testing.T) {
 	fonte.modelo = "gemini-outro" // o usuário troca o modelo nas configurações
 	antes := m.conta("extracao")
 	base := map[string]string{"acusado": "FULANO DE TAL", "incluir_IMP-1": "sim", "conduta_IMP-1": "deixar de comparecer ao serviço",
-		"dispositivo_IMP-1": "art. 16, inciso XVI, do RDPM", "natureza_IMP-1": "MEDIA", "data_IMP-1": "07/11/2026",
+		"diploma_IMP-1": "RDPM", "disp_rdpm_IMP-1": "RDPM-16-XVI", "data_IMP-1": "07/11/2026",
 		"incluir_IMP-2": "nao", "incluir_IMP-X1": "nao"}
 	responder(t, g, perguntaDelimitacao, "confirmar", base)
 
@@ -735,5 +740,86 @@ func TestCriancaBloqueiaChatGPT(t *testing.T) {
 	autorizarEnvio(t, g)
 	if p := perguntaAtual(t, g); p.ID != perguntaDelimitacao || len(fonte.abertos) != 1 || fonte.abertos[0].Provedor != inference.ProvedorGemini {
 		t.Fatalf("depois de trocar: %+v %+v", p, fonte.abertos)
+	}
+}
+
+// Enquadramento manual (V4 §48.5): o usuário escolhe diploma e dispositivo
+// no catálogo; no RDPM a natureza é a do artigo, no Estatuto é atribuída;
+// escolha diferente da citada no Memorando volta com o alerta da §22.1 e só
+// é congelada com confirmação expressa.
+// Cobre: PADS-ENQ-01
+// Regra: PADS-ENQ-001, PADS-ESC-001
+func TestEnquadramentoManual(t *testing.T) {
+	m := &motorRoteiro{pedidos: map[string]int{}, usuario: map[string][]string{}}
+	g := gerenciadorIA(t, &fonteFalsa{m: m})
+	_, _ = g.Iniciar()
+	_, _ = g.EscolherTipo(workflow.TipoPADS)
+	_, _ = g.EscolherEntrada(workflow.EntradaUpload)
+	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
+	autorizarEnvio(t, g)
+	base := map[string]string{"acusado": "FULANO DE TAL",
+		"incluir_IMP-1": "sim", "conduta_IMP-1": "deixar de comparecer ao serviço", "data_IMP-1": "07/11/2026",
+		"diploma_IMP-1": "RDPM", "disp_rdpm_IMP-1": "RDPM-17-IX", // citado: art. 16, XVI
+		"incluir_IMP-2": "sim", "conduta_IMP-2": "faltar com a verdade", "data_IMP-2": "07/11/2026",
+		"diploma_IMP-2": "ESTATUTO", "disp_est_IMP-2": "EST-32-III", // citado: art. 17, II
+		"incluir_IMP-X1": "nao"}
+	if _, err := g.Responder(perguntaDelimitacao, "confirmar", base); err == nil {
+		t.Fatal("no Estatuto a natureza atribuída é obrigatória")
+	}
+	base["natureza_IMP-2"] = "MEDIA"
+	responder(t, g, perguntaDelimitacao, "confirmar", base)
+
+	p := perguntaAtual(t, g)
+	if p == nil || p.ID != perguntaDelimitacao || campo(p, campoConfirmaDiv+"IMP-1").ID == "" || campo(p, campoConfirmaDiv+"IMP-2").ID == "" {
+		t.Fatalf("divergências deveriam voltar ao formulário com a confirmação: %+v", p)
+	}
+	alertas := ""
+	for _, gr := range p.Grupos {
+		alertas += strings.Join(gr.Alertas, " ")
+	}
+	if !strings.Contains(alertas, "V4 §22.1") || !strings.Contains(alertas, "art. 17, inciso IX, do RDPM") || !strings.Contains(alertas, "art. 16, inciso XVI, do RDPM") {
+		t.Fatalf("alerta da divergência: %s", alertas)
+	}
+	if campo(p, "disp_rdpm_IMP-1").Valor != "RDPM-17-IX" || campo(p, "natureza_IMP-2").Valor != "MEDIA" {
+		t.Fatal("as escolhas do usuário devem ser mantidas no formulário devolvido")
+	}
+	if g.Dados().(*Dados).IA.Conjunto != nil {
+		t.Fatal("nada pode ser congelado antes da confirmação")
+	}
+	// "Vou corrigir" não confirma: o formulário volta de novo.
+	base[campoConfirmaDiv+"IMP-1"], base[campoConfirmaDiv+"IMP-2"] = "nao", "sim"
+	responder(t, g, perguntaDelimitacao, "confirmar", base)
+	if p := perguntaAtual(t, g); p.ID != perguntaDelimitacao || campo(p, campoConfirmaDiv+"IMP-1").ID == "" {
+		t.Fatalf("sem confirmação, volta ao formulário: %+v", p)
+	}
+	base[campoConfirmaDiv+"IMP-1"] = "sim"
+	responder(t, g, perguntaDelimitacao, "confirmar", base)
+	if p := perguntaAtual(t, g); p.ID != perguntaMidias {
+		t.Fatalf("depois de confirmar: %+v", p)
+	}
+	ims := g.Dados().(*Dados).IA.Conjunto.Imputacoes()
+	if len(ims) != 2 || ims[0].Dispositivo != "art. 17, inciso IX, do RDPM" || ims[0].Natureza != "GRAVE" ||
+		!strings.HasPrefix(ims[1].Dispositivo, "art. 32, inciso III, do Estatuto dos Policiais Militares") || ims[1].Natureza != "MEDIA" {
+		t.Fatalf("congeladas: %+v", ims)
+	}
+}
+
+// Enquadramento igual ao citado no Memorando não pede confirmação.
+func TestEnquadramentoIgualAoCitadoSemConfirmacao(t *testing.T) {
+	m := &motorRoteiro{pedidos: map[string]int{}, usuario: map[string][]string{}}
+	g := gerenciadorIA(t, &fonteFalsa{m: m})
+	_, _ = g.Iniciar()
+	_, _ = g.EscolherTipo(workflow.TipoPADS)
+	_, _ = g.EscolherEntrada(workflow.EntradaUpload)
+	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
+	autorizarEnvio(t, g)
+	responder(t, g, perguntaDelimitacao, "confirmar", map[string]string{"acusado": "FULANO DE TAL",
+		"incluir_IMP-1": "sim", "conduta_IMP-1": "x", "data_IMP-1": "07/11/2026", "diploma_IMP-1": "RDPM", "disp_rdpm_IMP-1": "RDPM-16-XVI",
+		"incluir_IMP-2": "nao", "incluir_IMP-X1": "nao"})
+	if p := perguntaAtual(t, g); p.ID != perguntaMidias {
+		t.Fatalf("%+v", p)
+	}
+	if ims := g.Dados().(*Dados).IA.Conjunto.Imputacoes(); ims[0].Natureza != "MEDIA" {
+		t.Fatalf("natureza do art. 16: %+v", ims)
 	}
 }

@@ -49,6 +49,9 @@ const (
 	CampoData       TipoCampo = "DATA" // DD/MM/AAAA
 	CampoEscolha    TipoCampo = "ESCOLHA"
 	CampoSimNao     TipoCampo = "SIM_NAO"
+	// CampoBusca: escolha numa lista longa, com filtro por digitação (ex.:
+	// dispositivos do catálogo de enquadramento). Valida como ESCOLHA.
+	CampoBusca TipoCampo = "BUSCA"
 )
 
 // Fonte aponta um trecho dos autos (abre o visualizador com realce).
@@ -131,8 +134,20 @@ func (p *Pergunta) visao() *PerguntaVisao {
 }
 
 // visivel aplica MostrarSe.
-func visivel(c Campo, valores map[string]string) bool {
-	return c.MostrarSe == nil || valores[c.MostrarSe.Campo] == c.MostrarSe.Valor
+// visivel: a condição do campo vale e o campo de que ele depende também
+// está visível (condições encadeadas: "incluir" → "diploma" → "dispositivo").
+func visivel(c Campo, valores map[string]string, porID map[string]Campo) bool {
+	for prof := 0; c.MostrarSe != nil; prof++ {
+		if prof > 8 || valores[c.MostrarSe.Campo] != c.MostrarSe.Valor {
+			return false
+		}
+		pai, ok := porID[c.MostrarSe.Campo]
+		if !ok {
+			return true
+		}
+		c = pai
+	}
+	return true
 }
 
 // ValidarCampos confere obrigatoriedade e formato; devolve os valores
@@ -140,8 +155,12 @@ func visivel(c Campo, valores map[string]string) bool {
 func ValidarCampos(cs []Campo, valores map[string]string) (map[string]string, error) {
 	out := map[string]string{}
 	var problemas []string
+	porID := make(map[string]Campo, len(cs))
 	for _, c := range cs {
-		if !visivel(c, valores) {
+		porID[c.ID] = c
+	}
+	for _, c := range cs {
+		if !visivel(c, valores, porID) {
 			continue
 		}
 		v := strings.TrimSpace(valores[c.ID])
@@ -165,7 +184,7 @@ func ValidarCampos(cs []Campo, valores map[string]string) (map[string]string, er
 				problemas = append(problemas, c.Rotulo+": data no formato DD/MM/AAAA")
 				continue
 			}
-		case CampoEscolha, CampoSimNao:
+		case CampoEscolha, CampoSimNao, CampoBusca:
 			ok := false
 			for _, o := range opcoesCampo(c) {
 				ok = ok || o.ID == v

@@ -126,7 +126,9 @@ func init() {
 		audiência audiencia comunicação comunicacao informação informacao encaminhamento juntada conclusão
 		conclusao decisão decisao julgamento homologação homologacao imputação imputacao imputações imputacoes
 		fato fatos objeto escala serviço servico instauração instauracao abertura vista prazo
-		vossa vosso senhoria excelência excelencia magnificência magnificencia fica ficam`) {
+		vossa vosso senhoria excelência excelencia magnificência magnificencia fica ficam
+		estatuto policiais policial decreto-lei código codigo constituição constituicao penal civil federal
+		estadual complementar emenda normativa instrução instrucao portarias regimento interno`) {
 		paradas[p] = true
 	}
 }

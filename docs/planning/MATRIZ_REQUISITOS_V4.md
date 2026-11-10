@@ -20,7 +20,8 @@
 
 | ID | Origem V4 | Requisito | Rót. | Tipo | Módulo / política | Testes |
 |---|---|---|---|---|---|---|
-| PADS-ESC-001 | §§22.1, 30.2 | Memorando Disciplinar inicial é a peça delimitadora; imputações extraídas, apresentadas, confirmadas e **congeladas** (versão auditável) | AP | DET+PRG | workflow.Delimitar; domain/pads.ImputacaoSet | PADS-E01…E05 |
+| PADS-ESC-001 | §§22.1, 30.2, 48.5 | Memorando Disciplinar inicial é a peça delimitadora; condutas e datas extraídas, enquadramento do usuário pelo catálogo, tudo confirmado e **congelado** (versão auditável) (v2) | AP | DET+PRG | workflow.Delimitar; domain/pads.ImputacaoSet | PADS-E01…E05 |
+| PADS-ENQ-001 | §48.5 | Enquadramento manual pelo catálogo curado (RDPM natureza fixa; Estatuto natureza atribuída); citado só para conferência; divergência confirmada com a §22.1 | AP | PRG+DET+VAL | rules/enquadramento; pipeline | PADS-ENQ-01 |
 | PADS-ESC-002 | §22.1 | Nunca criar, ampliar, substituir ou trocar artigo de imputação para cobrir conduta diversa | AP | IA+VAL | schema enum imputacao_id; validate.ScopePADS | PADS-E05, VAL-NEG-01 |
 | PADS-ESC-003 | §22.2 | Resultados admitidos: procedência, procedência parcial, improcedência, sempre por imputação original | AP | DET+VAL | engine.ResultadoGlobal | PADS-E02, PADS-E04 |
 | PADS-ESC-004 | §§22.1, 22.3 | Conduta diversa descoberta na instrução não gera acusação, punição nem encaminhamento automático na minuta | AP | IA+VAL | I-05; validate.ScopePADS | PADS-E01, PADS-E03, PADS-E05 |

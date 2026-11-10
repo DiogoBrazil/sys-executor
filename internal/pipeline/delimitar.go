@@ -13,7 +13,6 @@ import (
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
 	"github.com/DiogoBrazil/sys-executor/internal/policy"
 	"github.com/DiogoBrazil/sys-executor/internal/rules/civil"
-	"github.com/DiogoBrazil/sys-executor/internal/rules/engine"
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
 )
 
@@ -112,7 +111,16 @@ func (p *Pipeline) delimitarPADS(ctx context.Context, c *workflow.Contexto, d *D
 	resp, ok := c.RespostaCompleta(perguntaDelimitacao)
 	if !ok {
 		ant, _ := c.Anterior(perguntaDelimitacao)
-		c.Perguntar(perguntaImputacoes(*e.DelimPADS, ant))
+		c.Perguntar(perguntaImputacoes(*e.DelimPADS, ant, nil))
+		publicarPainel(c, d)
+		return workflow.AguardandoEsclarecimento, nil
+	}
+	// Enquadramento diferente do citado no Memorando (ou sem citação
+	// correspondente): volta ao formulário com o alerta e a confirmação
+	// expressa (V4 §§22.1, 48.5); nada é congelado antes disso.
+	if div, pendentes := divergencias(*e.DelimPADS, resp); pendentes > 0 {
+		c.Esquecer(perguntaDelimitacao)
+		c.Perguntar(perguntaImputacoes(*e.DelimPADS, resp, div))
 		publicarPainel(c, d)
 		return workflow.AguardandoEsclarecimento, nil
 	}
@@ -130,7 +138,7 @@ func (p *Pipeline) delimitarPADS(ctx context.Context, c *workflow.Contexto, d *D
 }
 
 // perguntaImputacoes monta o formulário de confirmação (PADS-ESC-001).
-func perguntaImputacoes(r analise.PropostaDelimitacaoPADS, ant workflow.Resposta) workflow.Pergunta {
+func perguntaImputacoes(r analise.PropostaDelimitacaoPADS, ant workflow.Resposta, div map[string]string) workflow.Pergunta {
 	val := func(campo, padrao string) string {
 		if v, ok := ant.Valores[campo]; ok {
 			return v
@@ -139,7 +147,8 @@ func perguntaImputacoes(r analise.PropostaDelimitacaoPADS, ant workflow.Resposta
 	}
 	pg := workflow.Pergunta{
 		ID: perguntaDelimitacao, Titulo: "Confirme as imputações do Memorando Disciplinar", Revisavel: true,
-		Contexto: "A IA leu o Memorando Disciplinar e propôs as imputações abaixo. Confira cada uma no trecho original e corrija o que for preciso. " +
+		Contexto: "A IA leu o Memorando Disciplinar e propôs as condutas e datas abaixo. Confira cada uma no trecho original e corrija o que for preciso. " +
+			"O enquadramento é seu: escolha o diploma e o dispositivo de cada imputação (o dispositivo citado no Memorando aparece só para conferência). " +
 			"Depois de confirmadas, só estas imputações serão julgadas; conduta diversa encontrada na instrução não vira acusação.",
 		Opcoes: []workflow.Opcao{{ID: "confirmar", Rotulo: "Confirmar imputações", Validar: true},
 			{ID: "cancelar", Rotulo: "Cancelar a tarefa", Destino: workflow.Cancelada}},
@@ -165,27 +174,38 @@ func perguntaImputacoes(r analise.PropostaDelimitacaoPADS, ant workflow.Resposta
 	pg.Grupos = append(pg.Grupos, grupo)
 	pg.Campos = append(pg.Campos, campo)
 
-	add := func(id, titulo string, desc []string, fontes []workflow.Fonte, alertas []string, conduta, disp, nat, data, incluir string) {
+	add := func(id, titulo string, desc []string, fontes []workflow.Fonte, alertas []string, conduta, data, incluir string) {
+		if msg, ok := div[id]; ok {
+			alertas = append(alertas, msg)
+		}
 		pg.Grupos = append(pg.Grupos, workflow.GrupoCampos{ID: id, Titulo: titulo, Descricao: desc, Fontes: fontes, Alertas: alertas})
 		sim := &workflow.Condicao{Campo: "incluir_" + id, Valor: "sim"}
 		pg.Campos = append(pg.Campos,
 			workflow.Campo{ID: "incluir_" + id, Rotulo: "Incluir esta imputação", Tipo: workflow.CampoSimNao, Obrigatorio: true, Grupo: id, Valor: val("incluir_"+id, incluir)},
-			workflow.Campo{ID: "conduta_" + id, Rotulo: "Conduta imputada", Tipo: workflow.CampoTextoLongo, Obrigatorio: true, Grupo: id, Valor: val("conduta_"+id, conduta), MostrarSe: sim},
-			workflow.Campo{ID: "dispositivo_" + id, Rotulo: "Dispositivo", Tipo: workflow.CampoTexto, Obrigatorio: true, Grupo: id, Valor: val("dispositivo_"+id, disp), MostrarSe: sim,
-				Ajuda: "Ex.: art. 16, inciso XVI, do RDPM"},
-			workflow.Campo{ID: "natureza_" + id, Rotulo: "Natureza", Tipo: workflow.CampoEscolha, Opcoes: opcoesNatureza, Obrigatorio: true, Grupo: id, Valor: val("natureza_"+id, nat), MostrarSe: sim},
+			workflow.Campo{ID: "conduta_" + id, Rotulo: "Conduta imputada", Tipo: workflow.CampoTextoLongo, Obrigatorio: true, Grupo: id, Valor: val("conduta_"+id, conduta), MostrarSe: sim})
+		pg.Campos = append(pg.Campos, camposEnquadramento(id, val, sim)...)
+		pg.Campos = append(pg.Campos,
 			workflow.Campo{ID: "data_" + id, Rotulo: "Data do fato", Tipo: workflow.CampoData, Obrigatorio: true, Grupo: id, Valor: val("data_"+id, data), MostrarSe: sim,
-				Ajuda: "DD/MM/AAAA"},
-		)
+				Ajuda: "DD/MM/AAAA"})
+		if _, ok := div[id]; ok {
+			pg.Campos = append(pg.Campos, workflow.Campo{ID: campoConfirmaDiv + id, Grupo: id, Tipo: workflow.CampoSimNao, Obrigatorio: true, MostrarSe: sim,
+				Rotulo: "Confirmo este enquadramento para a conduta acusada no Memorando",
+				Opcoes: []workflow.OpcaoVisao{{ID: "sim", Rotulo: "Confirmo"}, {ID: "nao", Rotulo: "Vou corrigir"}},
+				Valor:  val(campoConfirmaDiv+id, "")})
+		}
 	}
 	for _, im := range r.Imputacoes {
-		add(im.ID, im.ID, []string{im.Conduta}, []workflow.Fonte{fonteDe(im.Ponto, "Memorando")}, im.Pendencias,
-			im.Conduta, im.Dispositivo(), string(im.Natureza), dataTexto(im.Data), "sim")
+		desc := []string{im.Conduta, descricaoCitado(im)}
+		if im.Natureza != "" {
+			desc = append(desc, "Natureza declarada no Memorando: "+rotuloNatureza[string(im.Natureza)]+".")
+		}
+		add(im.ID, im.ID, desc, []workflow.Fonte{fonteDe(im.Ponto, "Memorando")}, im.Pendencias,
+			im.Conduta, dataTexto(im.Data), "sim")
 	}
 	for k := 1; k <= maxExtras; k++ {
 		id := fmt.Sprintf("IMP-X%d", k)
 		add(id, "Imputação não identificada pela IA", []string{"Use só se o memorando trouxer outra imputação que não apareceu acima."},
-			nil, nil, "", "", "", "", "nao")
+			nil, nil, "", "", "nao")
 	}
 	for _, pnd := range r.Pendencias {
 		pg.Grupos[0].Alertas = append(pg.Grupos[0].Alertas, pnd)
@@ -230,9 +250,13 @@ func congelarImputacoes(r analise.PropostaDelimitacaoPADS, resp workflow.Respost
 			continue
 		}
 		n++
+		disp, nat, ok := escolhido(resp, id)
+		if !ok {
+			return nil, "", fmt.Errorf("enquadramento de %s incompleto", id)
+		}
 		im := pads.Imputacao{
-			ID: fmt.Sprintf("IMP-%d", n), Texto: resp.Valor("conduta_" + id), Dispositivo: resp.Valor("dispositivo_" + id),
-			Natureza: engine.Natureza(resp.Valor("natureza_" + id)), Fato: civil.Instante{Data: lerData(resp.Valor("data_" + id))},
+			ID: fmt.Sprintf("IMP-%d", n), Texto: resp.Valor("conduta_" + id), Dispositivo: disp.Referencia(),
+			Natureza: nat, Fato: civil.Instante{Data: lerData(resp.Valor("data_" + id))},
 			Evid: evid[id],
 		}
 		if err := set.Adicionar(im); err != nil {

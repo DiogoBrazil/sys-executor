@@ -80,3 +80,17 @@ O CI falha enquanto o SHA-256 da V4 divergir do lock (GOV-LOCK-01).
 - **Dependências novas:** `github.com/coreos/go-oidc/v3` e `github.com/go-jose/go-jose/v4` (Apache-2.0); `golang.org/x/oauth2` (BSD-3-Clause, indireta).
 - **Golden:** sem alteração.
 - **Aprovação:** usuário, por meio do plano D-11 aprovado (etapa 4 autorizada em 09/11/2026).
+
+### 09/11/2026 — Catálogo de enquadramento (etapa 5 do plano D-11; V4 §48.5)
+- **V4:** sem alteração; o lock não muda.
+- **Novo `internal/rules/enquadramento/dispositivos.yaml`:** 130 dispositivos na redação vigente, com arquivo e página de origem e a norma que deu a redação.
+  - RDPM: art. 15 com 17 incisos (natureza leve), art. 16 com 44 (média) e art. 17 com 39 (grave).
+  - Estatuto (DL 09-A/1982): art. 29 com 18 incisos mais as 5 alíneas do XVIII, e art. 32 com 7 incisos, sem natureza.
+  - Extraído dos PDFs de `docs/law_library`. **Revisão humana do usuário: pendente.**
+- **PADS-ESC-001 v2:** o enquadramento vem do usuário. **Nova PADS-ENQ-001.**
+- **Formulário das imputações:**
+  - diploma, depois dispositivo com filtro (campo `BUSCA`), depois natureza só no Estatuto;
+  - divergência com o citado no Memorando exige confirmação com a §22.1;
+  - a visibilidade dos campos agora é encadeada, no Go e na interface.
+- **Golden:** sem alteração.
+- **Aprovação:** usuário, por meio do plano D-11 aprovado (etapas 5–8 autorizadas em 09/11/2026); revisão da curadoria pendente.

@@ -577,3 +577,68 @@ describe("ChatGPT nas configurações de IA", () => {
     expect(w.find('[data-teste="chatgpt-sem-lista"]').exists()).toBe(false);
   });
 });
+
+// Enquadramento manual (V4 §48.5): diploma → dispositivo (lista com filtro)
+// → natureza só no Estatuto; condições encadeadas.
+describe("Enquadramento no formulário das imputações", () => {
+  const c = (id: string, extra: Record<string, unknown>) => ({ id, rotulo: id, tipo: "TEXTO", opcoes: [], obrigatorio: true, valor: "",
+    ajuda: "", grupo: "IMP-1", min: 0, max: 0, fontes: [], mostrarSe: null, ...extra });
+  const form = {
+    id: "confirmar_delimitacao", titulo: "Confirme", contexto: "c",
+    opcoes: [{ id: "confirmar", rotulo: "Confirmar", validar: true }],
+    grupos: [{ id: "IMP-1", titulo: "IMP-1", descricao: ["Dispositivo citado no Memorando (para conferência): art. 16, inciso XVI, do RDPM."], alertas: [], fontes: [] }],
+    campos: [
+      c("incluir_IMP-1", { tipo: "SIM_NAO", valor: "sim" }),
+      c("diploma_IMP-1", { tipo: "ESCOLHA", opcoes: [{ id: "RDPM", rotulo: "RDPM" }, { id: "ESTATUTO", rotulo: "Estatuto" }], mostrarSe: { campo: "incluir_IMP-1", valor: "sim" } }),
+      c("disp_rdpm_IMP-1", { tipo: "BUSCA", mostrarSe: { campo: "diploma_IMP-1", valor: "RDPM" }, opcoes: [
+        { id: "RDPM-16-XLIII", rotulo: "art. 16, XLIII — chegar atrasado à atividade para a qual esteja escalado (média)" },
+        { id: "RDPM-17-XXXIX", rotulo: "art. 17, XXXIX — dirigir-se de maneira desrespeitosa ou desatenciosa a subordinado, par ou superior hierárquico (grave)" },
+      ] }),
+      c("disp_est_IMP-1", { tipo: "BUSCA", mostrarSe: { campo: "diploma_IMP-1", valor: "ESTATUTO" }, opcoes: [
+        { id: "EST-32-IV", rotulo: "art. 32, IV — a disciplina e o respeito à hierarquia" },
+      ] }),
+      c("natureza_IMP-1", { tipo: "ESCOLHA", opcoes: [{ id: "LEVE", rotulo: "Leve" }, { id: "MEDIA", rotulo: "Média" }, { id: "GRAVE", rotulo: "Grave" }], mostrarSe: { campo: "diploma_IMP-1", valor: "ESTATUTO" } }),
+    ],
+  };
+
+  it("o dispositivo é escolhido pelo usuário, com filtro; natureza só no Estatuto", async () => {
+    visaoAtual = visao("AGUARDANDO_ESCLARECIMENTO", { pergunta: form });
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="campo-disp_rdpm_IMP-1"]').exists()).toBe(false); // sem diploma, sem dispositivo
+    expect(w.find('[data-teste="grupo-IMP-1"]').text()).toContain("para conferência");
+    await w.find('[data-teste="campo-diploma_IMP-1-RDPM"]').setValue(true);
+    await flushPromises();
+    expect(w.find('[data-teste="campo-natureza_IMP-1-LEVE"]').exists()).toBe(false); // RDPM: natureza do artigo
+    await w.find('[data-teste="campo-disp_rdpm_IMP-1-filtro"]').setValue("desatencios");
+    await flushPromises();
+    expect(w.findAll('[data-teste^="campo-disp_rdpm_IMP-1-opcao-"]').length).toBe(1);
+    await w.find('[data-teste="campo-disp_rdpm_IMP-1-opcao-RDPM-17-XXXIX"]').trigger("click");
+    await flushPromises();
+    expect(w.find('[data-teste="campo-disp_rdpm_IMP-1-escolhida"]').text()).toContain("art. 17, XXXIX");
+    await w.find('[data-teste="opcao-confirmar"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain('responder:confirmar_delimitacao:confirmar:{"incluir_IMP-1":"sim","diploma_IMP-1":"RDPM","disp_rdpm_IMP-1":"RDPM-17-XXXIX"}');
+  });
+
+  it("Estatuto exige a natureza; incluir = não esconde toda a cadeia", async () => {
+    visaoAtual = visao("AGUARDANDO_ESCLARECIMENTO", { pergunta: form });
+    const w = mount(App);
+    await flushPromises();
+    await w.find('[data-teste="campo-diploma_IMP-1-ESTATUTO"]').setValue(true);
+    await flushPromises();
+    await w.find('[data-teste="campo-disp_est_IMP-1-filtro"]').setValue("hierarquia");
+    await w.find('[data-teste="campo-disp_est_IMP-1-opcao-EST-32-IV"]').trigger("click");
+    await w.find('[data-teste="opcao-confirmar"]').trigger("click");
+    await flushPromises();
+    expect(chamadas.some((x) => x.startsWith("responder"))).toBe(false); // natureza obrigatória
+    await w.find('[data-teste="campo-natureza_IMP-1-MEDIA"]').setValue(true);
+    await w.find('[data-teste="campo-incluir_IMP-1-nao"]').setValue(true);
+    await flushPromises();
+    expect(w.find('[data-teste="campo-disp_est_IMP-1"]').exists()).toBe(false); // pai oculto → filho oculto
+    expect(w.find('[data-teste="campo-natureza_IMP-1-MEDIA"]').exists()).toBe(false);
+    await w.find('[data-teste="opcao-confirmar"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain('responder:confirmar_delimitacao:confirmar:{"incluir_IMP-1":"nao"}');
+  });
+});

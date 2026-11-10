@@ -892,6 +892,12 @@ export enum TipoCampo {
     CampoData = "DATA",
     CampoEscolha = "ESCOLHA",
     CampoSimNao = "SIM_NAO",
+
+    /**
+     * CampoBusca: escolha numa lista longa, com filtro por digitação (ex.:
+     * dispositivos do catálogo de enquadramento). Valida como ESCOLHA.
+     */
+    CampoBusca = "BUSCA",
 };
 
 /**

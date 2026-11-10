@@ -635,3 +635,26 @@ func TestSequenciaDaVisaoCresce(t *testing.T) {
 		t.Fatalf("sequência não crescente: %v %v %v", v1, v2, v3)
 	}
 }
+
+// Visibilidade encadeada: o campo só vale se a condição dele e a do campo
+// de que depende valerem; BUSCA aceita só uma das opções.
+func TestCamposEncadeadosEBusca(t *testing.T) {
+	cs := []Campo{
+		{ID: "incluir", Tipo: CampoSimNao, Obrigatorio: true},
+		{ID: "diploma", Tipo: CampoEscolha, Obrigatorio: true, Opcoes: []OpcaoVisao{{ID: "RDPM"}, {ID: "EST"}}, MostrarSe: &Condicao{Campo: "incluir", Valor: "sim"}},
+		{ID: "disp", Rotulo: "Dispositivo", Tipo: CampoBusca, Obrigatorio: true, Opcoes: []OpcaoVisao{{ID: "RDPM-17-V"}}, MostrarSe: &Condicao{Campo: "diploma", Valor: "RDPM"}},
+	}
+	// "incluir" = não: diploma e dispositivo ocultos, mesmo com valor antigo.
+	if vs, err := ValidarCampos(cs, map[string]string{"incluir": "nao", "diploma": "RDPM"}); err != nil || vs["diploma"] != "" {
+		t.Fatalf("encadeado: %v %v", vs, err)
+	}
+	if _, err := ValidarCampos(cs, map[string]string{"incluir": "sim", "diploma": "RDPM"}); err == nil {
+		t.Fatal("dispositivo obrigatório visível e vazio")
+	}
+	if _, err := ValidarCampos(cs, map[string]string{"incluir": "sim", "diploma": "RDPM", "disp": "RDPM-99-X"}); err == nil {
+		t.Fatal("BUSCA fora das opções aceita")
+	}
+	if vs, err := ValidarCampos(cs, map[string]string{"incluir": "sim", "diploma": "RDPM", "disp": "RDPM-17-V"}); err != nil || vs["disp"] != "RDPM-17-V" {
+		t.Fatalf("%v %v", vs, err)
+	}
+}

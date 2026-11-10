@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from "vue";
 import { estado, responder } from "../estado";
 import type { Campo, Fonte, GrupoCampos, PerguntaVisao } from "../../bindings/github.com/DiogoBrazil/sys-executor/internal/workflow/models";
+import CampoBusca from "./CampoBusca.vue";
 
 const props = defineProps<{ pergunta: PerguntaVisao }>();
 const emit = defineEmits<{ abrir: [pagina: number, inicio: number, fim: number] }>();
@@ -21,8 +22,13 @@ const grupos = computed(() => props.pergunta.grupos ?? []);
 const soltos = computed(() => campos.value.filter((c) => !c.grupo || !grupos.value.some((g) => g.id === c.grupo)));
 const doGrupo = (g: GrupoCampos) => campos.value.filter((c) => c.grupo === g.id);
 
-function visivel(c: Campo): boolean {
-  return !c.mostrarSe || valores[c.mostrarSe.campo] === c.mostrarSe.valor;
+// Visibilidade encadeada (como no Go): a condição do campo vale e o campo de
+// que ele depende também está visível.
+function visivel(c: Campo, prof = 0): boolean {
+  if (!c.mostrarSe) return true;
+  if (prof > 8 || valores[c.mostrarSe.campo] !== c.mostrarSe.valor) return false;
+  const pai = campos.value.find((x) => x.id === c.mostrarSe!.campo);
+  return !pai || visivel(pai, prof + 1);
 }
 
 const reData = /^(\d{2})\/(\d{2})\/(\d{4})$/;
@@ -117,6 +123,7 @@ function rotuloFonte(f: Fonte) {
               <option value="">Escolha…</option>
               <option v-for="o in opcoesDe(c)" :key="o.id" :value="o.id">{{ o.rotulo }}</option>
             </select>
+            <CampoBusca v-else-if="c.tipo === 'BUSCA'" :id="'c-' + c.id" v-model="valores[c.id]" :opcoes="opcoesDe(c)" :teste="'campo-' + c.id" />
             <textarea v-else-if="c.tipo === 'TEXTO_LONGO'" :id="'c-' + c.id" v-model="valores[c.id]" rows="3" :data-teste="'campo-' + c.id"></textarea>
             <input
               v-else
@@ -153,6 +160,7 @@ function rotuloFonte(f: Fonte) {
             <option value="">Escolha…</option>
             <option v-for="o in opcoesDe(c)" :key="o.id" :value="o.id">{{ o.rotulo }}</option>
           </select>
+          <CampoBusca v-else-if="c.tipo === 'BUSCA'" :id="'s-' + c.id" v-model="valores[c.id]" :opcoes="opcoesDe(c)" :teste="'campo-' + c.id" />
           <textarea v-else-if="c.tipo === 'TEXTO_LONGO'" :id="'s-' + c.id" v-model="valores[c.id]" rows="3" :data-teste="'campo-' + c.id"></textarea>
           <input v-else :id="'s-' + c.id" v-model="valores[c.id]" :placeholder="c.tipo === 'DATA' ? 'DD/MM/AAAA' : undefined" :data-teste="'campo-' + c.id" />
         </template>

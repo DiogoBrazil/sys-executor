@@ -3,15 +3,15 @@
 # O catálogo é a fonte das regras; mudanças seguem REGRAS_IA_ESTRATEGIA.md §5.3.
 
 - id: PADS-ESC-001
-  origem: "§§22.1, 30.2"
+  origem: "§§22.1, 30.2, 48.5"
   fluxo: PADS
   rotulo: [APROVADO]
   tipo: [DETERMINISTICA, PERGUNTA]
-  enunciado: "Memorando Disciplinar inicial é a peça delimitadora; imputações extraídas, apresentadas, confirmadas e congeladas (versão auditável)"
+  enunciado: "Memorando Disciplinar inicial é a peça delimitadora; condutas e datas extraídas pela IA, enquadramento (dispositivo e natureza) informado pelo usuário pelo catálogo curado, tudo apresentado, confirmado e congelado (versão auditável)"
   modulo: "workflow.Delimitar; domain/pads.ImputacaoSet"
   enforced_by: [pads.ImputacaoSet, pads.NovoJulgamento]
   testes: ["PADS-E01", "PADS-E02", "PADS-E03", "PADS-E04", "PADS-E05"]
-  versao: 1
+  versao: 2
 
 - id: PADS-ESC-002
   origem: "§22.1"
@@ -80,4 +80,16 @@
   modulo: "validate.ScopePADS"
   enforced_by: [pads.Julgamento]
   testes: ["PADS-E05"]
+  versao: 1
+
+- id: PADS-ENQ-001
+  origem: "§48.5"
+  fluxo: PADS
+  rotulo: [APROVADO]
+  tipo: [PERGUNTA, DETERMINISTICA, VALIDADOR]
+  enunciado: "Enquadramento manual pelo catálogo curado (RDPM arts. 15–17, natureza fixa do artigo; Estatuto arts. 29 e 32, natureza atribuída pelo usuário); cada dispositivo é uma imputação; o dispositivo citado no Memorando aparece só para conferência e nunca é sugerido; escolha diferente da citada, ou sem citação correspondente, exige confirmação expressa com a remissão à §22.1 antes do congelamento"
+  modulo: "rules/enquadramento; pipeline (confirmar_delimitacao)"
+  enforced_by: [enquadramento.Dispositivo, enquadramento.DoCitado, enquadramento.Todos]
+  falha: "Divergência não confirmada → o formulário volta com o alerta; nada é congelado"
+  testes: ["PADS-ENQ-01"]
   versao: 1
