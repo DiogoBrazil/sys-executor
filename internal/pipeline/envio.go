@@ -50,9 +50,13 @@ func (p *Pipeline) autorizarEnvio(c *workflow.Contexto, d *Dados) (aguardar bool
 			}
 		}
 	}
+	if e.suspeitosEnvio == nil {
+		// Revisão item a item dos possíveis nomes sem âncora (TRV-SEG-013).
+		e.suspeitosEnvio = suspeitosDasPaginas(d, e.mapa)
+	}
 	resp, ok := c.RespostaCompleta(PerguntaEnvioIA)
 	if !ok {
-		c.Perguntar(perguntaEnvio(modelo, d, e.mapa.Resumir()))
+		c.Perguntar(perguntaEnvio(modelo, d, e.mapa.Resumir(), e.suspeitosEnvio))
 		return true, nil
 	}
 	if resp.Opcao != opcaoAutorizar {
@@ -60,6 +64,7 @@ func (p *Pipeline) autorizarEnvio(c *workflow.Contexto, d *Dados) (aguardar bool
 		c.Esquecer(PerguntaEnvioIA)
 		return false, erros.Novo(erros.IAEnvioNaoAutorizado)
 	}
+	aplicarDecisoes(e.mapa, e.suspeitosEnvio, resp)
 	var extras []string
 	for _, l := range strings.Split(resp.Valor(campoOcultar), "\n") {
 		if l = strings.TrimSpace(l); l != "" {
@@ -71,7 +76,7 @@ func (p *Pipeline) autorizarEnvio(c *workflow.Contexto, d *Dados) (aguardar bool
 	return false, nil
 }
 
-func perguntaEnvio(modelo string, d *Dados, r pseudonimo.Resumo) workflow.Pergunta {
+func perguntaEnvio(modelo string, d *Dados, r pseudonimo.Resumo, ss []suspeito) workflow.Pergunta {
 	paginas, tokens := 0, 0
 	if d.Autos != nil {
 		paginas = len(d.Autos.Paginas)
@@ -92,12 +97,17 @@ func perguntaEnvio(modelo string, d *Dados, r pseudonimo.Resumo) workflow.Pergun
 		"Sem a sua autorização, nada é enviado. Esta confirmação não substitui eventual autorização institucional "+
 		"para tratar os dados em serviço externo.",
 		modelo, len(d.Pecas), paginas, est, r.Texto())
+	gs, cs := camposRevisao(ss)
+	if len(ss) > 0 {
+		ctx += fmt.Sprintf("\n\nHá %d possível(is) nome(s) não reconhecido(s) abaixo: decida cada um antes de autorizar.", len(ss))
+	}
 	return workflow.Pergunta{
 		ID: PerguntaEnvioIA, Titulo: "Autorizar o envio à Gemini API", Contexto: ctx,
-		Campos: []workflow.Campo{{ID: campoOcultar, Rotulo: "Outros nomes ou dados a ocultar (opcional)",
-			Tipo: workflow.CampoTextoLongo, Ajuda: "Um por linha. Ex.: o nome de uma testemunha citada sem posto ou papel."}},
+		Grupos: gs,
+		Campos: append(cs, workflow.Campo{ID: campoOcultar, Rotulo: "Outros nomes ou dados a ocultar (opcional)",
+			Tipo: workflow.CampoTextoLongo, Ajuda: "Um por linha. Ex.: o nome de uma testemunha citada sem posto ou papel."}),
 		Opcoes: []workflow.Opcao{
-			{ID: opcaoAutorizar, Rotulo: "Autorizar o envio"},
+			{ID: opcaoAutorizar, Rotulo: "Autorizar o envio", Validar: true},
 			{ID: opcaoNaoEnviar, Rotulo: "Não enviar"},
 		},
 		Resumir: func(rs workflow.Resposta) string {

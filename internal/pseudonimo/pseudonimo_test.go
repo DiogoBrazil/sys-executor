@@ -158,6 +158,7 @@ func (e *motorEco) Contexto() int                                         { retu
 func TestMotorOcultaNaIdaERestauraNaVolta(t *testing.T) {
 	m := NovoMapa()
 	m.Aprender(autosSinteticos)
+	m.Liberar("Jorge Teixeira") // decisão do usuário na revisão: nome da avenida, não dado pessoal
 	mk := m.marcador["Maria Aparecida Souza"]
 	eco := &motorEco{respostas: []string{`{"trecho_literal":"Testemunha: ` + mk + `, CPF [CPF-01]","quem":"` + mk + `"}`}}
 	p := Envolver(eco, m)

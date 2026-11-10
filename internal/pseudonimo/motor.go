@@ -50,6 +50,12 @@ func (p *Motor) Gerar(ctx context.Context, ped inference.Pedido) (inference.Resp
 	} else {
 		q.Sistema = InstrucaoMarcadores
 	}
+	// Dados com padrão reconhecível que estejam no próprio pedido (texto
+	// digitado pelo usuário, histórico de reenvio) são aprendidos antes.
+	p.mapa.Aprender(ped.Usuario)
+	for _, h := range ped.Historico {
+		p.mapa.Aprender(h.Conteudo)
+	}
 	q.Usuario = p.mapa.Ocultar(ped.Usuario)
 	q.Historico = make([]inference.Mensagem, len(ped.Historico))
 	for i, h := range ped.Historico {
@@ -57,6 +63,10 @@ func (p *Motor) Gerar(ctx context.Context, ped inference.Pedido) (inference.Resp
 	}
 	var ultimo error
 	for tentativa := 0; tentativa <= reenviosMarcador; tentativa++ {
+		// Barreira, camada 1 (TRV-SEG-013): o pedido exato que vai sair.
+		if err := p.conferir(q); err != nil {
+			return inference.Resposta{}, err
+		}
 		r, err := p.interno.Gerar(ctx, q)
 		if err != nil {
 			return r, err
@@ -86,4 +96,20 @@ func (p *Motor) Gerar(ctx context.Context, ped inference.Pedido) (inference.Resp
 				". Use somente os marcadores que aparecem nos documentos, copiados exatamente, com os colchetes, e responda de novo somente com o JSON do schema."})
 	}
 	return inference.Resposta{}, erros.Com(erros.IARespostaIncompleta, ultimo)
+}
+
+// conferir aplica a camada 1 da barreira. Vazamento vira IA-014 (bloqueio,
+// sem opção de ignorar); possível nome não reconhecido volta como
+// ErrRevisao, para a etapa perguntar ao usuário e tentar de novo.
+func (p *Motor) conferir(q inference.Pedido) error {
+	hs := make([]string, len(q.Historico))
+	for i, h := range q.Historico {
+		hs[i] = h.Conteudo
+	}
+	err := p.mapa.conferir(q.Sistema, q.Usuario, hs, q.Schema)
+	var vz ErrVazamento
+	if errors.As(err, &vz) {
+		return erros.Com(erros.IABloqueioPrivacidade, vz)
+	}
+	return err
 }

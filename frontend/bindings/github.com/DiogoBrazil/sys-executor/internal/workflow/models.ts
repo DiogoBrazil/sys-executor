@@ -969,6 +969,14 @@ export class Visao {
     "painel": PainelAnalise | null;
     "respostas": RespostaVisao[];
 
+    /**
+     * Sequencia cresce a cada visão montada. A interface descarta uma visão
+     * mais antiga que a que já mostra: a resposta de um comando pode chegar
+     * depois dos eventos que a etapa emitiu em seguida (ex.: revisão da
+     * barreira, que não espera a rede).
+     */
+    "sequencia": number;
+
     /** Creates a new Visao instance. */
     constructor($$source: Partial<Visao> = {}) {
         if (!("id" in $$source)) {
@@ -1024,6 +1032,9 @@ export class Visao {
         }
         if (!("respostas" in $$source)) {
             this["respostas"] = [];
+        }
+        if (!("sequencia" in $$source)) {
+            this["sequencia"] = 0;
         }
 
         Object.assign(this, $$source);

@@ -2,7 +2,17 @@
 
 Atualizado em 09/11/2026. Branch: **`add-mode-apikey-oauth`** (nada foi enviado ao remoto nem mesclado).
 
-> **Atualização de 09/11/2026 — D-11:** o usuário aprovou o plano `docs/planning/PLANO_CHATGPT_PECAS_PRIVACIDADE.md`. Ele trata do ChatGPT pelo *Sign in with ChatGPT* como 2º provedor, do cadastro peça por peça, do enquadramento manual (RDPM/Estatuto) e da barreira obrigatória de privacidade. A D-11 reabre parcialmente o item 1 da §1 abaixo, que excluía o OAuth e outros provedores; o Gemini continua preservado. **Etapa 0 concluída:** a Emenda 2 foi aprovada e inserida na V4 (seção 48), com `V4.lock`/CHANGELOG atualizados; o catálogo de regras muda junto com o código de cada etapa. **Etapa 1 concluída (PoC `poc/chatgpt`):** login, tokens, renovação, revogação, modelos e inferência SSE funcionaram. Os 8 schemas reais foram aceitos em strict sem nenhuma violação. Resultados em `docs/planning/RELATORIO_POC_CHATGPT.md`; a sessão de teste foi revogada. **Próximo passo:** etapa 2 (barreira de privacidade), que depende de autorização expressa. **Nenhum código** foi alterado; cada etapa do plano depende de autorização expressa.
+> **Atualização de 09/11/2026 — D-11:** o usuário aprovou o plano `docs/planning/PLANO_CHATGPT_PECAS_PRIVACIDADE.md`. Ele trata do ChatGPT pelo *Sign in with ChatGPT* como 2º provedor, do cadastro peça por peça, do enquadramento manual (RDPM/Estatuto) e da barreira obrigatória de privacidade. A D-11 reabre parcialmente o item 1 da §1 abaixo, que excluía o OAuth e outros provedores; o Gemini continua preservado. **Etapa 0 concluída:** a Emenda 2 foi aprovada e inserida na V4 (seção 48), com `V4.lock`/CHANGELOG atualizados; o catálogo de regras muda junto com o código de cada etapa. **Etapa 1 concluída (PoC `poc/chatgpt`):** login, tokens, renovação, revogação, modelos e inferência SSE funcionaram. Os 8 schemas reais foram aceitos em strict sem nenhuma violação. Resultados em `docs/planning/RELATORIO_POC_CHATGPT.md`; a sessão de teste foi revogada. **Etapa 2 concluída (barreira de privacidade):**
+- casamento sem diferenciar caixa nem acentos;
+- camada 1 no pedido e camada 2 nos bytes da requisição (IA-014);
+- revisão item a item na autorização e no meio da etapa.
+
+Relatório: `docs/planning/RELATORIO_ETAPA2_BARREIRA.md`. O teste no Windows confirmou a barreira e revelou três correções:
+- ordem das telas;
+- **400 do Gemini**: `maxItems` recusado; o schema vai sem limites de lista e é conferido no Go;
+- cota diária classificada como IA-005.
+
+O 400 só pode ser reconfirmado ponta a ponta quando a cota diária gratuita (20/dia) renovar. **Próximo passo:** etapa 3 (generalização para mais de um provedor), que depende de autorização expressa. **Nenhum código** foi alterado; cada etapa do plano depende de autorização expressa.
 
 Leia junto: `docs/planning/RELATORIO_MIGRACAO_GEMINI.md` (relatório técnico), `docs/planning/ADR_009_gemini_api.md` (arquitetura), V4 §47 (`docs/rules/sys-executor_especificacao_consolidada_V4.md`) e D-10 (`docs/planning/REGISTRO_DUVIDAS_DECISOES.md`).
 

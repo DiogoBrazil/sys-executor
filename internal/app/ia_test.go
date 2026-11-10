@@ -174,7 +174,7 @@ func TestFonteGemini(t *testing.T) {
 		t.Fatalf("modelo: %q %v", m, err)
 	}
 	var atividades []string
-	m, fechar, err := c.fonte.Abrir(context.Background(), func(s string) { atividades = append(atividades, s) })
+	m, fechar, err := c.fonte.Abrir(context.Background(), func(s string) { atividades = append(atividades, s) }, nil)
 	if err != nil || m == nil || len(atividades) != 1 {
 		t.Fatalf("abrir: %v %v", err, atividades)
 	}

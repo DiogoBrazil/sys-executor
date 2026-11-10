@@ -23,7 +23,10 @@ type FonteMotor interface {
 	// Modelo confere a configuração sem rede (chave cadastrada e modelo
 	// escolhido) e devolve o modelo, para a confirmação de envio.
 	Modelo() (string, error)
-	Abrir(ctx context.Context, atividade func(string)) (inference.Motor, func(), error)
+	// Abrir prepara o motor. inspecionar recebe o corpo exato de cada
+	// requisição antes de sair (barreira de privacidade, camada 2;
+	// TRV-SEG-013): o motor não pode enviar nada que ele recuse.
+	Abrir(ctx context.Context, atividade func(string), inspecionar func([]byte) error) (inference.Motor, func(), error)
 }
 
 // EstadoIA guarda, em memória, o que as etapas de IA produziram.
@@ -58,6 +61,12 @@ type EstadoIA struct {
 	// (só memória; descartado com a tarefa).
 	envioAutorizado bool
 	mapa            *pseudonimo.Mapa
+	// Barreira de privacidade (V4 §48.6): possíveis nomes da revisão feita
+	// na autorização (nil = ainda não calculados) e revisão pendente surgida
+	// depois dela.
+	suspeitosEnvio []suspeito
+	revisao        *revisaoPendente
+	revisoes       int
 }
 
 func novoEstadoIA() *EstadoIA {
@@ -229,7 +238,7 @@ func (p *Pipeline) garantirMotor(ctx context.Context, c *workflow.Contexto, d *D
 		// Defesa em profundidade: nunca abrir o motor sem a autorização da tarefa.
 		return erros.Novo(erros.IAEnvioNaoAutorizado)
 	}
-	m, fechar, err := p.IA.Abrir(ctx, c.Atividade)
+	m, fechar, err := p.IA.Abrir(ctx, c.Atividade, d.IA.mapa.Inspecionar)
 	if err != nil {
 		return err
 	}

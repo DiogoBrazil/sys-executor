@@ -4,6 +4,8 @@ import { flushPromises, mount } from "@vue/test-utils";
 // Backend simulado: a FSM real é testada em Go; aqui só a interface.
 const chamadas: string[] = [];
 let visaoAtual: any = null;
+// Ouvinte do evento tarefa:visao e gancho para emitir eventos durante um comando.
+const ganchos = vi.hoisted(() => ({ ouvinte: null as null | ((v: any) => void), antesDeResponder: null as null | (() => void) }));
 const { iaBase } = vi.hoisted(() => ({
   iaBase: {
     chaveCadastrada: false, status: "sem_chave", modelos: [], modeloSelecionado: "", modeloForaDaLista: false,
@@ -49,10 +51,14 @@ vi.mock("./api", () => ({
     selecionarPDF: () => { chamadas.push("pdf"); return resp(visao("EXTRAINDO", { tipo: visaoAtual.tipo })); },
     cancelar: () => { chamadas.push("cancelar"); return resp(visao("CANCELADA", { terminal: true })); },
     descartar: () => { chamadas.push("descartar"); return resp(null); },
-    aoMudar: () => () => {},
+    aoMudar: (cb: (v: any) => void) => { ganchos.ouvinte = cb; return () => {}; },
   },
   responder: (p: string, o: string, vals: Record<string, string> = {}) => {
     chamadas.push(`responder:${p}:${o}:${JSON.stringify(vals)}`);
+    if (ganchos.antesDeResponder) {
+      ganchos.antesDeResponder();
+      return Promise.resolve({ visao: visao("DELIMITANDO", { sequencia: 6 }), erro: null });
+    }
     return resp(visao("DELIMITANDO", { parada: true, erro: { codigo: "TAR-004", titulo: "t", mensagem: "m", acao: "a" } }));
   },
   tarefa: {
@@ -98,6 +104,7 @@ import App from "./App.vue";
 import { estado } from "./estado";
 
 beforeEach(() => {
+  ganchos.antesDeResponder = null;
   chamadas.length = 0;
   visaoAtual = null;
   iaAtual = iaBase;
@@ -460,5 +467,29 @@ describe("T27 — configuração da Gemini API", () => {
     const w = mount(App);
     await flushPromises();
     expect(w.find('[data-teste="primeiro-uso"]').exists()).toBe(false);
+  });
+});
+
+// A resposta de um comando pode chegar depois dos eventos que a etapa emitiu
+// em seguida (ex.: revisão da barreira de privacidade, sem rede): a tela não
+// pode voltar para a visão mais antiga.
+describe("Ordem das visões", () => {
+  it("descarta a resposta do comando mais antiga que o evento já aplicado", async () => {
+    const { carregar, responder } = await import("./estado");
+    visaoAtual = visao("AGUARDANDO_ESCLARECIMENTO", { sequencia: 5, pergunta: { id: "delimitacao", titulo: "t", contexto: "", opcoes: [], campos: [], grupos: [] } });
+    await carregar();
+    expect(estado.visao?.sequencia).toBe(5);
+    const nova = visao("AGUARDANDO_ESCLARECIMENTO", { sequencia: 7, pergunta: { id: "revisao_privacidade_1", titulo: "Revisar", contexto: "", opcoes: [], campos: [], grupos: [] } });
+    ganchos.antesDeResponder = () => ganchos.ouvinte?.(nova);
+    await responder("delimitacao", "confirmar", {});
+    await flushPromises();
+    expect(estado.visao?.sequencia).toBe(7);
+    expect(estado.visao?.pergunta?.id).toBe("revisao_privacidade_1");
+    // visão mais nova vinda depois continua sendo aplicada
+    ganchos.ouvinte?.(visao("ANALISANDO", { sequencia: 8 }));
+    expect(estado.visao?.estado).toBe("ANALISANDO");
+    // outra tarefa (id diferente) sempre substitui
+    ganchos.ouvinte?.({ ...visao("NOVA"), id: "t2", sequencia: 1 });
+    expect(estado.visao?.id).toBe("t2");
   });
 });

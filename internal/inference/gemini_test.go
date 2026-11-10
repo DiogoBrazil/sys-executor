@@ -256,6 +256,8 @@ func TestErrosDaAPI(t *testing.T) {
 		{"região", []resp{erroAPI(400, "FAILED_PRECONDITION", "User location is not supported", "")}, erros.IAPermissaoNegada, 1, false},
 		{"modelo", []resp{erroAPI(404, "NOT_FOUND", "not found", "")}, erros.IAModeloIndisponivel, 1, false},
 		{"cota diária não repete", []resp{erroAPI(429, "RESOURCE_EXHAUSTED", "quota", diaria)}, erros.IACota, 1, false},
+		// Texto real do nível gratuito (09/11/2026): cita "billing", mas é cota (IA-005), não créditos.
+		{"cota diária com texto de billing", []resp{erroAPI(429, "RESOURCE_EXHAUSTED", "You exceeded your current quota, please check your plan and billing details.", diaria)}, erros.IACota, 1, false},
 		{"cota por minuto repete e passa", []resp{erroAPI(429, "RESOURCE_EXHAUSTED", "quota",
 			`[{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"2s"}]`), ok(`{"a":"b"}`)}, "", 2, true},
 		{"503 três vezes", []resp{erroAPI(503, "UNAVAILABLE", "overloaded", "")}, erros.IAIndisponivel, tentativasTransporte, false},
@@ -540,5 +542,62 @@ func TestDiagnosticoDo400TrazCampoEEtapa(t *testing.T) {
 	}
 	if d := e.Causa.Error(); !strings.Contains(d, "contents[1].parts[0].data") || !strings.Contains(d, "schema=x") {
 		t.Fatalf("diagnóstico sem campo/etapa: %s", d)
+	}
+}
+
+// Barreira de privacidade, camada 2: o transporte entrega ao inspetor o
+// corpo exato; recusado, nada chega ao servidor, não há nova tentativa e o
+// erro é IA-014. Aceito, o corpo chega inalterado.
+// Regra: TRV-SEG-013
+func TestTransporteInspecionaOCorpo(t *testing.T) {
+	f := novoFalso(t)
+	f.roteiro = []resp{ok(`{"a":"b"}`)}
+	cfg := f.cfg()
+	var vistos [][]byte
+	cfg.Inspecionar = func(b []byte) error {
+		vistos = append(vistos, append([]byte(nil), b...))
+		if strings.Contains(string(b), "SEGREDO") {
+			return errors.New("resíduo")
+		}
+		return nil
+	}
+	m, err := NovoMotorGemini(context.Background(), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Gerar(context.Background(), pedidoTeste); err != nil {
+		t.Fatal(err)
+	}
+	if len(vistos) == 0 || !json.Valid(vistos[len(vistos)-1]) || f.qtd() != 1 {
+		t.Fatalf("inspetor não recebeu o corpo JSON: %d vistos, %d no servidor", len(vistos), f.qtd())
+	}
+	p := pedidoTeste
+	p.Usuario = "contém SEGREDO"
+	_, err = m.Gerar(context.Background(), p)
+	if codigo(err) != erros.IABloqueioPrivacidade || f.qtd() != 1 {
+		t.Fatalf("esperado IA-014 sem envio: %v (servidor recebeu %d)", err, f.qtd())
+	}
+}
+
+// A Gemini API recusa minItems/maxItems em schemas maiores (400 sem campo):
+// o schema vai sem eles; o resto (enum, maxLength, required…) vai inteiro.
+func TestSchemaSemLimitesDeLista(t *testing.T) {
+	f := novoFalso(t)
+	f.roteiro = []resp{ok(`{"l":[]}`)}
+	m, err := NovoMotorGemini(context.Background(), f.cfg())
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := pedidoTeste
+	p.Historico = nil
+	p.Schema = json.RawMessage(`{"type":"object","additionalProperties":false,"required":["l"],"properties":{"l":{"type":"array","minItems":1,"maxItems":3,"items":{"type":"string","maxLength":9,"enum":["a","b"]}}}}`)
+	if _, err := m.Gerar(context.Background(), p); err != nil {
+		t.Fatal(err)
+	}
+	gc, _ := f.corpo(0)["generationConfig"].(map[string]any)
+	b, _ := json.Marshal(gc["responseJsonSchema"])
+	s := string(b)
+	if strings.Contains(s, "maxItems") || strings.Contains(s, "minItems") || !strings.Contains(s, `"maxLength":9`) || !strings.Contains(s, `"enum"`) {
+		t.Fatalf("schema enviado: %s", s)
 	}
 }

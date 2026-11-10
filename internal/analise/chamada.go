@@ -109,7 +109,11 @@ func (x *Executor) Chamar(ctx context.Context, ch Chamada, decodificar func([]by
 		case res.Truncada:
 			motivo = "a resposta foi cortada por excesso de tamanho; responda de forma mais concisa"
 		default:
-			if err := decodificar(res.Conteudo); err != nil {
+			// O schema é conferido no Go para todo provedor (o provedor pode
+			// não impô-lo por inteiro); depois, as validações da etapa.
+			if err := ConferirSchema(ch.Schema, res.Conteudo); err != nil {
+				motivo = err.Error()
+			} else if err := decodificar(res.Conteudo); err != nil {
 				motivo = err.Error()
 			} else {
 				motivo = ""

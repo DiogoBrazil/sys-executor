@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"encoding/json"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -120,7 +121,7 @@ type fonteFalsa struct {
 
 func (f *fonteFalsa) Modelo() (string, error) { return "gemini-teste", nil }
 
-func (f *fonteFalsa) Abrir(ctx context.Context, atividade func(string)) (inference.Motor, func(), error) {
+func (f *fonteFalsa) Abrir(ctx context.Context, atividade func(string), _ func([]byte) error) (inference.Motor, func(), error) {
 	if f.falhas > 0 {
 		f.falhas--
 		return nil, nil, erros.Novo(erros.IAChaveAusente)
@@ -176,10 +177,29 @@ func responder(t *testing.T, g *workflow.Gerenciador, id, opcao string, vals map
 	return v
 }
 
-// autorizarEnvio responde à confirmação de envio à Gemini API (V4 §47.3).
+// autorizarEnvio responde à confirmação de envio à Gemini API (V4 §47.3),
+// decidindo "não é dado pessoal" para os possíveis nomes da revisão
+// (nos autos de teste, o trecho em maiúsculas da frase de injeção).
 func autorizarEnvio(t *testing.T, g *workflow.Gerenciador) {
 	t.Helper()
-	responder(t, g, PerguntaEnvioIA, opcaoAutorizar, nil)
+	responder(t, g, PerguntaEnvioIA, opcaoAutorizar, decisoesRevisao(t, g, decManter, nil))
+}
+
+// decisoesRevisao preenche os campos de revisão da pergunta atual com a
+// decisão dada, somando os valores extras.
+func decisoesRevisao(t *testing.T, g *workflow.Gerenciador, dec string, extras map[string]string) map[string]string {
+	t.Helper()
+	esperar(t, g, func(v *workflow.Visao) bool { return v.Pergunta != nil })
+	vals := map[string]string{}
+	for _, c := range perguntaAtual(t, g).Campos {
+		if strings.HasPrefix(c.ID, campoSuspeito) {
+			vals[c.ID] = dec
+		}
+	}
+	for k, v := range extras {
+		vals[k] = v
+	}
+	return vals
 }
 
 func perguntaAtual(t *testing.T, g *workflow.Gerenciador) *workflow.PerguntaVisao {
@@ -393,7 +413,7 @@ type fonteSR struct{ m *motorSR }
 
 func (f fonteSR) Modelo() (string, error) { return "gemini-teste", nil }
 
-func (f fonteSR) Abrir(context.Context, func(string)) (inference.Motor, func(), error) {
+func (f fonteSR) Abrir(context.Context, func(string), func([]byte) error) (inference.Motor, func(), error) {
 	return f.m, func() {}, nil
 }
 
@@ -514,7 +534,7 @@ func TestConfirmacaoDeEnvio(t *testing.T) {
 		t.Fatalf("nada pode ser enviado sem autorização: aberto=%d pedidos=%v", fonte.aberto, m.pedidos)
 	}
 	_, _ = g.Retomar()
-	responder(t, g, PerguntaEnvioIA, opcaoAutorizar, map[string]string{campoOcultar: "quartel\n"})
+	responder(t, g, PerguntaEnvioIA, opcaoAutorizar, decisoesRevisao(t, g, decManter, map[string]string{campoOcultar: "quartel\n"}))
 	if p := perguntaAtual(t, g); p.ID != perguntaDelimitacao {
 		t.Fatalf("após autorizar: %+v", p)
 	}
@@ -528,5 +548,90 @@ func TestConfirmacaoDeEnvio(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+// Barreira de privacidade no meio da etapa (V4 §48.6): um nome sem âncora
+// digitado pelo usuário no formulário pára o envio para revisão; decidido
+// "ocultar", a etapa segue e o nome nunca sai em nenhum pedido. Ao fim, o
+// estado da tarefa não guarda nenhum marcador (contrato para a composição
+// da minuta: tudo o que a IA devolveu já está restaurado).
+// Cobre: SEG-BAR-01
+// Regra: TRV-SEG-011, TRV-SEG-013
+func TestRevisaoNoMeioDaEtapaENenhumMarcadorNoEstado(t *testing.T) {
+	m := &motorRoteiro{pedidos: map[string]int{}, usuario: map[string][]string{}}
+	g := gerenciadorIA(t, &fonteFalsa{m: m})
+	_, _ = g.Iniciar()
+	_, _ = g.EscolherTipo(workflow.TipoPADS)
+	_, _ = g.EscolherEntrada(workflow.EntradaUpload)
+	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
+	autorizarEnvio(t, g)
+
+	base := map[string]string{"acusado": "FULANO DE TAL", "incluir_IMP-1": "sim",
+		"conduta_IMP-1":     "deixar de comparecer ao serviço, segundo Lucas Imaginário",
+		"dispositivo_IMP-1": "art. 16, inciso XVI, do RDPM", "natureza_IMP-1": "MEDIA", "data_IMP-1": "07/11/2026",
+		"incluir_IMP-2": "nao", "incluir_IMP-X1": "nao"}
+	responder(t, g, perguntaDelimitacao, "confirmar", base)
+
+	p := perguntaAtual(t, g)
+	if p == nil || !strings.HasPrefix(p.ID, prefixoRevisao) || len(p.Campos) != 1 || p.Campos[0].Rotulo != "Lucas Imaginário" {
+		t.Fatalf("esperava a revisão do nome digitado: %+v", p)
+	}
+	antes := m.conta("extracao")
+	// Recusar não envia nada e pára de forma recuperável.
+	responder(t, g, p.ID, opcaoNaoEnviar, nil)
+	v := esperar(t, g, func(v *workflow.Visao) bool { return v.Parada })
+	if v.Erro == nil || v.Erro.Codigo != "IA-011" || m.conta("extracao") != antes {
+		t.Fatalf("recusa da revisão: %+v", v.Erro)
+	}
+	_, _ = g.Retomar()
+	p = perguntaAtual(t, g)
+	if p == nil || !strings.HasPrefix(p.ID, prefixoRevisao) {
+		t.Fatalf("a revisão deve voltar ao tentar de novo: %+v", p)
+	}
+	responder(t, g, p.ID, opcaoContinuar, decisoesRevisao(t, g, decOcultar, nil))
+
+	p = perguntaAtual(t, g)
+	if p.ID != perguntaMidias {
+		t.Fatalf("após a revisão: %+v", p)
+	}
+	vals := map[string]string{}
+	for _, c := range p.Campos {
+		vals[c.ID] = ""
+	}
+	responder(t, g, perguntaMidias, "continuar", vals)
+	responder(t, g, "resultado:IMP-1", "confirmar", map[string]string{"resultado": "PROCEDENTE"})
+	responder(t, g, perguntaComportamento, "confirmar", map[string]string{"comportamento": "BOM", "pontos": "25"})
+	responder(t, g, perguntaHistorico, "confirmar", map[string]string{"tem": "nao"})
+	responder(t, g, "reincidencia:MEDIA", "confirmar", map[string]string{"possui": "nao"})
+	responder(t, g, perguntaServicos, "confirmar", map[string]string{"relevantes": "nao"})
+	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.ConsultandoFontes })
+	if v.Erro == nil || v.Erro.Codigo != "TAR-004" {
+		t.Fatalf("fim da fase: %+v", v.Erro)
+	}
+
+	m.mu.Lock()
+	for nome, us := range m.usuario {
+		for _, u := range us {
+			for _, s := range []string{"Lucas Imaginário", "LUCAS IMAGINÁRIO", "FULANO DE TAL", "CICLANO"} {
+				if strings.Contains(u, s) {
+					m.mu.Unlock()
+					t.Fatalf("%q foi enviado à IA (%s)", s, nome)
+				}
+			}
+		}
+	}
+	m.mu.Unlock()
+
+	d := g.Dados().(*Dados)
+	b, err := json.Marshal(d.IA)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mk := regexp.MustCompile(`\[(?:PESSOA|CPF|RG|MATRICULA|TELEFONE|EMAIL|CEP|ENDERECO|NASCIMENTO|OAB)-\d`).Find(b); mk != nil {
+		t.Fatalf("marcador restou no estado da tarefa: %s", mk)
+	}
+	if !strings.Contains(string(b), "FULANO DE TAL") {
+		t.Fatal("o estado deveria guardar os dados reais restaurados")
 	}
 }

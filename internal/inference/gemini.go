@@ -57,6 +57,10 @@ type ConfigGemini struct {
 	// curto: o usuário vê o erro em vez de esperar.
 	EsperaMax time.Duration
 
+	// Inspecionar recebe o corpo exato de cada requisição antes de sair
+	// (barreira de privacidade, camada 2; TRV-SEG-013). Erro = não envia.
+	Inspecionar func(corpo []byte) error
+
 	// Somente testes do pacote: servidor falso e espera instantânea.
 	baseURL string
 	espera  func(context.Context, time.Duration) error
@@ -76,7 +80,7 @@ func novoCliente(ctx context.Context, c ConfigGemini) (*genai.Client, *http.Clie
 	if len(c.Chave) == 0 {
 		return nil, nil, erros.Novo(erros.IAChaveAusente)
 	}
-	hc, err := novoClienteHTTP(c.base())
+	hc, err := novoClienteHTTP(c.base(), c.Inspecionar)
 	if err != nil {
 		return nil, nil, erros.Com(erros.InternoInesperado, err)
 	}
@@ -226,9 +230,35 @@ func (m *MotorGemini) configuracao(p Pedido) (*genai.GenerateContentConfig, erro
 			return nil, erros.Com(erros.InternoInesperado, fmt.Errorf("schema inválido: %w", err))
 		}
 		cfg.ResponseMIMEType = "application/json"
-		cfg.ResponseJsonSchema = sch
+		cfg.ResponseJsonSchema = semLimitesDeLista(sch)
 	}
 	return cfg, nil
+}
+
+// semLimitesDeLista remove minItems/maxItems do schema enviado à Gemini API:
+// em schemas maiores (extração, análise) ela recusa a requisição inteira com
+// 400 INVALID_ARGUMENT, sem apontar campo (verificado em 09/11/2026 com os
+// modelos 3.5 e 3.6 Flash). Os limites continuam valendo: a resposta é
+// conferida no Go contra o schema completo (analise.ConferirSchema).
+func semLimitesDeLista(s any) any {
+	switch x := s.(type) {
+	case map[string]any:
+		m := make(map[string]any, len(x))
+		for k, v := range x {
+			if k == "minItems" || k == "maxItems" {
+				continue
+			}
+			m[k] = semLimitesDeLista(v)
+		}
+		return m
+	case []any:
+		out := make([]any, len(x))
+		for i, v := range x {
+			out[i] = semLimitesDeLista(v)
+		}
+		return out
+	}
+	return s
 }
 
 // segurancaDesligada: os autos descrevem violência, assédio e crimes; com os

@@ -76,8 +76,8 @@ func (p *Pipeline) Etapas() map[workflow.Estado]workflow.Etapa {
 		workflow.Extraindo:        p.extrair,
 		workflow.Classificando:    p.classificar,
 		workflow.Compatibilidade:  p.compatibilidade,
-		workflow.Delimitando:      p.delimitar,
-		workflow.Analisando:       p.analisar,
+		workflow.Delimitando:      p.comRevisao(workflow.Delimitando, p.delimitar),
+		workflow.Analisando:       p.comRevisao(workflow.Analisando, p.analisar),
 	}
 }
 

@@ -175,6 +175,7 @@ type Gerenciador struct {
 	seiPronto bool
 	t         *tarefa
 	trabalho  sync.WaitGroup
+	seq       uint64 // última Visao.Sequencia (protegido por mu)
 }
 
 // Opcoes configura o gerenciador.
@@ -225,6 +226,8 @@ func (g *Gerenciador) visaoLocked() *Visao {
 		Autos: t.autos, Parada: t.parada, Atividade: t.atividade, Painel: t.painel,
 		Retomavel: t.parada && !t.rodando && t.erro != nil && t.erro.Codigo != erros.TarefaEtapaIndisponiv,
 	}
+	g.seq++
+	v.Sequencia = g.seq
 	for _, rr := range t.respondidas {
 		resumo := ""
 		if rr.p.Resumir != nil {

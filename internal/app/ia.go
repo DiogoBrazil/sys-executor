@@ -107,7 +107,7 @@ func (f *FonteGemini) lerChave() ([]byte, error) {
 }
 
 // Abrir cria o cliente da tarefa e confere o modelo no provedor.
-func (f *FonteGemini) Abrir(ctx context.Context, atividade func(string)) (inference.Motor, func(), error) {
+func (f *FonteGemini) Abrir(ctx context.Context, atividade func(string), inspecionar func([]byte) error) (inference.Motor, func(), error) {
 	modelo, err := f.Modelo()
 	if err != nil {
 		return nil, nil, err
@@ -118,7 +118,7 @@ func (f *FonteGemini) Abrir(ctx context.Context, atividade func(string)) (infere
 	}
 	defer credencial.Zerar(chave)
 	atividade("Conectando à Gemini API")
-	m, err := f.novoMotor()(ctx, inference.ConfigGemini{Chave: chave, Modelo: modelo, Pensamento: f.Pensamento})
+	m, err := f.novoMotor()(ctx, inference.ConfigGemini{Chave: chave, Modelo: modelo, Pensamento: f.Pensamento, Inspecionar: inspecionar})
 	if err != nil {
 		return nil, nil, err
 	}

@@ -1,8 +1,10 @@
 package inference
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -31,7 +33,18 @@ type TransporteRestrito struct {
 	Base    http.RoundTripper
 	esquema string
 	host    string // host[:porta]
+	// Inspecionar confere o corpo exato antes do envio (barreira de
+	// privacidade, camada 2). Erro → ErrInspecao e nada sai.
+	Inspecionar func(corpo []byte) error
 }
+
+// ErrInspecao: a barreira de privacidade recusou o corpo da requisição.
+type ErrInspecao struct{ Causa error }
+
+func (e ErrInspecao) Error() string {
+	return "envio recusado pela barreira de privacidade: " + e.Causa.Error()
+}
+func (e ErrInspecao) Unwrap() error { return e.Causa }
 
 // NovoTransporteRestrito permite somente a origem de base (esquema + host).
 func NovoTransporteRestrito(base http.RoundTripper, origem string) (*TransporteRestrito, error) {
@@ -57,6 +70,21 @@ func (t *TransporteRestrito) RoundTrip(r *http.Request) (*http.Response, error) 
 		}
 		return nil, ErrHostBloqueado{Destino: destino}
 	}
+	if t.Inspecionar != nil && r.Body != nil && r.Body != http.NoBody {
+		corpo, err := io.ReadAll(r.Body)
+		r.Body.Close()
+		if err != nil {
+			return nil, err
+		}
+		if err := t.Inspecionar(corpo); err != nil {
+			return nil, ErrInspecao{Causa: err}
+		}
+		// Clona o pedido (RoundTrip não deve alterar o original) com o corpo relido.
+		r = r.Clone(r.Context())
+		r.Body = io.NopCloser(bytes.NewReader(corpo))
+		r.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(corpo)), nil }
+		r.ContentLength = int64(len(corpo))
+	}
 	return t.Base.RoundTrip(r)
 }
 
@@ -76,11 +104,12 @@ func novoTransporteBase() *http.Transport {
 }
 
 // novoClienteHTTP monta o cliente com o transporte restrito à origem dada.
-func novoClienteHTTP(origem string) (*http.Client, error) {
+func novoClienteHTTP(origem string, inspecionar func([]byte) error) (*http.Client, error) {
 	tr, err := NovoTransporteRestrito(nil, origem)
 	if err != nil {
 		return nil, err
 	}
+	tr.Inspecionar = inspecionar
 	return &http.Client{
 		Transport: tr,
 		// Redirecionamento nunca é seguido: a Gemini API não redireciona, e um

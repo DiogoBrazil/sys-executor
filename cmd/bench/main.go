@@ -128,6 +128,11 @@ func rodar(ctx context.Context, b *policy.Bundle, med *medidor, c casos.Caso, ps
 		for _, pg := range c.Autos.Paginas {
 			mapa.Aprender(pg.Texto)
 		}
+		// Revisão da barreira (TRV-SEG-013): nos casos sintéticos, todo possível
+		// nome não reconhecido é ocultado (decisão mais protetiva).
+		for _, pg := range c.Autos.Paginas {
+			mapa.AcrescentarNomes(mapa.Suspeitos(mapa.Ocultar(pg.Texto)))
+		}
 		r.pseudo = mapa.Resumir().Texto()
 		motor = pseudonimo.Envolver(med, mapa)
 	}

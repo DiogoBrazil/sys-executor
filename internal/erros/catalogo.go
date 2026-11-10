@@ -48,6 +48,8 @@ const (
 	IAEnvioNaoAutorizado Codigo = "IA-011"
 	IACredencial         Codigo = "IA-012"
 	IASemCreditos        Codigo = "IA-013"
+	// Barreira de privacidade antes do envio (V4 §48.6, TRV-SEG-013).
+	IABloqueioPrivacidade Codigo = "IA-014"
 
 	// Biblioteca jurídica e referências
 	BibliotecaIndisponivel Codigo = "BIB-001"
@@ -192,6 +194,10 @@ func init() {
 	def(IASemCreditos, CatModelo, "Sem créditos na conta da Gemini API",
 		"O projeto do Google ligado à chave está sem créditos pré-pagos ou com o faturamento pendente, e o Google recusou a chamada.",
 		"Adicione créditos ou regularize o faturamento do projeto no Google AI Studio (ai.studio/projects), ou cadastre a chave de outro projeto, e tente novamente.")
+
+	def(IABloqueioPrivacidade, CatModelo, "Envio bloqueado para proteger dados pessoais",
+		"Antes do envio à IA, o aplicativo encontrou um dado pessoal já reconhecido que deveria ter sido ocultado, e bloqueou o envio. Nada foi enviado.",
+		"Tente novamente. Se o bloqueio se repetir, a etapa não pode seguir pela IA com segurança: cancele a tarefa ou faça esta parte manualmente.")
 
 	def(BibliotecaIndisponivel, CatBiblioteca, "Biblioteca jurídica indisponível",
 		"A biblioteca jurídica local não pôde ser aberta.",

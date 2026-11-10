@@ -30,6 +30,11 @@ type Visao struct {
 	Atividade string          `json:"atividade"`
 	Painel    *PainelAnalise  `json:"painel"`
 	Respostas []RespostaVisao `json:"respostas"`
+	// Sequencia cresce a cada visão montada. A interface descarta uma visão
+	// mais antiga que a que já mostra: a resposta de um comando pode chegar
+	// depois dos eventos que a etapa emitiu em seguida (ex.: revisão da
+	// barreira, que não espera a rede).
+	Sequencia uint64 `json:"sequencia"`
 }
 
 // Situacao de uma etapa da linha do tempo.

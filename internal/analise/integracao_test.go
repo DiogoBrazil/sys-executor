@@ -2,6 +2,7 @@ package analise
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -32,6 +33,14 @@ func TestIntegracaoEtapasModeloReal(t *testing.T) {
 		mapa := pseudonimo.NovoMapa()
 		for _, pg := range a0.Paginas {
 			mapa.Aprender(pg.Texto)
+		}
+		// Revisão da barreira (TRV-SEG-013): nos autos sintéticos, todo
+		// possível nome não reconhecido é ocultado (decisão mais protetiva).
+		for _, pg := range a0.Paginas {
+			if ss := mapa.Suspeitos(mapa.Ocultar(pg.Texto)); len(ss) > 0 {
+				t.Logf("revisão (sintético): ocultar %q", ss)
+				mapa.AcrescentarNomes(ss)
+			}
 		}
 		t.Logf("pseudonimização: %s", mapa.Resumir().Texto())
 		s = pseudonimo.Envolver(g, mapa)
@@ -70,6 +79,10 @@ func TestIntegracaoEtapasModeloReal(t *testing.T) {
 		t0 = time.Now()
 		e, err := ExtrairPeca(ctx, x, a, p, sec, alvos, nil, reg)
 		if err != nil {
+			var rev pseudonimo.ErrRevisao
+			if errors.As(err, &rev) {
+				t.Fatalf("%v: %q", err, rev.Itens) // itens sintéticos
+			}
 			t.Fatal(err)
 		}
 		t.Logf("extração %s (%s): %d pontos, %d pessoas, achados %d, descartes %d", p.Titulo, time.Since(t0).Round(time.Second), len(e.Pontos), len(e.Pessoas), len(e.Achados), e.Descartes)

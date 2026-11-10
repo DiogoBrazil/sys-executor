@@ -194,8 +194,9 @@
 | TRV-SEG-008 | PT | Cache do WebView2/Edge e dumps mitigados | PT/AV | SEG | platform/win | SEG-CACHE-01, SEG-WER-01 |
 | TRV-SEG-009 | §47.4 | Chave da Gemini API cifrada com DPAPI; nunca na interface, eventos, preferências, erros ou logs; validada sem gerar texto; substituível e removível | AP | SEG | credencial; app.IAService | SEG-KEY-01 |
 | TRV-SEG-010 | §47.3 | Confirmação de envio à Gemini API em cada tarefa, antes da 1ª etapa de IA; sem autorização nada é enviado | AP | SEG+UI | pipeline (envio_ia) | SEG-ENV-01 |
-| TRV-SEG-011 | §47.3 | Pseudonimização de dados pessoais antes do envio e restauração exata (melhor esforço) | AP | SEG | pseudonimo | SEG-PSEUDO-01 |
+| TRV-SEG-011 | §47.3 | Pseudonimização de dados pessoais antes do envio e restauração exata (melhor esforço; sem diferença de caixa/acento; v2) | AP | SEG | pseudonimo | SEG-PSEUDO-01 |
 | TRV-SEG-012 | §47.3 | Envio só a generativelanguage.googleapis.com; store=false; sem ferramentas, Files API nem cache no provedor | AP | SEG | inference.MotorGemini | SEG-NET-01 |
+| TRV-SEG-013 | §48.6 | Barreira obrigatória antes do envio (pedido e bytes da requisição); revisão item a item de possíveis nomes; resíduo bloqueia (IA-014) | AP | SEG+UI | pseudonimo; inference.TransporteRestrito; pipeline | SEG-BAR-01 |
 
 ## 11. Transversal — IA (Gemini API desde a emenda §47; regras da IA local revogadas)
 

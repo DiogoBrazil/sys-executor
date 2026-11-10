@@ -37,6 +37,11 @@ func classificar(ctx context.Context, err error, chave string) falhaGemini {
 	if ctx.Err() != nil && errors.Is(ctx.Err(), context.Canceled) {
 		return falhaGemini{erro: context.Canceled, cancelado: true}
 	}
+	var insp ErrInspecao
+	if errors.As(err, &insp) {
+		// Barreira de privacidade: nada saiu; não se repete (TRV-SEG-013).
+		return falhaGemini{erro: erros.Com(erros.IABloqueioPrivacidade, insp)}
+	}
 	var bloq ErrHostBloqueado
 	if errors.As(err, &bloq) {
 		return falhaGemini{erro: erros.Com(erros.InternoInesperado, bloq)}
@@ -67,7 +72,9 @@ func classificarAPI(e genai.APIError, chave string) falhaGemini {
 	motivo := razao(e)
 	// Créditos pré-pagos esgotados ou faturamento pendente: não adianta
 	// repetir nem esperar (o código HTTP varia; vale o texto e o status).
-	if semCreditos(e, motivo) {
+	// Cota excedida (QuotaFailure) vem com "check your plan and billing
+	// details" no texto: é limite de uso (IA-005), não falta de créditos.
+	if !temQuotaFailure(e) && semCreditos(e, motivo) {
 		return falhaGemini{erro: erros.Com(erros.IASemCreditos, causa)}
 	}
 	switch {
@@ -170,6 +177,16 @@ func retryInfo(e genai.APIError) (time.Duration, bool) {
 }
 
 // cotaDiaria: google.rpc.QuotaFailure com quotaId/quotaMetric "PerDay".
+// temQuotaFailure: o erro traz google.rpc.QuotaFailure (cota de uso).
+func temQuotaFailure(e genai.APIError) bool {
+	for _, d := range e.Details {
+		if t, _ := d["@type"].(string); strings.HasSuffix(t, "google.rpc.QuotaFailure") {
+			return true
+		}
+	}
+	return false
+}
+
 func cotaDiaria(e genai.APIError) bool {
 	for _, d := range e.Details {
 		t, _ := d["@type"].(string)

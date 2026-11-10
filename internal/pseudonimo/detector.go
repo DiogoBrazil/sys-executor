@@ -119,7 +119,14 @@ func init() {
 		assinado assinada eletronicamente conforme referente nome completo matrícula matricula cpf rg oab qopm qppm qobm qpbm cel
 		ten cap maj sgt cb sd asp subten st tc coronel tenente capitão capitao major sargento cabo soldado aspirante subtenente
 		ministério ministerio público publico justiça justica tribunal vara comarca fórum forum cartório cartorio segurança seguranca
-		pública trânsito transito detran ciopor sesdec sepog jus gov dr dra sr sra srta exmo exma ilmo ilma`) {
+		pública trânsito transito detran ciopor sesdec sepog jus gov dr dra sr sra srta exmo exma ilmo ilma
+		defesa prévia previa alegações alegacoes finais inquirição inquiricao interrogatório interrogatorio
+		qualificação qualificacao laudo certidão certidao notificação notificacao citação citacao intimação
+		intimacao manifestação manifestacao parecer solução solucao mandado exame perícia pericia pericial ata
+		audiência audiencia comunicação comunicacao informação informacao encaminhamento juntada conclusão
+		conclusao decisão decisao julgamento homologação homologacao imputação imputacao imputações imputacoes
+		fato fatos objeto escala serviço servico instauração instauracao abertura vista prazo
+		vossa vosso senhoria excelência excelencia magnificência magnificencia fica ficam`) {
 		paradas[p] = true
 	}
 }

@@ -116,12 +116,12 @@
   fluxo: TRV
   rotulo: [APROVADO]
   tipo: [SEGURANCA]
-  enunciado: "Pseudonimização de dados pessoais antes do envio (nomes, CPF, RG, matrícula, telefone, e-mail, CEP, endereço, nascimento) e restauração exata na resposta; melhor esforço, não anonimização; datas dos fatos, números SEI e links não são trocados"
+  enunciado: "Pseudonimização de dados pessoais antes do envio (nomes, CPF, RG, matrícula, telefone, e-mail, CEP, endereço, nascimento) e restauração exata na resposta; grafias que só diferem em caixa, acento ou quebra de linha (inclusive escapada em JSON) são ocultadas; nome de uma só palavra só com inicial maiúscula; melhor esforço, não anonimização; datas dos fatos, números SEI e links não são trocados"
   modulo: "pseudonimo"
   enforced_by: [pseudonimo.Envolver, pseudonimo.Mapa]
-  falha: "Marcador alterado pela IA → correção pedida; persistindo, IA-010"
+  falha: "Marcador alterado ou deformado (qualquer tipo, qualquer caixa entre colchetes) → correção pedida; persistindo, IA-010"
   testes: ["SEG-PSEUDO-01"]
-  versao: 1
+  versao: 2
 
 - id: TRV-SEG-012
   origem: "§47.3"
@@ -132,4 +132,16 @@
   modulo: "inference.MotorGemini"
   enforced_by: [inference.TransporteRestrito, inference.HostGemini]
   testes: ["SEG-NET-01"]
+  versao: 1
+
+- id: TRV-SEG-013
+  origem: "§48.6"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [SEGURANCA, UI]
+  enunciado: "Barreira obrigatória antes de cada envio à IA: dado pessoal conhecido que reste no pedido (instruções, dados, histórico, schema) ou nos bytes da requisição bloqueia o envio sem opção de ignorar; possível nome sem âncora não decidido pára para revisão item a item (na autorização e no meio da etapa), sem confirmação genérica; a tabela de correspondência nunca sai do computador"
+  modulo: "pseudonimo (camada 1 e Inspecionar); inference.TransporteRestrito (camada 2); pipeline (revisão)"
+  enforced_by: [pseudonimo.ErrVazamento, pseudonimo.ErrRevisao, inference.ErrInspecao]
+  falha: "Resíduo → IA-014, nada enviado; revisão recusada → IA-011, parada recuperável"
+  testes: ["SEG-BAR-01"]
   versao: 1

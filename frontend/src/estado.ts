@@ -19,8 +19,16 @@ export const estado = reactive({
   verConfigIA: false, // tela Configurações de IA aberta por cima da atual
 });
 
+// mostrar aplica uma visão do Go, salvo se for mais antiga que a atual: a
+// resposta de um comando pode chegar depois dos eventos emitidos em seguida.
+function mostrar(v: Visao | null) {
+  const atual = estado.visao;
+  if (v && atual && atual.id === v.id && (v.sequencia ?? 0) < (atual.sequencia ?? 0)) return;
+  estado.visao = v;
+}
+
 function aplicar(r: Resposta) {
-  estado.visao = r.visao ?? null;
+  mostrar(r.visao ?? null);
   estado.erro = r.erro ? { ...r.erro } : null;
 }
 
@@ -46,9 +54,7 @@ async function executar(cmd: () => Promise<Resposta>): Promise<boolean> {
 }
 
 export async function carregar() {
-  api.aoMudar((v) => {
-    estado.visao = v;
-  });
+  api.aoMudar((v) => mostrar(v));
   iaApi.aoMudar((m) => {
     estado.ia = m;
   });

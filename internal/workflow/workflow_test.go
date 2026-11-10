@@ -623,3 +623,15 @@ func TestUltimaVisaoEmitidaDaParadaEhRetomavel(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 	}
 }
+
+// A sequência das visões só cresce (a interface descarta a mais antiga quando
+// a resposta de um comando chega depois dos eventos da etapa).
+func TestSequenciaDaVisaoCresce(t *testing.T) {
+	g, _, _ := novo(t, nil)
+	v1, _ := g.Iniciar()
+	v2, _ := g.EscolherTipo(TipoPADS)
+	v3 := g.Visao()
+	if v1 == nil || v2 == nil || v3 == nil || !(v1.Sequencia < v2.Sequencia && v2.Sequencia < v3.Sequencia) {
+		t.Fatalf("sequência não crescente: %v %v %v", v1, v2, v3)
+	}
+}

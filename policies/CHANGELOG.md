@@ -43,3 +43,15 @@ O CI falha enquanto o SHA-256 da V4 divergir do lock (GOV-LOCK-01).
 - **Testes:** T02, T03 e T04–T06 continuam mapeados às regras atuais até a etapa do cadastro de peças, quando passam a ser verificados no sentido da seção 48.2.
 - **Registro:** D-11 em `docs/planning/REGISTRO_DUVIDAS_DECISOES.md`.
 - **Aprovação:** usuário, em 09/11/2026 ("Tudo certo"). Os acréscimos sobre crianças, aviso de privacidade e marca decorrem dos Termos do SIWC fornecidos pelo usuário; a opção "pergunta + bloqueio" foi escolhida por ele.
+
+### 09/11/2026 — Catálogo: barreira de privacidade (etapa 2 do plano D-11; V4 §48.6)
+- **V4:** sem alteração (o lock não muda).
+- **TRV-SEG-011 v2:** a ocultação passa a não diferenciar caixa nem acentos e a aceitar quebra de linha entre as palavras, inclusive escapada em JSON. Nome de uma só palavra só é trocado com inicial maiúscula, para "machado", o objeto, não virar marcador. Marcadores deformados são recusados para todos os tipos.
+- **Nova TRV-SEG-013:** barreira obrigatória antes de cada envio.
+  - Camada 1, no pedido: resíduo de dado conhecido bloqueia com IA-014.
+  - Revisão item a item de possíveis nomes sem âncora, feita na autorização e no meio da etapa, sem confirmação genérica.
+  - Camada 2, nos bytes da requisição, pelo transporte restrito.
+- **Novo código de erro:** IA-014.
+- **Testes:** SEG-PSEUDO-01 ampliado; novo SEG-BAR-01.
+- **Golden dos prompts:** sem alteração.
+- **Aprovação:** usuário, por meio do plano D-11 aprovado (etapa 2 autorizada em 09/11/2026).
