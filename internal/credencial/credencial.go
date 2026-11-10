@@ -11,6 +11,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
@@ -30,29 +31,43 @@ type Loja interface {
 	Existe() bool
 }
 
-// entropia vincula o dado cifrado a este uso: outro programa da mesma conta
-// que chame a DPAPI sem ela não decifra o arquivo.
-var entropia = []byte("sys-executor/gemini-api-key/v1")
+// entropiaGemini vincula o dado cifrado a este uso: outro programa da mesma
+// conta que chame a DPAPI sem ela não decifra o arquivo.
+var entropiaGemini = []byte("sys-executor/gemini-api-key/v1")
 
-const nomeArquivo = "gemini.dpapi"
+const arquivoGemini = "gemini.dpapi"
 
-// LojaArquivo grava a chave cifrada (DPAPI) em <dir>/gemini.dpapi.
+// LojaArquivo grava um segredo cifrado (DPAPI) em <dir>/<nome>.
 type LojaArquivo struct {
-	mu  sync.Mutex
-	dir string
+	mu       sync.Mutex
+	dir      string
+	nome     string
+	entropia []byte
 }
 
-// NovaLojaArquivo usa a pasta dir (criada e protegida na primeira gravação).
-func NovaLojaArquivo(dir string) *LojaArquivo { return &LojaArquivo{dir: dir} }
+// NovaLojaArquivo é a loja da chave da Gemini API (<dir>/gemini.dpapi).
+func NovaLojaArquivo(dir string) *LojaArquivo {
+	return NovaLojaNomeada(dir, arquivoGemini, entropiaGemini)
+}
 
-func (l *LojaArquivo) caminho() string { return filepath.Join(l.dir, nomeArquivo) }
+// NovaLojaNomeada guarda outro segredo na mesma pasta protegida, com nome e
+// entropia próprios: um não decifra o do outro (ex.: credencial do
+// ChatGPT, V4 §48.3). nome é um nome simples de arquivo.
+func NovaLojaNomeada(dir, nome string, entropia []byte) *LojaArquivo {
+	if nome == "" || filepath.Base(nome) != nome || len(entropia) == 0 {
+		panic("credencial: nome de arquivo ou entropia inválidos")
+	}
+	return &LojaArquivo{dir: dir, nome: nome, entropia: append([]byte(nil), entropia...)}
+}
+
+func (l *LojaArquivo) caminho() string { return filepath.Join(l.dir, l.nome) }
 
 // Guardar cifra e grava atomicamente. Uma chave vazia é recusada.
 func (l *LojaArquivo) Guardar(chave []byte) error {
 	if len(bytes.TrimSpace(chave)) == 0 {
 		return errors.New("chave vazia")
 	}
-	cif, err := proteger(chave, entropia)
+	cif, err := proteger(chave, l.entropia)
 	if err != nil {
 		return err
 	}
@@ -64,7 +79,7 @@ func (l *LojaArquivo) Guardar(chave []byte) error {
 	if err := protegerDiretorio(l.dir); err != nil {
 		return err
 	}
-	tmp, err := os.CreateTemp(l.dir, ".gemini-*.tmp")
+	tmp, err := os.CreateTemp(l.dir, "."+strings.TrimSuffix(l.nome, filepath.Ext(l.nome))+"-*.tmp")
 	if err != nil {
 		return err
 	}
@@ -96,7 +111,7 @@ func (l *LojaArquivo) Ler() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return desproteger(cif, entropia)
+	return desproteger(cif, l.entropia)
 }
 
 // Remover apaga o arquivo (ausente não é erro).

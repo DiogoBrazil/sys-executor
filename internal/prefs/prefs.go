@@ -17,17 +17,34 @@ import (
 	"sync"
 )
 
-// versaoAtual 2: a inferência local saiu (D-10, V4 §47); entram o modelo
-// Gemini escolhido e saem o modelo local e o estado da GPU. A chave da Gemini
-// API NUNCA entra aqui (fica no pacote credencial, com DPAPI).
-const versaoAtual = 2
+// versaoAtual 3: dois provedores de IA (V4 §48.1) — entram o provedor
+// escolhido e o modelo do ChatGPT. Histórico: v2 = modelo Gemini (D-10,
+// V4 §47); v1 = inferência local. Credenciais (chave da Gemini API, tokens
+// do ChatGPT) NUNCA entram aqui (pacote credencial, com DPAPI).
+const versaoAtual = 3
+
+// Provedores admitidos em ProvedorIA ("" = nenhum escolhido ainda).
+const (
+	ProvedorGemini  = "GEMINI"
+	ProvedorChatGPT = "CHATGPT"
+)
 
 // Preferencias é o conjunto completo e fechado de preferências.
 type Preferencias struct {
 	Versao        int    `json:"versao"`
 	PesquisaWeb   bool   `json:"pesquisa_web"`   // V4 §41: desligada na primeira instalação
 	PastaDownload string `json:"pasta_download"` // vazio = perguntar ao salvar
+	ProvedorIA    string `json:"provedor_ia"`    // "", GEMINI ou CHATGPT (escolha explícita, V4 §48.1)
 	ModeloGemini  string `json:"modelo_gemini"`  // vazio = nenhum escolhido (V4 §47.5)
+	ModeloChatGPT string `json:"modelo_chatgpt"` // slug da lista da conta; vazio = nenhum
+}
+
+// preferenciasV2 é o formato anterior (só Gemini), lido para migrar.
+type preferenciasV2 struct {
+	Versao        int    `json:"versao"`
+	PesquisaWeb   bool   `json:"pesquisa_web"`
+	PastaDownload string `json:"pasta_download"`
+	ModeloGemini  string `json:"modelo_gemini"`
 }
 
 // preferenciasV1 é o formato anterior (inferência local), lido só para
@@ -48,7 +65,10 @@ func Padrao() Preferencias {
 	return Preferencias{Versao: versaoAtual}
 }
 
-var reModelo = regexp.MustCompile(`^(gemini-[a-z0-9.-]{1,100})?$`)
+var (
+	reModelo        = regexp.MustCompile(`^(gemini-[a-z0-9.-]{1,100})?$`)
+	reModeloChatGPT = regexp.MustCompile(`^([a-z0-9][a-z0-9.\-]{0,99})?$`)
+)
 
 // Validar confere cada campo.
 func (p Preferencias) Validar() error {
@@ -58,8 +78,13 @@ func (p Preferencias) Validar() error {
 	if p.PastaDownload != "" && !filepath.IsAbs(p.PastaDownload) {
 		return errors.New("pasta de download deve ser um caminho absoluto")
 	}
-	if !reModelo.MatchString(p.ModeloGemini) {
+	if !reModelo.MatchString(p.ModeloGemini) || !reModeloChatGPT.MatchString(p.ModeloChatGPT) {
 		return errors.New("identificador de modelo inválido")
+	}
+	switch p.ProvedorIA {
+	case "", ProvedorGemini, ProvedorChatGPT:
+	default:
+		return errors.New("provedor de IA inválido")
 	}
 	return nil
 }
@@ -72,7 +97,7 @@ type Loja struct {
 }
 
 // Abrir lê o arquivo. Ausente → padrão. Inválido → padrão (o arquivo ruim é
-// substituído na próxima gravação). Um arquivo da versão 1 é migrado.
+// substituído na próxima gravação). Arquivos das versões 2 e 1 são migrados.
 func Abrir(caminho string) (*Loja, error) {
 	l := &Loja{caminho: caminho, atual: Padrao()}
 	b, err := os.ReadFile(caminho)
@@ -89,13 +114,36 @@ func Abrir(caminho string) (*Loja, error) {
 		l.atual = p
 		return l, nil
 	}
-	if m, ok := migrarV1(b); ok {
-		l.atual = m
-		if err := l.gravar(m); err != nil {
-			return l, err
+	for _, migrar := range []func([]byte) (Preferencias, bool){migrarV2, migrarV1} {
+		if m, ok := migrar(b); ok {
+			l.atual = m
+			if err := l.gravar(m); err != nil {
+				return l, err
+			}
+			return l, nil
 		}
 	}
 	return l, nil
+}
+
+// migrarV2 mantém tudo; quem já tinha escolhido um modelo Gemini continua
+// com a Gemini API como provedor (a escolha foi explícita).
+func migrarV2(b []byte) (Preferencias, bool) {
+	var v2 preferenciasV2
+	dec := json.NewDecoder(bytes.NewReader(b))
+	dec.DisallowUnknownFields()
+	if dec.Decode(&v2) != nil || v2.Versao != 2 {
+		return Preferencias{}, false
+	}
+	p := Padrao()
+	p.PesquisaWeb, p.PastaDownload, p.ModeloGemini = v2.PesquisaWeb, v2.PastaDownload, v2.ModeloGemini
+	if p.ModeloGemini != "" {
+		p.ProvedorIA = ProvedorGemini
+	}
+	if p.Validar() != nil {
+		return Preferencias{}, false
+	}
+	return p, true
 }
 
 // migrarV1 aproveita pesquisa web e pasta de download do formato anterior.

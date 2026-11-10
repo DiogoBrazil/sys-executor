@@ -22,9 +22,19 @@ export class Preferencias {
     "pasta_download": string;
 
     /**
+     * "", GEMINI ou CHATGPT (escolha explícita, V4 §48.1)
+     */
+    "provedor_ia": string;
+
+    /**
      * vazio = nenhum escolhido (V4 §47.5)
      */
     "modelo_gemini": string;
+
+    /**
+     * slug da lista da conta; vazio = nenhum
+     */
+    "modelo_chatgpt": string;
 
     /** Creates a new Preferencias instance. */
     constructor($$source: Partial<Preferencias> = {}) {
@@ -37,8 +47,14 @@ export class Preferencias {
         if (!("pasta_download" in $$source)) {
             this["pasta_download"] = "";
         }
+        if (!("provedor_ia" in $$source)) {
+            this["provedor_ia"] = "";
+        }
         if (!("modelo_gemini" in $$source)) {
             this["modelo_gemini"] = "";
+        }
+        if (!("modelo_chatgpt" in $$source)) {
+            this["modelo_chatgpt"] = "";
         }
 
         Object.assign(this, $$source);

@@ -100,16 +100,16 @@
   versao: 1
 
 - id: TRV-SEG-010
-  origem: "§47.3"
+  origem: "§§47.3, 48.1"
   fluxo: TRV
   rotulo: [APROVADO]
   tipo: [SEGURANCA, UI]
-  enunciado: "Confirmação de envio à Gemini API em cada tarefa, antes da primeira etapa de IA (modelo, peças, estimativa de tokens, resumo da pseudonimização); sem autorização nada é enviado"
+  enunciado: "Confirmação de envio à IA em cada tarefa, antes da primeira etapa de IA (serviço, modelo, peças, estimativa de tokens, resumo da pseudonimização); vale para um provedor e um modelo: se qualquer um mudar, o motor anterior é fechado e nada vai ao novo alvo antes de nova confirmação; sem autorização nada é enviado"
   modulo: "pipeline (envio_ia)"
-  enforced_by: [pipeline.PerguntaEnvioIA]
+  enforced_by: [pipeline.PerguntaEnvioIA, inference.Alvo]
   falha: "Recusa → IA-011, parada recuperável; nova tentativa pergunta de novo"
-  testes: ["SEG-ENV-01"]
-  versao: 1
+  testes: ["SEG-ENV-01", "SEG-ENV-02"]
+  versao: 2
 
 - id: TRV-SEG-011
   origem: "§47.3"

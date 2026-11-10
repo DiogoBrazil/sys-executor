@@ -148,6 +148,10 @@ func TestSelecionarETestarModelo(t *testing.T) {
 	if v.ModeloSelecionado != "gemini-3.6-flash" || c.loja.Obter().ModeloGemini != "gemini-3.6-flash" {
 		t.Fatalf("seleção não persistiu: %+v", v)
 	}
+	// Escolher o modelo Gemini é escolher a Gemini API como provedor (V4 §48.1).
+	if c.loja.Obter().ProvedorIA != prefs.ProvedorGemini {
+		t.Fatalf("provedor não gravado: %+v", c.loja.Obter())
+	}
 	v = c.serv.TestarModelo("gemini-3.6-flash")
 	if v.Modelos[0].Teste != "ok" {
 		t.Fatalf("teste: %+v", v.Modelos[0])
@@ -174,7 +178,11 @@ func TestFonteGemini(t *testing.T) {
 		t.Fatalf("modelo: %q %v", m, err)
 	}
 	var atividades []string
-	m, fechar, err := c.fonte.Abrir(context.Background(), func(s string) { atividades = append(atividades, s) }, nil)
+	alvo, err := c.fonte.Alvo()
+	if err != nil || alvo.Provedor != inference.ProvedorGemini || alvo.Modelo != "gemini-3.6-flash" {
+		t.Fatalf("alvo: %+v %v", alvo, err)
+	}
+	m, fechar, err := c.fonte.Abrir(context.Background(), alvo, func(s string) { atividades = append(atividades, s) }, nil)
 	if err != nil || m == nil || len(atividades) != 1 {
 		t.Fatalf("abrir: %v %v", err, atividades)
 	}

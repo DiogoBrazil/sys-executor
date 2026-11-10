@@ -79,6 +79,16 @@ func (f *FonteGemini) testar() func(context.Context, inference.ConfigGemini) err
 	return inference.TestarModelo
 }
 
+// Alvo confere a configuração sem rede e sem decifrar a chave
+// (pipeline.FonteMotor).
+func (f *FonteGemini) Alvo() (inference.Alvo, error) {
+	m, err := f.Modelo()
+	if err != nil {
+		return inference.Alvo{}, err
+	}
+	return inference.Alvo{Provedor: inference.ProvedorGemini, Rotulo: inference.RotuloProvedor(inference.ProvedorGemini), Modelo: m}, nil
+}
+
 // Modelo confere a configuração sem rede e sem decifrar a chave.
 func (f *FonteGemini) Modelo() (string, error) {
 	if f.Credenciais == nil || !f.Credenciais.Existe() {
@@ -107,11 +117,13 @@ func (f *FonteGemini) lerChave() ([]byte, error) {
 }
 
 // Abrir cria o cliente da tarefa e confere o modelo no provedor.
-func (f *FonteGemini) Abrir(ctx context.Context, atividade func(string), inspecionar func([]byte) error) (inference.Motor, func(), error) {
-	modelo, err := f.Modelo()
-	if err != nil {
-		return nil, nil, err
+func (f *FonteGemini) Abrir(ctx context.Context, alvo inference.Alvo, atividade func(string), inspecionar func([]byte) error) (inference.Motor, func(), error) {
+	if alvo.Provedor != inference.ProvedorGemini || alvo.Modelo == "" {
+		return nil, nil, erros.Com(erros.InternoInesperado, errors.New("alvo de IA não é a Gemini API"))
 	}
+	// O motor abre exatamente o modelo autorizado na tarefa (V4 §48.1), não
+	// o que estiver nas preferências agora.
+	modelo := alvo.Modelo
 	chave, err := f.lerChave()
 	if err != nil {
 		return nil, nil, err
@@ -369,7 +381,11 @@ func (s *IAService) SelecionarModelo(id string) VisaoIA {
 	var err error
 	if !conhecido {
 		err = erros.Com(erros.IAModeloIndisponivel, errors.New("modelo fora da lista da chave"))
-	} else if _, e := s.Fonte.Loja.Atualizar(func(p *prefs.Preferencias) { p.ModeloGemini = id }); e != nil {
+	} else if _, e := s.Fonte.Loja.Atualizar(func(p *prefs.Preferencias) {
+		// Escolher um modelo Gemini é escolher a Gemini API como provedor
+		// (escolha explícita, V4 §48.1).
+		p.ModeloGemini, p.ProvedorIA = id, prefs.ProvedorGemini
+	}); e != nil {
 		err = erros.Com(erros.IAModeloIndisponivel, e)
 	}
 	s.mu.Lock()

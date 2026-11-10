@@ -50,6 +50,13 @@ const (
 	IASemCreditos        Codigo = "IA-013"
 	// Barreira de privacidade antes do envio (V4 §48.6, TRV-SEG-013).
 	IABloqueioPrivacidade Codigo = "IA-014"
+	// ChatGPT pelo plano do usuário (Sign in with ChatGPT, V4 §§48.3, 48.7).
+	IAContaDesconectada  Codigo = "IA-015"
+	IALoginNaoConcluido  Codigo = "IA-016"
+	IAPlanoNaoAutorizado Codigo = "IA-017"
+	IASessaoExpirada     Codigo = "IA-018"
+	IALimitePlano        Codigo = "IA-019"
+	IAContaNaoElegivel   Codigo = "IA-020"
 
 	// Biblioteca jurídica e referências
 	BibliotecaIndisponivel Codigo = "BIB-001"
@@ -161,32 +168,32 @@ func init() {
 	def(IAChaveInvalida, CatModelo, "Chave da Gemini API não aceita",
 		"O Google não aceitou a chave cadastrada. Ela pode estar incorreta, revogada ou excluída.",
 		"Cadastre uma chave válida em Configurações de IA e tente novamente.")
-	def(IAPermissaoNegada, CatModelo, "Acesso negado pela Gemini API",
-		"A chave cadastrada não tem permissão para usar a Gemini API ou o modelo escolhido, ou o serviço não está liberado para a sua conta ou região.",
-		"Verifique a chave e o projeto no Google AI Studio, ou escolha outro modelo em Configurações de IA.")
+	def(IAPermissaoNegada, CatModelo, "Acesso negado pelo serviço de IA",
+		"O serviço de IA escolhido recusou o acesso ao modelo ou à conta, ou o serviço não está liberado para a sua conta ou região.",
+		"Confira a configuração em Configurações de IA (chave, conta ou modelo) ou escolha outro modelo.")
 	def(IAModeloIndisponivel, CatModelo, "Modelo de IA indisponível",
-		"O modelo de IA escolhido não está disponível para a sua chave, ou nenhum modelo foi escolhido.",
+		"O modelo de IA escolhido não está disponível para a sua conta, ou nenhum modelo foi escolhido.",
 		"Escolha um modelo em Configurações de IA e tente novamente.")
-	def(IACota, CatModelo, "Limite de uso da Gemini API atingido",
-		"A cota de uso da sua chave foi atingida (por minuto ou por dia).",
-		"Aguarde alguns minutos e tente novamente. Se o limite for diário, ele é renovado no dia seguinte; os limites podem ser consultados no Google AI Studio.")
-	def(IAIndisponivel, CatModelo, "Gemini API indisponível",
-		"O serviço da Gemini API está temporariamente indisponível ou sobrecarregado.",
+	def(IACota, CatModelo, "Limite de uso do serviço de IA atingido",
+		"A cota de uso da sua conta no serviço de IA foi atingida (por minuto ou por dia).",
+		"Aguarde alguns minutos e tente novamente. Se o limite for diário, ele é renovado no dia seguinte; os limites podem ser consultados no painel do serviço.")
+	def(IAIndisponivel, CatModelo, "Serviço de IA indisponível",
+		"O serviço de IA está temporariamente indisponível ou sobrecarregado.",
 		"Tente novamente em alguns minutos. O andamento da tarefa foi mantido.")
-	def(IASemConexao, CatModelo, "Sem conexão com a Gemini API",
-		"A análise por IA exige internet, e não foi possível se conectar ao serviço do Google.",
+	def(IASemConexao, CatModelo, "Sem conexão com o serviço de IA",
+		"A análise por IA exige internet, e não foi possível se conectar ao serviço escolhido.",
 		"Verifique a conexão (e o proxy da rede, se houver) e tente novamente. O andamento da tarefa foi mantido.")
-	def(IATempoEsgotado, CatModelo, "A Gemini API demorou demais para responder",
+	def(IATempoEsgotado, CatModelo, "O serviço de IA demorou demais para responder",
 		"A resposta da IA não chegou dentro do tempo limite.",
 		"Tente novamente. O andamento da tarefa foi mantido.")
 	def(IARespostaBloqueada, CatModelo, "Resposta recusada pelo provedor",
-		"O Google recusou processar este conteúdo dos autos pelas regras dele.",
+		"O provedor de IA recusou processar este conteúdo dos autos pelas regras dele.",
 		"Tente novamente ou escolha outro modelo. Se persistir, esta etapa precisará ser feita manualmente.")
 	def(IARespostaIncompleta, CatModelo, "Resposta incompleta da IA",
-		"A resposta da Gemini API chegou incompleta ou vazia e foi descartada.",
+		"A resposta da IA chegou incompleta ou vazia e foi descartada.",
 		"Tente novamente. Nenhum resultado incompleto foi aproveitado.")
-	def(IAEnvioNaoAutorizado, CatModelo, "Envio à Gemini API não autorizado",
-		"Você optou por não enviar o conteúdo dos autos à Gemini API; nada foi enviado.",
+	def(IAEnvioNaoAutorizado, CatModelo, "Envio à IA não autorizado",
+		"Você optou por não enviar o conteúdo dos autos ao serviço de IA; nada foi enviado.",
 		"Para continuar a análise por IA, use Tentar novamente e autorize o envio, ou cancele a tarefa.")
 	def(IACredencial, CatModelo, "Não foi possível guardar ou ler a chave",
 		"O Windows não conseguiu proteger ou abrir a chave da Gemini API desta conta.",
@@ -198,6 +205,25 @@ func init() {
 	def(IABloqueioPrivacidade, CatModelo, "Envio bloqueado para proteger dados pessoais",
 		"Antes do envio à IA, o aplicativo encontrou um dado pessoal já reconhecido que deveria ter sido ocultado, e bloqueou o envio. Nada foi enviado.",
 		"Tente novamente. Se o bloqueio se repetir, a etapa não pode seguir pela IA com segurança: cancele a tarefa ou faça esta parte manualmente.")
+
+	def(IAContaDesconectada, CatModelo, "Conta ChatGPT não conectada",
+		"O ChatGPT foi escolhido como serviço de IA, mas nenhuma conta está conectada neste computador.",
+		"Conecte a sua conta em Configurações de IA ou escolha outro serviço, e tente novamente.")
+	def(IALoginNaoConcluido, CatModelo, "Entrada no ChatGPT não concluída",
+		"O acesso à conta ChatGPT não foi concluído: a autorização foi cancelada, expirou ou foi recusada. Se isso se repetir, é provável que a conta não tenha um plano elegível para uso em outros aplicativos.",
+		"Tente entrar de novo uma vez. Para usar o plano em outros aplicativos, a conta precisa ter um plano Plus ou Pro.")
+	def(IAPlanoNaoAutorizado, CatModelo, "Uso do plano ChatGPT não autorizado",
+		"A conta foi conectada, mas a permissão para usar o plano ChatGPT neste aplicativo não foi concedida. Sem ela, nenhum texto é enviado.",
+		"Em Configurações de IA, entre de novo e autorize o uso do plano, ou escolha outro serviço.")
+	def(IASessaoExpirada, CatModelo, "Conexão com o ChatGPT encerrada",
+		"A conexão da conta ChatGPT com o aplicativo expirou ou foi desfeita nas configurações do ChatGPT.",
+		"Conecte a conta de novo em Configurações de IA e tente novamente. O andamento da tarefa foi mantido.")
+	def(IALimitePlano, CatModelo, "Limite de uso do plano ChatGPT atingido",
+		"O limite de uso do seu plano ChatGPT para outros aplicativos foi atingido. No plano Plus, esse limite é compartilhado com os demais aplicativos conectados.",
+		"Aguarde a renovação do limite e tente novamente; o uso pode ser acompanhado em ChatGPT, Configurações, Uso. O andamento da tarefa foi mantido.")
+	def(IAContaNaoElegivel, CatModelo, "Conta ChatGPT sem uso do plano disponível",
+		"O uso do plano ChatGPT em outros aplicativos não está disponível para esta conta, espaço de trabalho ou região.",
+		"Use outra conta com plano elegível ou escolha outro serviço em Configurações de IA.")
 
 	def(BibliotecaIndisponivel, CatBiblioteca, "Biblioteca jurídica indisponível",
 		"A biblioteca jurídica local não pôde ser aberta.",

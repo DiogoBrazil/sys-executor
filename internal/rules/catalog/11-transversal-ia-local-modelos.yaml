@@ -153,3 +153,15 @@
   modulo: "inference"
   testes: ["T14", "T16"]
   versao: 1
+
+- id: TRV-IA-014
+  origem: "§48.1"
+  fluxo: TRV
+  rotulo: [APROVADO]
+  tipo: [ARQUITETURA, SEGURANCA]
+  enunciado: "Dois provedores de inferência (Gemini API com chave; ChatGPT pelo plano do usuário), escolhidos explicitamente nas Configurações de IA; o motor abre exatamente o alvo autorizado na tarefa; não há troca automática: provedor escolhido e indisponível é erro, nunca desvio para o outro"
+  modulo: "app.FonteIA; prefs (provedor_ia, v3)"
+  enforced_by: [app.FonteIA, prefs.ProvedorChatGPT]
+  falha: "ChatGPT sem conta conectada → IA-015; nenhum serviço escolhido → IA-004"
+  testes: ["IA-PROV-01"]
+  versao: 1

@@ -117,11 +117,20 @@ type fonteFalsa struct {
 	falhas  int
 	aberto  int
 	fechado int
+	modelo  string           // "" = gemini-teste
+	abertos []inference.Alvo // alvos para os quais o motor foi aberto
 }
 
-func (f *fonteFalsa) Modelo() (string, error) { return "gemini-teste", nil }
+func (f *fonteFalsa) Alvo() (inference.Alvo, error) {
+	m := f.modelo
+	if m == "" {
+		m = "gemini-teste"
+	}
+	return inference.Alvo{Provedor: inference.ProvedorGemini, Rotulo: inference.RotuloProvedor(inference.ProvedorGemini), Modelo: m}, nil
+}
 
-func (f *fonteFalsa) Abrir(ctx context.Context, atividade func(string), _ func([]byte) error) (inference.Motor, func(), error) {
+func (f *fonteFalsa) Abrir(ctx context.Context, alvo inference.Alvo, atividade func(string), _ func([]byte) error) (inference.Motor, func(), error) {
+	f.abertos = append(f.abertos, alvo)
 	if f.falhas > 0 {
 		f.falhas--
 		return nil, nil, erros.Novo(erros.IAChaveAusente)
@@ -411,9 +420,11 @@ func (m *motorSR) Gerar(_ context.Context, p inference.Pedido) (inference.Respos
 
 type fonteSR struct{ m *motorSR }
 
-func (f fonteSR) Modelo() (string, error) { return "gemini-teste", nil }
+func (f fonteSR) Alvo() (inference.Alvo, error) {
+	return inference.Alvo{Provedor: inference.ProvedorGemini, Rotulo: "Gemini API (Google)", Modelo: "gemini-teste"}, nil
+}
 
-func (f fonteSR) Abrir(context.Context, func(string), func([]byte) error) (inference.Motor, func(), error) {
+func (f fonteSR) Abrir(context.Context, inference.Alvo, func(string), func([]byte) error) (inference.Motor, func(), error) {
 	return f.m, func() {}, nil
 }
 
@@ -633,5 +644,46 @@ func TestRevisaoNoMeioDaEtapaENenhumMarcadorNoEstado(t *testing.T) {
 	}
 	if !strings.Contains(string(b), "FULANO DE TAL") {
 		t.Fatal("o estado deveria guardar os dados reais restaurados")
+	}
+}
+
+// A autorização vale para um provedor e um modelo (V4 §48.1): trocado o
+// modelo depois dela, nada é enviado ao novo alvo antes de nova confirmação;
+// o motor do alvo anterior é fechado e o novo é aberto para o alvo
+// autorizado.
+// Cobre: SEG-ENV-02
+// Regra: TRV-SEG-010
+func TestAutorizacaoVinculadaAoAlvo(t *testing.T) {
+	m := &motorRoteiro{pedidos: map[string]int{}, usuario: map[string][]string{}}
+	fonte := &fonteFalsa{m: m}
+	g := gerenciadorIA(t, fonte)
+	_, _ = g.Iniciar()
+	_, _ = g.EscolherTipo(workflow.TipoPADS)
+	_, _ = g.EscolherEntrada(workflow.EntradaUpload)
+	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
+	autorizarEnvio(t, g)
+	if p := perguntaAtual(t, g); p.ID != perguntaDelimitacao {
+		t.Fatalf("%+v", p)
+	}
+	fonte.modelo = "gemini-outro" // o usuário troca o modelo nas configurações
+	antes := m.conta("extracao")
+	base := map[string]string{"acusado": "FULANO DE TAL", "incluir_IMP-1": "sim", "conduta_IMP-1": "deixar de comparecer ao serviço",
+		"dispositivo_IMP-1": "art. 16, inciso XVI, do RDPM", "natureza_IMP-1": "MEDIA", "data_IMP-1": "07/11/2026",
+		"incluir_IMP-2": "nao", "incluir_IMP-X1": "nao"}
+	responder(t, g, perguntaDelimitacao, "confirmar", base)
+
+	p := perguntaAtual(t, g)
+	if p == nil || p.ID != PerguntaEnvioIA || !strings.Contains(p.Contexto, "gemini-outro") {
+		t.Fatalf("deveria pedir nova autorização para o novo modelo: %+v", p)
+	}
+	if m.conta("extracao") != antes || fonte.fechado != 1 {
+		t.Fatalf("nada pode ir ao novo alvo antes da confirmação: extração %d→%d, fechado=%d", antes, m.conta("extracao"), fonte.fechado)
+	}
+	autorizarEnvio(t, g)
+	if p := perguntaAtual(t, g); p.ID != perguntaMidias {
+		t.Fatalf("após reautorizar: %+v", p)
+	}
+	if n := len(fonte.abertos); n != 2 || fonte.abertos[0].Modelo != "gemini-teste" || fonte.abertos[1].Modelo != "gemini-outro" {
+		t.Fatalf("motores abertos: %+v", fonte.abertos)
 	}
 }

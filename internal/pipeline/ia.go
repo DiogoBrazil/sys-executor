@@ -15,18 +15,20 @@ import (
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
 )
 
-// FonteMotor prepara o motor de IA da tarefa (Gemini API com a chave e o
-// modelo configurados pelo usuário; V4 §47). Erros IA-0xx são recuperáveis:
-// a tarefa pára com o aviso e o usuário tenta de novo depois de corrigir a
+// FonteMotor prepara o motor de IA da tarefa: o provedor e o modelo
+// escolhidos pelo usuário (V4 §§47, 48). Erros IA-0xx são recuperáveis: a
+// tarefa pára com o aviso e o usuário tenta de novo depois de corrigir a
 // configuração ou a conexão.
 type FonteMotor interface {
-	// Modelo confere a configuração sem rede (chave cadastrada e modelo
-	// escolhido) e devolve o modelo, para a confirmação de envio.
-	Modelo() (string, error)
-	// Abrir prepara o motor. inspecionar recebe o corpo exato de cada
-	// requisição antes de sair (barreira de privacidade, camada 2;
-	// TRV-SEG-013): o motor não pode enviar nada que ele recuse.
-	Abrir(ctx context.Context, atividade func(string), inspecionar func([]byte) error) (inference.Motor, func(), error)
+	// Alvo confere a configuração sem rede (provedor escolhido, credencial
+	// presente, modelo escolhido) e devolve o alvo, para a confirmação de
+	// envio e para conferir que ele não mudou depois da autorização.
+	Alvo() (inference.Alvo, error)
+	// Abrir prepara o motor exatamente para o alvo autorizado. inspecionar
+	// recebe o corpo exato de cada requisição antes de sair (barreira de
+	// privacidade, camada 2; TRV-SEG-013): o motor não pode enviar nada que
+	// ele recuse.
+	Abrir(ctx context.Context, alvo inference.Alvo, atividade func(string), inspecionar func([]byte) error) (inference.Motor, func(), error)
 }
 
 // EstadoIA guarda, em memória, o que as etapas de IA produziram.
@@ -57,10 +59,11 @@ type EstadoIA struct {
 	midiasAplicadas    bool              // respostas sobre mídias já convertidas em evidência/ressalva
 	Pendencias         []string
 
-	// Envio à IA (V4 §47.3): autorização da tarefa e mapa da pseudonimização
-	// (só memória; descartado com a tarefa).
-	envioAutorizado bool
-	mapa            *pseudonimo.Mapa
+	// Envio à IA (V4 §§47.3, 48.1): alvo (provedor e modelo) para o qual o
+	// envio foi autorizado e mapa da pseudonimização (só memória; descartado
+	// com a tarefa).
+	autorizado *inference.Alvo
+	mapa       *pseudonimo.Mapa
 	// Barreira de privacidade (V4 §48.6): possíveis nomes da revisão feita
 	// na autorização (nil = ainda não calculados) e revisão pendente surgida
 	// depois dela.
@@ -234,11 +237,11 @@ func (p *Pipeline) garantirMotor(ctx context.Context, c *workflow.Contexto, d *D
 		}
 		d.IA.bundle = b
 	}
-	if !d.IA.envioAutorizado || d.IA.mapa == nil {
+	if d.IA.autorizado == nil || d.IA.mapa == nil {
 		// Defesa em profundidade: nunca abrir o motor sem a autorização da tarefa.
 		return erros.Novo(erros.IAEnvioNaoAutorizado)
 	}
-	m, fechar, err := p.IA.Abrir(ctx, c.Atividade, d.IA.mapa.Inspecionar)
+	m, fechar, err := p.IA.Abrir(ctx, *d.IA.autorizado, c.Atividade, d.IA.mapa.Inspecionar)
 	if err != nil {
 		return err
 	}

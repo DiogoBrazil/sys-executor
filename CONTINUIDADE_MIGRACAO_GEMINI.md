@@ -12,7 +12,7 @@ Relatório: `docs/planning/RELATORIO_ETAPA2_BARREIRA.md`. O teste no Windows con
 - **400 do Gemini**: `maxItems` recusado; o schema vai sem limites de lista e é conferido no Go;
 - cota diária classificada como IA-005.
 
-O 400 só pode ser reconfirmado ponta a ponta quando a cota diária gratuita (20/dia) renovar. **Próximo passo:** etapa 3 (generalização para mais de um provedor), que depende de autorização expressa. **Nenhum código** foi alterado; cada etapa do plano depende de autorização expressa.
+O 400 só pode ser reconfirmado ponta a ponta quando a cota diária gratuita (20/dia) renovar. **Etapa 2 commitada** (`ab14035`). **Etapa 3 implementada** (generalização para mais de um provedor; relatório em `docs/planning/RELATORIO_ETAPA3_MULTIPROVEDOR.md`). **Próximo passo:** etapa 4 (provedor ChatGPT), que depende de autorização expressa. **Nenhum código** foi alterado; cada etapa do plano depende de autorização expressa.
 
 Leia junto: `docs/planning/RELATORIO_MIGRACAO_GEMINI.md` (relatório técnico), `docs/planning/ADR_009_gemini_api.md` (arquitetura), V4 §47 (`docs/rules/sys-executor_especificacao_consolidada_V4.md`) e D-10 (`docs/planning/REGISTRO_DUVIDAS_DECISOES.md`).
 

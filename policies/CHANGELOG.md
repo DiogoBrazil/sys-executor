@@ -55,3 +55,14 @@ O CI falha enquanto o SHA-256 da V4 divergir do lock (GOV-LOCK-01).
 - **Testes:** SEG-PSEUDO-01 ampliado; novo SEG-BAR-01.
 - **Golden dos prompts:** sem alteração.
 - **Aprovação:** usuário, por meio do plano D-11 aprovado (etapa 2 autorizada em 09/11/2026).
+
+### 09/11/2026 — Catálogo: mais de um provedor (etapa 3 do plano D-11; V4 §48.1)
+- **V4:** sem alteração; o lock não muda.
+- **TRV-SEG-010 v2:** a confirmação de envio vale para **um provedor e um modelo**. Se um dos dois mudar depois da autorização, o motor anterior é fechado e a pergunta é feita de novo antes de qualquer envio.
+- **Nova TRV-IA-014:** dois provedores, escolhidos explicitamente. O motor abre o alvo autorizado e não há troca automática.
+- **Erros:** textos de IA-003 a IA-011 neutros quanto ao provedor; novos IA-015 a IA-020, do ChatGPT. Nenhum código foi reutilizado.
+- **Preferências v3:** `provedor_ia` e `modelo_chatgpt`, com migração da v2.
+- **Credencial:** loja nomeada, com arquivo e entropia próprios.
+- **Testes:** novos SEG-ENV-02 e IA-PROV-01.
+- **Golden:** sem alteração.
+- **Aprovação:** usuário, por meio do plano D-11 aprovado (etapa 3 autorizada em 09/11/2026).

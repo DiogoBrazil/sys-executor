@@ -26,7 +26,7 @@ func TestLojaArquivo(t *testing.T) {
 		if !errors.Is(err, ErrSemProtecao) {
 			t.Fatalf("fora do Windows não pode gravar sem proteção: %v", err)
 		}
-		if _, e := os.Stat(filepath.Join(dir, nomeArquivo)); e == nil {
+		if _, e := os.Stat(filepath.Join(dir, arquivoGemini)); e == nil {
 			t.Fatal("arquivo gravado sem proteção")
 		}
 		return
@@ -34,7 +34,7 @@ func TestLojaArquivo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cru, err := os.ReadFile(filepath.Join(dir, nomeArquivo))
+	cru, err := os.ReadFile(filepath.Join(dir, arquivoGemini))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestLojaArquivo(t *testing.T) {
 	}
 	// Arquivo adulterado não decifra.
 	cru[len(cru)/2] ^= 0xFF
-	os.WriteFile(filepath.Join(dir, nomeArquivo), cru, 0o600)
+	os.WriteFile(filepath.Join(dir, arquivoGemini), cru, 0o600)
 	if _, err := l.Ler(); err == nil {
 		t.Fatal("arquivo adulterado foi aceito")
 	}
@@ -76,5 +76,46 @@ func TestLojaMemoria(t *testing.T) {
 	l.Remover()
 	if l.Existe() {
 		t.Fatal("removida")
+	}
+}
+
+// V4 §48.3: a credencial do ChatGPT fica na mesma pasta protegida, com nome
+// e entropia próprios; uma não decifra a outra (job go-windows do CI).
+// Regra: TRV-SEG-009
+func TestLojasNomeadasIsoladas(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "credenciais")
+	g := NovaLojaArquivo(dir)
+	c := NovaLojaNomeada(dir, "chatgpt.dpapi", []byte("sys-executor/chatgpt/v1"))
+	if c.caminho() == g.caminho() {
+		t.Fatal("as lojas não podem compartilhar o arquivo")
+	}
+	for _, ruim := range []string{"", "../x.dpapi", `a\b`} {
+		func() {
+			defer func() { _ = recover() }()
+			NovaLojaNomeada(dir, ruim, []byte("e"))
+			if ruim == "" || ruim == "../x.dpapi" {
+				t.Errorf("nome %q deveria ser recusado", ruim)
+			}
+		}()
+	}
+	if runtime.GOOS != "windows" {
+		if err := c.Guardar([]byte(sentinela)); !errors.Is(err, ErrSemProtecao) {
+			t.Fatalf("fora do Windows: %v", err)
+		}
+		return
+	}
+	if err := g.Guardar([]byte("chave-gemini")); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Guardar([]byte(sentinela)); err != nil {
+		t.Fatal(err)
+	}
+	// Com a entropia da outra loja, o arquivo não decifra.
+	cruzada := NovaLojaNomeada(dir, "chatgpt.dpapi", entropiaGemini)
+	if _, err := cruzada.Ler(); err == nil {
+		t.Fatal("entropia diferente decifrou o segredo")
+	}
+	if v, err := g.Ler(); err != nil || string(v) != "chave-gemini" {
+		t.Fatalf("loja Gemini afetada: %q %v", v, err)
 	}
 }

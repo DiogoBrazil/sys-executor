@@ -74,11 +74,12 @@ func main() {
 			return t, nil
 		},
 	}
-	// IA (V4 §47): Gemini API com a chave do usuário, cifrada com DPAPI em
-	// %LOCALAPPDATA%\sys-executor\credenciais, e o modelo das preferências.
+	// IA (V4 §§47, 48): provedor escolhido pelo usuário nas preferências, sem
+	// troca automática. Gemini API com a chave do usuário, cifrada com DPAPI em
+	// %LOCALAPPDATA%\sys-executor\credenciais. ChatGPT: etapa 4 do plano D-11.
 	// Sem inferência local e sem fallback local (D-10).
 	fonteIA := &app.FonteGemini{Credenciais: credencial.NovaLojaArquivo(p.Credenciais()), Loja: loja}
-	pipe.IA = fonteIA
+	pipe.IA = &app.FonteIA{Loja: loja, Gemini: fonteIA}
 
 	// SEI/RO pelo Microsoft Edge instalado (Fase 2). Sem Edge, só o envio do PDF.
 	navegador, errNav := sei.LocalizarNavegador()
