@@ -99,14 +99,7 @@ async function enviarSegredo() {
 .sei h2 { font-size: var(--t-lg); }
 .form { display: grid; gap: 0.9rem; }
 label { display: grid; gap: 0.3rem; font-weight: 500; }
-input {
-  font: inherit;
-  font-weight: 400;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid var(--linha-forte);
-  border-radius: var(--raio);
-  background: #fff;
-}
+input { font-weight: 400; }
 .nota { color: var(--tinta-suave); font-size: var(--t-sm); }
 .acoes { display: flex; gap: 0.7rem; }
 .andamento { display: flex; align-items: center; gap: 0.4rem; }

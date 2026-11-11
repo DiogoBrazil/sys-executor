@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build --mode production",
     "test": "vitest run",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "galeria": "vite -c vite.galeria.config.ts"
   },
   "dependencies": {
     "@fontsource/ibm-plex-sans": "^5.2.8",

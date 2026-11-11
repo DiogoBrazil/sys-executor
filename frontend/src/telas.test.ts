@@ -315,6 +315,50 @@ describe("Cadastro de peças (V4 §48.4)", () => {
   });
 });
 
+describe("Ajustes do teste real (10/11/2026)", () => {
+  it("depoente com o mesmo nome de pessoa já cadastrada: sugere usar a mesma e não duplica", async () => {
+    visaoAtual = visao("RECEBENDO_UPLOAD", { entrada: "UPLOAD", cadastro: cadastroPADS() });
+    const w = mount(App);
+    await flushPromises();
+    await w.find('[data-teste="passo-depoimentos"]').trigger("click");
+    await flushPromises();
+    await w.find('[data-teste="novo-depoimento"]').trigger("click");
+    await w.find('[data-teste="depoente-nome-0"]').setValue("Diego Suposto");
+    await w.find('[data-teste="novo-depoimento"]').trigger("click");
+    await w.find('[data-teste="depoente-nome-1"]').setValue("DIEGO  SUPOSTO");
+    expect(w.find('[data-teste="depoente-homonimo-1"]').text()).toContain("já está cadastrada como depoente");
+    await w.find('[data-teste="depoente-usar-mesma-1"]').trigger("click");
+    expect(w.find('[data-teste="depoente-homonimo-1"]').exists()).toBe(false);
+    expect(w.find('[data-teste="depoente-reuso-1"]').exists()).toBe(true);
+    await w.find('[data-teste="passo-conferencia"]').trigger("click");
+    await flushPromises();
+    expect(w.findAll('[data-teste="pessoa"]')).toHaveLength(1);
+  });
+
+  it("ofendido com nome de instituição: aviso no campo", async () => {
+    const cad = { ...cadastroPADS(), tipo: "SR", pecas: [{ id: "PEC-01", tipo: "PORTARIA", titulo: "", descricao: "", papel: "", pessoaIds: [], data: "", sei: "", naoApresentada: false, arquivos: [] }] };
+    visaoAtual = visao("RECEBENDO_UPLOAD", { tipo: "SR", entrada: "UPLOAD", cadastro: cad });
+    const w = mount(App);
+    await flushPromises();
+    await w.find('[data-teste="novo-ofendidos"]').trigger("click");
+    await w.find('[data-teste="ofendidos-nome"]').setValue("Administração Pública");
+    expect(w.find('[data-teste="ofendido-institucional"]').exists()).toBe(true);
+  });
+
+  it("grupo sem campos visíveis nem conteúdo não aparece", async () => {
+    visaoAtual = visao("AGUARDANDO_ESCLARECIMENTO", { pergunta: {
+      id: "hist", titulo: "Histórico", contexto: "", opcoes: [{ id: "confirmar", rotulo: "Confirmar", validar: true }],
+      grupos: [{ id: "t1", titulo: "Transgressão anterior 1", descricao: [], alertas: [], fontes: [] }],
+      campos: [{ id: "ha", rotulo: "Há?", tipo: "SIM_NAO", obrigatorio: true, valor: "" },
+        { id: "d1", rotulo: "Data", tipo: "DATA", obrigatorio: true, grupo: "t1", valor: "", mostrarSe: { campo: "ha", valor: "sim" } }] } });
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="grupo-t1"]').exists()).toBe(false);
+    await w.find('[data-teste="campo-ha-sim"]').setValue(true);
+    expect(w.find('[data-teste="grupo-t1"]').exists()).toBe(true);
+  });
+});
+
 describe("T07 — tarefa em execução", () => {
   it("mostra status e etapas, sem chatbot nem texto em streaming", async () => {
     visaoAtual = visao("EXTRAINDO");

@@ -170,6 +170,56 @@ function opcoesReuso(p: PecaCadastro): PessoaLocal[] {
   const atual = p.pessoaIds[0] ?? "";
   return depoentes.value.filter((ps) => ps.nome.trim() && (ps.id !== atual || compartilhada(atual, p)));
 }
+// ---- Pessoas repetidas e ofendido institucional (teste da SR, 10/11/2026) ----
+const chaveNome = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/g, " ").trim();
+const reInstitucional = /\b(administracao|estado|fazenda|policia|municipio|prefeitura|secretaria|uniao|governo|ministerio|corregedoria|batalhao)\b/;
+const institucional = (ps: PessoaLocal) => reInstitucional.test(chaveNome(ps.nome));
+function referencias(id: string): number {
+  const l = local.value;
+  return l.pecas.filter((x) => x.pessoaIds.includes(id)).length + (l.acusadoId === id ? 1 : 0) +
+    (l.sindicados.includes(id) ? 1 : 0) + (l.ofendidos.includes(id) ? 1 : 0);
+}
+function papelCadastrado(id: string): string {
+  const l = local.value;
+  if (l.acusadoId === id) return "acusado";
+  if (l.sindicados.includes(id)) return "sindicado";
+  if (l.ofendidos.includes(id)) return "ofendido";
+  return "depoente";
+}
+// Outra pessoa já cadastrada com o mesmo nome do depoente digitado.
+function homonimo(p: PecaCadastro): PessoaLocal | undefined {
+  const atual = pessoa(p.pessoaIds[0] ?? "");
+  const k = atual ? chaveNome(atual.nome) : "";
+  if (!k) return undefined;
+  return local.value.pessoas.find((x) => x.id !== atual!.id && chaveNome(x.nome) === k &&
+    (local.value.tipo !== "PADS" || x.id !== local.value.acusadoId));
+}
+function usarMesma(p: PecaCadastro, outra: PessoaLocal) {
+  const antiga = p.pessoaIds[0];
+  trocarDepoente(p, outra.id);
+  if (antiga && referencias(antiga) === 0) local.value.pessoas = local.value.pessoas.filter((x) => x.id !== antiga);
+}
+// Avisos da conferência (não impedem concluir).
+const avisosConferencia = computed(() => {
+  const l = local.value;
+  const out: string[] = [];
+  for (const p of l.pecas) {
+    if (p.tipo !== "DEPOIMENTO" || l.tipo !== "SR") continue;
+    const ps = pessoa(p.pessoaIds[0] ?? "");
+    if (ps?.nome.trim() && l.sindicados.includes(ps.id) && p.papel !== "SINDICADO") {
+      out.push(`${rotuloPessoa(ps)} é sindicado, mas o depoimento está como ${rotuloPapel(p.papel).toLowerCase()}. Confira o papel.`);
+    }
+  }
+  const vistos = new Map<string, number>();
+  for (const ps of l.pessoas) if (ps.nome.trim()) vistos.set(chaveNome(ps.nome), (vistos.get(chaveNome(ps.nome)) ?? 0) + 1);
+  for (const [k, n] of vistos) {
+    if (n > 1) {
+      const ps = l.pessoas.find((x) => chaveNome(x.nome) === k)!;
+      out.push(`${rotuloPessoa(ps)} foi cadastrado ${n} vezes. Se é a mesma pessoa, use "Usar a mesma" no depoimento.`);
+    }
+  }
+  return out;
+});
 const valorReuso = (p: PecaCadastro) => (p.pessoaIds[0] && compartilhada(p.pessoaIds[0], p) ? p.pessoaIds[0] : "");
 function acrescentarEnvolvido(lista: "sindicados" | "ofendidos") {
   local.value[lista].push(novaPessoa().id);
@@ -297,11 +347,18 @@ function descricaoPeca(p: PecaCadastro): string {
       </section>
       <section v-for="lista in (['sindicados', 'ofendidos'] as const)" :key="lista" class="bloco">
         <h3>{{ lista === "sindicados" ? "Sindicados" : "Ofendidos" }}</h3>
+        <p v-if="lista === 'ofendidos'" class="ajuda">
+          Só pessoas. Se o ofendido é a Administração ou uma instituição, não a cadastre aqui: deixe a lista vazia e marque
+          "Não há ofendido individualizado".
+        </p>
         <div v-for="id in local[lista]" :key="id" class="linha2" :data-teste="lista + '-item'">
           <template v-if="pessoa(id)">
             <label>Posto/graduação <input v-model="pessoa(id)!.postoGrad" @input="marcar" /></label>
             <label class="largo">Nome <input v-model="pessoa(id)!.nome" :data-teste="lista + '-nome'" @input="marcar" /></label>
             <button type="button" class="botao discreto" @click="retirarEnvolvido(lista, id)">Retirar</button>
+            <p v-if="lista === 'ofendidos' && institucional(pessoa(id)!)" class="alerta-campo" data-teste="ofendido-institucional">
+              Parece uma instituição, e não uma pessoa. Se for, retire-a e marque "Não há ofendido individualizado".
+            </p>
           </template>
         </div>
         <label v-if="lista === 'ofendidos' && local.ofendidos.length === 0" class="marca">
@@ -343,6 +400,10 @@ function descricaoPeca(p: PecaCadastro): string {
         <div v-if="pessoa(p.pessoaIds[0])" class="linha2">
           <label>Posto/graduação (se militar) <input v-model="pessoa(p.pessoaIds[0])!.postoGrad" :data-teste="'depoente-posto-' + i" @input="marcar" /></label>
           <label class="largo">Nome do depoente <input v-model="pessoa(p.pessoaIds[0])!.nome" :data-teste="'depoente-nome-' + i" @input="marcar" /></label>
+        </div>
+        <div v-if="homonimo(p)" class="callout info sugestao" :data-teste="'depoente-homonimo-' + i">
+          <p>Esta pessoa já está cadastrada como {{ papelCadastrado(homonimo(p)!.id) }}.</p>
+          <div><button type="button" class="botao" :data-teste="'depoente-usar-mesma-' + i" @click="usarMesma(p, homonimo(p)!)">Usar a mesma</button></div>
         </div>
         <label v-if="opcoesReuso(p).length" class="reuso">Já cadastrada em outra parte? (opcional)
           <select :value="valorReuso(p)" :data-teste="'depoente-' + i" @change="trocarDepoente(p, ($event.target as HTMLSelectElement).value)">
@@ -398,7 +459,8 @@ function descricaoPeca(p: PecaCadastro): string {
         <div v-for="p in local.pessoas.filter((x) => x.nome.trim())" :key="p.id" class="pessoa" data-teste="pessoa">
           <strong>{{ [p.postoGrad, p.nome].filter(Boolean).join(" ") }}</strong>
           <label class="largo">Outras grafias <input v-model="p.grafias" placeholder="Ex.: Cabo Inventado; Inventado" @input="marcar" /></label>
-          <label class="marca"><input v-model="p.crianca" type="checkbox" data-teste="crianca" @change="marcar" /> Menor de 13 anos</label>
+          <label v-if="!institucional(p)" class="marca"><input v-model="p.crianca" type="checkbox" data-teste="crianca" @change="marcar" /> Menor de 13 anos</label>
+          <span v-else class="selo alerta">Instituição?</span>
         </div>
       </section>
       <section class="bloco">
@@ -407,6 +469,9 @@ function descricaoPeca(p: PecaCadastro): string {
           <li v-for="p in pendencias" :key="p">{{ p }}</li>
         </ul>
         <p v-else class="ok">O cadastro está completo.</p>
+        <ul v-if="avisosConferencia.length" class="avisos-conf" data-teste="avisos-conferencia">
+          <li v-for="a in avisosConferencia" :key="a">{{ a }}</li>
+        </ul>
         <div class="acoes">
           <button type="button" class="botao primario" :disabled="estado.ocupado" data-teste="concluir-cadastro" @click="concluir">Concluir e processar</button>
         </div>
@@ -439,7 +504,6 @@ header p, .ajuda { color: var(--tinta-suave); max-width: 72ch; }
 .fato { display: grid; gap: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--linha); }
 label { display: grid; gap: 0.25rem; font-size: var(--t-sm); }
 label.marca { display: flex; gap: 0.5rem; align-items: center; }
-input:not([type]), input[type="search"], select { font: inherit; padding: 0.4rem 0.55rem; border: 1px solid var(--linha-forte); border-radius: var(--raio); background: #fff; }
 .linha2 { display: grid; grid-template-columns: minmax(10rem, 14rem) 1fr auto; gap: 0.6rem; align-items: end; }
 .largo { min-width: 0; }
 .papel { border: 0; margin: 0; padding: 0; display: flex; gap: 1rem; flex-wrap: wrap; }
@@ -447,6 +511,9 @@ input:not([type]), input[type="search"], select { font: inherit; padding: 0.4rem
 .papel label { display: flex; gap: 0.35rem; align-items: center; }
 .resumo, .pendencias { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.25rem; }
 .pendencias { color: var(--alerta); }
+.avisos-conf { margin: 0; padding: 0.6rem 0.8rem 0.6rem 1.8rem; background: var(--info-claro); border: 1px solid var(--info-linha); border-radius: var(--r-sm); display: grid; gap: 0.25rem; }
+.alerta-campo { grid-column: 1 / -1; color: var(--alerta); font-size: var(--t-sm); }
+.sugestao { align-items: center; }
 .ok { color: var(--ok); }
 .pessoa { display: grid; grid-template-columns: minmax(12rem, 1fr) 2fr auto; gap: 0.6rem; align-items: end; }
 .acoes, .navegar { display: flex; gap: 0.8rem; flex-wrap: wrap; }

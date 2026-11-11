@@ -2,9 +2,13 @@
 
 > **Comece por aqui.** Ponto de entrada para retomar o trabalho em qualquer máquina.
 >
-> - **Atualizado em:** 10/11/2026 (tarde), depois da etapa 7 do plano D-11 (commit `0579327`). Decisão do usuário: **sem mais bench**; os testes são manuais, no `.exe` (§3, §6.2).
+> - **Atualizado em:** 10/11/2026 (noite). Depois deste guia:
+>   - os testes A (SEI real) e B (SR) passaram, com dois ajustes (commit `8596de3`);
+>   - a **Fase 1 do novo visual** está implementada (§5.3).
+> - **Decisão do usuário:** **sem mais bench**. Os testes são manuais, no `.exe` (§3, §6.2).
 > - **Branch:** `add-mode-apikey-oauth`. O push é feito pelo usuário. Não há merge com a `main`.
-> - **Em uma linha:** as etapas 0 a 8 do plano D-11 estão **implementadas**. Para **concluir** o D-11 faltam os testes manuais do usuário (§6.1) e algumas decisões dele (§6.3).
+> - **Em uma linha:** o D-11 está implementado. Dos testes manuais, A e B passaram e falta o C (Gemini). Em paralelo, há uma melhoria da interface em 3 fases: a 1 está pronta (com teste do usuário pendente), e a 2 e a 3 faltam.
+> - **Próximos passos:** **§6.0**.
 
 ---
 
@@ -24,8 +28,9 @@ O processamento para em **"Consultando fontes jurídicas" (TAR-004)**, que é o 
 |---|---|---|
 | ChatGPT no app (login, modelo, PADS até TAR-004) | ✅ | ✅ 09/11/2026, conta Plus, `gpt-6-luna` |
 | Cadastro de peças PADS | ✅ | ✅ 09/11/2026, com ChatGPT |
-| Cadastro de peças SR | ✅ | ❌ **pendente** (§6.1-B) |
-| SEI com seleção no computador (etapa 7) | ✅ CAD-SEI-01 (simulado, pdfium real) | ✅ 10/11/2026, processo real, ChatGPT, até TAR-004 |
+| Cadastro de peças SR | ✅ | ✅ 10/11/2026, ChatGPT, até TAR-004 (ajustes P1 a P3 na Fase 1 da interface) |
+| SEI com seleção no computador (etapa 7) | ✅ CAD-SEI-01 (simulado, pdfium real) | ✅ 10/11/2026, processo real, ChatGPT, até TAR-004 (depois dos ajustes do `8596de3`) |
+| Novo visual, Fase 1 (base, P1 a P3, itens 1 e 2) | ✅ vitest 35/35, galeria | ❌ **pendente** (§6.0, passo 1) |
 | Gemini no app, de ponta a ponta | ✅ | ⚠️ **parcial**: a cota gratuita acabou no teste de 09/11/2026. A conta está no nível pago desde 10/11 (§6.1-C) |
 | Bench Gemini `gemini-3.6-flash` (casos sintéticos) | ✅ dentro dos limiares; vazamento 0 | — |
 | Bench ChatGPT `gpt-6-luna` | ⚠️ abaixo dos limiares de JSON 1ª e de resultado; vazamento 0 | Bench encerrado por decisão do usuário (§6.2); a qualidade é avaliada nos testes manuais |
@@ -46,6 +51,7 @@ O processamento para em **"Consultando fontes jurídicas" (TAR-004)**, que é o 
    - `RELATORIO_ETAPA2_BARREIRA.md`, `RELATORIO_ETAPA3_MULTIPROVEDOR.md`, `RELATORIO_ETAPA4_CHATGPT.md`;
    - `RELATORIO_ETAPA6_CADASTRO.md`, `RELATORIO_ETAPA7_SEI.md`, `RELATORIO_ETAPA8_BENCH.md`.
 7. `CONTINUIDADE_MIGRACAO_GEMINI.md`: histórico da migração para o Gemini.
+8. **Interface:** `docs/planning/PLANO_INTERFACE.md` (plano aprovado, 3 fases) e `docs/planning/RELATORIO_INTERFACE.md` (o que cada fase fez).
 
 ---
 
@@ -115,6 +121,7 @@ GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsg
 ```
 - **Feche o app antes de substituir o `.exe`.** Confira com `tasklist.exe | grep -i sys-executor`.
 - Pasta de teste usada até aqui: `C:\Users\diogo\Documents\testes-sys-executor\`, com o `.exe`, `componentes\tesseract\`, os PDFs sintéticos e o `sei-mapa.exe`.
+- **Galeria de telas (só desenvolvimento):** `cd frontend && npm run galeria` abre cada tela com dados sintéticos (`galeria.html#resultado`, `#cadastro-sr`…). As capturas são feitas com o `chrome-headless-shell` do Playwright com `--disable-gpu --disable-features=Vulkan`. Ela não entra no `.exe`.
 - **Modo diagnóstico:** mostra a causa técnica, com os dígitos mascarados. No PowerShell: `$env:SYSEXEC_DIAGNOSTICO = "1"; .\sys-executor.exe`.
 
 ### 4.4 Verificação completa (antes de cada commit)
@@ -151,11 +158,39 @@ git diff --stat -- internal/policy/testdata                 # golden: vazio
 | 6 | `e6f40d6` | Cadastro peça por peça, junção em memória, peças declaradas conferidas pelo conteúdo, assistente `Montagem.vue` | PADS testado pelo usuário; **SR pendente** |
 | — | `f001fdd` | Guia e gerador versionado dos PDFs sintéticos | — |
 | 8 | `4ec155d` | Bench:<br>• `-provedor gemini\|chatgpt\|falso`, `-entrada memoria,monolitica,pecas`, `-max-chamadas`, `-amostras`;<br>• conta ChatGPT própria;<br>• métrica de vazamento sobre o corpo exato.<br>ADR 010, README, plano de testes §9, `sei-mapa` ampliado. | Concluída. Gemini dentro dos limiares; ChatGPT abaixo (§6.2) |
-| 7 | `0579327` | SEI com seleção no computador (opção A, E2 revisado):<br>• o PDF de todos os documentos é separado pelo carimbo;<br>• os documentos vão ao cadastro, e o usuário escolhe os de cada peça.<br>V4 §48.4 revisada; TRV-ING-008; CAD-SEI-01.<br>Na extração, pessoa sem nome é descartada, sem recusa. | Implementada; **teste real pendente** (§6.1-A) |
-| — | (este commit) | Este guia reescrito para a continuidade | — |
-| — | (não commitado) | **Ajuste da revisão de nomes**, depois do teste A de 10/11 (SEI real ok; 18 "possíveis nomes", 11 falsos). Reteste: 2 itens. 2ª rodada (título com conector, "Ver no PDF", pareamento pelo artigo, aviso de natureza, acusado com posto, "fato 1", tela de depoimentos). Ver `RELATORIO_ETAPA7_SEI.md` §6 e §7 | `.exe` gerado; **reteste do usuário pendente** |
+| 7 | `0579327` | SEI com seleção no computador (opção A, E2 revisado):<br>• o PDF de todos os documentos é separado pelo carimbo;<br>• os documentos vão ao cadastro, e o usuário escolhe os de cada peça.<br>V4 §48.4 revisada; TRV-ING-008; CAD-SEI-01.<br>Na extração, pessoa sem nome é descartada, sem recusa. | ✅ Testada pelo usuário (SEI real, 10/11) |
+| — | `3bb0c6f` | Guia reescrito para a continuidade | — |
+| — | `8596de3` | **Ajustes do teste real** (ver `RELATORIO_ETAPA7_SEI.md` §6 e §7):<br>• revisão de nomes: pedaços de nome conhecido ocultados, parentes da qualificação como âncora, filtros de termos, lugares e ruído de OCR. Caiu de 18 para 1 item no processo real;<br>• delimitação: pareamento pelo artigo, sem aviso de natureza, acusado com posto, "fato 1";<br>• tela de depoimentos. | ✅ Testado pelo usuário (PADS pelo SEI e SR) |
 
-### 5.3 Onde está cada coisa (código)
+### 5.3 Novo visual da interface (pedido do usuário, 10/11/2026)
+- **Plano aprovado:** `docs/planning/PLANO_INTERFACE.md`, em 3 fases. **Relatório:** `docs/planning/RELATORIO_INTERFACE.md`.
+- **Decisões do usuário:**
+  - identidade "capa dos autos refinada" (aba bordô no PADS e azul-petróleo na SR), **sem tema escuro**;
+  - no processamento, **etapas à esquerda + abas** (Análise, Suas respostas, Autos) e barra "Confirmar" fixa;
+  - ajustes funcionais P1 a P3 e itens 1 e 2 na Fase 1;
+  - **galeria local** de telas para conferir o visual, sem Superdesign.
+- **Restrições:** sem dependência npm nova (continua com 40), `data-teste` preservados, sem mudança em regra jurídica, golden ou V4.
+
+| Fase | Conteúdo | Situação |
+|---|---|---|
+| 1 | Tokens e estilos globais (`frontend/src/estilo.css`), `components/ui/{Icone,Recolhivel,Abas}.vue`, `AvisoErro` como callout, `--acento` pelo tipo no `App.vue`; galeria (`frontend/galeria.html`, `src/galeria/`, `vite.galeria.config.ts`, `npm run galeria`).<br>Ajustes:<br>• **P1:** conclusão da SR com o sindicado no título (`analisar.go`);<br>• **P2:** aviso de ofendido institucional (`Montagem.vue`);<br>• **P3:** "Usar a mesma" para depoente já cadastrado, e avisos na conferência (sindicado com outro papel, pessoa repetida);<br>• **item 1:** acusado com posto também sem leitura da IA (`cadastro.go`);<br>• **item 2:** grupo vazio escondido (`CartaoPergunta.vue`). | ✅ Implementada e commitada (commit "feat(interface): fase 1…", 10/11/2026). `.exe` gerado. **Teste do usuário pendente** |
+| 2 | Processamento:<br>• lombada de etapas à esquerda (sticky);<br>• pergunta no centro com aba da etapa, "Trechos citados" recolhidos e agrupados por peça, fundamentos em lista com "Mostrar mais", Lacuna/Diligência com ícone;<br>• barra Confirmar fixa e rolagem até o 1º erro;<br>• abas Análise / Suas respostas / Autos;<br>• `PainelAnalise` com `Recolhivel` e selos; `PainelAutos` com ícones;<br>• modal do PDF animado. | ❌ A fazer |
+| 3 | Cadastro (stepper com situação de cada passo, cartões, "Como funciona?" recolhido, barra Anterior/Próximo fixa, conferência em tabela), `ArquivosPeca`, `EditorEnquadramento`, `CampoBusca`, Início, Entrada, `PainelSEI`, Configurações de IA e `FaixaTipo` | ❌ A fazer |
+
+**Capturas da galeria** (eu as reviso antes de entregar o `.exe`):
+1. `cd frontend && npx vite build -c vite.galeria.config.ts --outDir <scratch>/galeria`;
+2. `npx vite preview -c vite.galeria.config.ts --outDir <scratch>/galeria` (porta 9311);
+3. `~/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell --headless --disable-gpu --disable-features=Vulkan --no-sandbox --hide-scrollbars --virtual-time-budget=3000 --window-size=1440,<altura> --screenshot=<arq>.png "http://127.0.0.1:9311/galeria.html#<cenario>"`.
+
+Os cenários estão em `src/galeria/cenarios.ts`, com a altura de cada um. Em outra máquina, instale o navegador com `npx playwright install chromium-headless-shell`, se ele faltar. **Nunca use GPU** (§3).
+
+### 5.4 Onde está cada coisa (código)
+- **Interface (frontend):**
+  - tokens e estilos globais: `frontend/src/estilo.css`;
+  - componentes base: `src/components/ui/` (Icone, Recolhivel, Abas);
+  - telas: `src/views/`; perguntas genéricas: `src/components/CartaoPergunta.vue`; cadastro: `src/views/Montagem.vue`;
+  - galeria: `frontend/galeria.html`, `src/galeria/`, `vite.galeria.config.ts`;
+  - testes de tela: `src/telas.test.ts` (dependem dos `data-teste`).
 - **Provedores de IA:**
   - Gemini: `internal/inference/gemini*.go`;
   - ChatGPT: `internal/inference/chatgpt*.go` e `internal/chatgpt/` (conta e OAuth);
@@ -190,12 +225,28 @@ git diff --stat -- internal/policy/testdata                 # golden: vazio
 
 ---
 
-## 6. O que falta para concluir o D-11 (em ordem)
+## 6. O que falta
+
+### 6.0 Próximos passos (em ordem)
+1. **Testar a Fase 1 do visual** (`.exe` gerado no fim da Fase 1; em outra máquina, gere de novo pelo §4.3):
+   - **SR por upload** (`pecas-sr-sintetico\`):
+     - em Ofendidos, digite "Administração Pública": deve aparecer o aviso de instituição;
+     - num depoimento, digite o nome de um sindicado: deve aparecer "Esta pessoa já está cadastrada como sindicado. [Usar a mesma]";
+     - na conferência, confira os avisos de papel e de pessoa repetida;
+     - siga até as conclusões: em "Suas respostas", cada conclusão deve mostrar o sindicado.
+   - **PADS:** em "Histórico disciplinar recente", os títulos "Transgressão anterior N" só aparecem depois do "Sim"; o acusado aparece com o posto em "Objeto do procedimento".
+   - A Fase 1 já está commitada. Se o teste apontar algo, corrija antes da Fase 2.
+2. **Fase 2 do visual** (processamento e perguntas), pelo `PLANO_INTERFACE.md`. Conferir pela galeria, gerar o `.exe` e passar o roteiro ao usuário.
+3. **Fase 3 do visual** (cadastro, início, entrada e configurações). Mesmo processo.
+4. **Teste C, Gemini de ponta a ponta** (§6.1-C). Pode ser feito com o `.exe` de qualquer fase.
+5. **Decisões do usuário para fechar o D-11** (§6.3).
+6. Registrar a conclusão do D-11 (§6.5). O usuário decide o merge com a `main` e a autorização da F5 (§6.6).
+
 
 ### 6.1 Testes manuais do usuário no Windows (bloqueiam a conclusão)
 Antes, gere o `.exe` (§4.3) e os PDFs sintéticos e copie o Tesseract (§4.2). Em *Configurações de IA*, conecte o ChatGPT e cadastre a chave do Gemini.
 
-**A. SEI real (etapa 7).** ✅ 10/11/2026: login, download, separação (17 documentos) e sugestões corretas. A revisão de nomes trouxe muitos falsos positivos → ajuste no `internal/pseudonimo` (relatório da etapa 7, §6 e §7). ✅ Reteste: 1 item (pessoa real) na revisão, delimitação sem repetições, processamento até TAR-004 (fim previsto do D-11).
+**A. SEI real (etapa 7).** ✅ **Concluído** em 10/11/2026: login, download, separação (17 documentos) e sugestões corretas. A revisão de nomes trouxe muitos falsos positivos → ajuste no `internal/pseudonimo` (relatório da etapa 7, §6 e §7). ✅ Reteste: 1 item (pessoa real) na revisão, delimitação sem repetições, processamento até TAR-004 (fim previsto do D-11).
 
 Use um processo de teste ou já encerrado.
 1. Escolha PADS (ou SR) e depois **"Buscar no SEI"**. Faça o login e o 2FA e informe o processo.
@@ -210,9 +261,14 @@ Use um processo de teste ou já encerrado.
    - o processamento segue até TAR-004.
 6. **Se algo divergir,** descreva sem dados reais: quantos documentos eram esperados e quantos apareceram, e a forma dos títulos. O ajuste é em `segment.Segmentar` ou em `autos.LerCarimbos`, **nunca na guarda**.
 
-**B. SR com upload** (`pecas-sr-sintetico/`): Portaria com sindicados e ofendidos (ou "sem ofendido"), depoimentos e conferência, até TAR-004. Conferir os alertas de sindicados divergentes e a pergunta de conexão.
+**B. SR com upload** (`pecas-sr-sintetico/`). ✅ **Concluído** em 10/11/2026: Portaria, sindicados, ofendido, depoimentos e conferência, até TAR-004, sem nenhum item na revisão de nomes.
+- Achados, todos corrigidos na Fase 1 da interface:
+  - **P1:** duas conclusões com o mesmo título;
+  - **P2:** "Administração Pública" cadastrada como ofendido pessoa;
+  - **P3:** sindicado cadastrado de novo como depoente declarante.
+- Não testados: a pergunta de conexão (só havia um fato) e o alerta de sindicados divergentes (os nomes batiam).
 
-**C. Gemini no app, de ponta a ponta** (`pecas-pads-sintetico/`): escolha a Gemini em *Configurações de IA*. Faça a confirmação de envio, a delimitação e a análise até TAR-004. Ele já roda no nível pago, sem a cota de 20 por dia.
+**C. Gemini no app, de ponta a ponta** (`pecas-pads-sintetico/`), ❌ **pendente**: escolha a Gemini em *Configurações de IA*. Faça a confirmação de envio, a delimitação e a análise até TAR-004. Ele já roda no nível pago, sem a cota de 20 por dia.
 
 **D. Opcional:** repetir um caso com o ChatGPT `gpt-6.1-sol` (decisão do usuário: "talvez, num teste manual").
 
@@ -252,13 +308,13 @@ Use um processo de teste ou já encerrado.
 |---|---|
 | OAuth oficial em Go; escopos; tokens com DPAPI e fora do Vue e de logs; Responses API com `store:false`/`stream:true`; sucesso só com `completed`; modelos dinâmicos | ✅ Feito e testado |
 | Gemini preservado, sem fallback; nenhuma IA local | ✅ Bench ok; ⚠️ falta o teste manual completo no app (§6.1-C) |
-| Cadastro PADS/SR peça por peça | ✅ PADS; ⚠️ SR manual pendente (§6.1-B) |
-| SEI só com os documentos escolhidos, sem download manual (V4 §48.4 revisada) | ✅ Implementado; ⚠️ teste real pendente (§6.1-A) |
+| Cadastro PADS/SR peça por peça | ✅ PADS e SR testados pelo usuário |
+| SEI só com os documentos escolhidos, sem download manual (V4 §48.4 revisada) | ✅ Testado com processo real |
 | Enquadramento por catálogo, divergência da §22.1 confirmada, conexão pelo motor | ✅ Feito; ⚠️ curadoria a revisar (§6.3-1) |
 | Barreira bloqueia identificador conhecido; mapa nunca sai do computador; restauração determinística | ✅ Feito; vazamento 0 no bench |
 | Regras jurídicas, cálculos e golden inalterados; `rulescov -estrito` verde | ✅ |
 
-**O D-11 estará concluído quando** os três ⚠️ de teste manual passarem, a curadoria for aprovada e o usuário decidir sobre o ChatGPT abaixo do limiar (§6.3-4). Ao concluir:
+**O D-11 estará concluído quando** o teste C (Gemini) passar, a curadoria for aprovada e o usuário decidir sobre o ChatGPT abaixo do limiar (§6.3-4). Ao concluir:
 - registrar a conclusão no `REGISTRO_DUVIDAS_DECISOES.md` (histórico) e neste guia;
 - o usuário decide o merge com a `main`.
 
@@ -272,7 +328,7 @@ Use um processo de teste ou já encerrado.
 ## 7. Como retomar com o Claude
 Na nova sessão, cole algo como:
 
-> Projeto sys-executor, branch `add-mode-apikey-oauth`. Leia o `GUIA_CONTINUIDADE.md` e os documentos que ele indica antes de qualquer ação. Siga as regras do §3. Prepare esta máquina pelo §4 e rode a verificação completa (§4.4). Depois me diga o que falta configurar. Em seguida, vamos pelo §6: <o que quer fazer agora, por exemplo, "acabei o teste A do §6.1; o resultado foi…">.
+> Projeto sys-executor, branch `add-mode-apikey-oauth`. Leia o `GUIA_CONTINUIDADE.md` (comece pelo §6.0) e os documentos que ele indica, em especial `docs/planning/PLANO_INTERFACE.md` e `RELATORIO_INTERFACE.md`. Siga as regras do §3: sem bench, testes manuais no `.exe` e commit sem coautor só quando eu pedir. Prepare esta máquina pelo §4 e gere o `.exe` (§4.3). Depois vamos pelo §6.0: <por exemplo, "testei a Fase 1; o resultado foi…" ou "pode seguir para a Fase 2">.
 
 ---
 

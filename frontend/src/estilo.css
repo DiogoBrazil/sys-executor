@@ -1,20 +1,31 @@
-/* Tokens do sys-executor. Metáfora: a capa dos autos (pasta + aba colorida). */
+/* Tokens do sys-executor. Metáfora: a capa dos autos (pasta + aba colorida).
+   A cor do procedimento (--acento) é definida pelo App conforme o tipo da
+   tarefa: bordô no PADS, azul-petróleo na SR. Fora de uma tarefa, a tinta. */
 :root {
-  --papel: #eef1ec;
-  --superficie: #f8f9f6;
-  --tinta: #1c2530;
-  --tinta-suave: #4a5561;
-  --linha: #c8d0c9;
-  --linha-forte: #9aa59d;
+  --papel: #eceee9;
+  --superficie: #ffffff;
+  --superficie-2: #f5f6f2;
+  --tinta: #1b2430;
+  --tinta-suave: #56616c;
+  --linha: #d8ddd5;
+  --linha-forte: #a3ada4;
   --pads: #7a2e3a;      /* bordô: julgamento disciplinar */
-  --pads-claro: #f3e7e8;
+  --pads-claro: #f5e9ea;
   --sr: #2f5d6b;        /* azul-petróleo: apuração */
-  --sr-claro: #e3eef0;
+  --sr-claro: #e4eff1;
+  --acento: var(--tinta);
+  --acento-claro: #e8ebe6;
   --alerta: #8a4b0f;
-  --alerta-claro: #fbf0e2;
+  --alerta-claro: #fcf3e6;
+  --alerta-linha: #ecd3ae;
   --erro: #9b1c1c;
-  --erro-claro: #fbeaea;
+  --erro-claro: #fcecec;
+  --erro-linha: #efc2c2;
   --ok: #2f6b3f;
+  --ok-claro: #e8f3ea;
+  --info: #2c4f7c;
+  --info-claro: #ebf1f8;
+  --info-linha: #c9d8ea;
   --foco: #1f5fbf;
 
   --serif: "Source Serif 4", "Times New Roman", serif;
@@ -28,13 +39,25 @@
   --t-xl: 1.6rem;
   --t-2xl: 2.1rem;
 
-  --raio-pasta: 3px 14px 14px 14px;
-  --raio: 6px;
+  /* Forma */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-pasta: 4px 14px 14px 14px;
+  --raio: var(--r-sm);        /* nome antigo */
+  --raio-pasta: var(--r-pasta);
+  --sombra-1: 0 1px 2px rgba(27, 36, 48, 0.06), 0 1px 1px rgba(27, 36, 48, 0.03);
+  --sombra-2: 0 2px 4px rgba(27, 36, 48, 0.05), 0 12px 32px -12px rgba(27, 36, 48, 0.22);
+
+  /* Movimento */
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 * { box-sizing: border-box; }
 
-html { font-size: 15px; }
+html { font-size: 15px; scroll-behavior: smooth; }
 
 body {
   margin: 0;
@@ -69,32 +92,121 @@ button:disabled { cursor: not-allowed; }
   outline-offset: 2px;
 }
 
+/* ---- Botões ---- */
 .botao {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  padding: 0.6rem 1.1rem;
-  border-radius: var(--raio);
+  min-height: 2.5rem;
+  padding: 0.55rem 1.05rem;
+  border-radius: var(--r-sm);
   border: 1px solid var(--linha-forte);
   background: var(--superficie);
   font-weight: 500;
+  line-height: 1.2;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
 }
 .botao:hover:not(:disabled) { border-color: var(--tinta); }
-.botao.primario { background: var(--tinta); border-color: var(--tinta); color: #fff; }
-.botao.primario:hover:not(:disabled) { background: #000; }
-.botao.perigo { border-color: var(--erro); color: var(--erro); }
+.botao:active:not(:disabled) { transform: translateY(1px); }
+.botao:disabled { opacity: 0.55; }
+.botao.primario { background: var(--acento); border-color: var(--acento); color: #fff; box-shadow: var(--sombra-1); }
+.botao.primario:hover:not(:disabled) { filter: brightness(0.92); border-color: var(--acento); }
+.botao.perigo { border-color: var(--erro); color: var(--erro); background: var(--superficie); }
+.botao.perigo:hover:not(:disabled) { background: var(--erro-claro); }
 .botao.perigo.confirmar { background: var(--erro); color: #fff; }
-.botao.discreto { border-color: transparent; background: transparent; color: var(--tinta-suave); text-decoration: underline; padding-inline: 0.4rem; }
+.botao.discreto { border-color: transparent; background: transparent; color: var(--tinta-suave); text-decoration: underline; text-underline-offset: 3px; padding-inline: 0.4rem; min-height: auto; }
+.botao.discreto:hover:not(:disabled) { color: var(--tinta); border-color: transparent; }
+.botao.icone { min-height: 2.1rem; width: 2.1rem; padding: 0; border-color: transparent; background: transparent; color: var(--tinta-suave); text-decoration: none; }
+.botao.icone:hover:not(:disabled) { background: var(--superficie-2); border-color: var(--linha); color: var(--tinta); }
 
-.aviso {
-  border-left: 4px solid var(--alerta);
-  background: var(--alerta-claro);
-  padding: 0.85rem 1rem;
-  border-radius: 0 var(--raio) var(--raio) 0;
+/* ---- Campos ---- */
+input:not([type="radio"]):not([type="checkbox"]), select, textarea {
+  font: inherit;
+  color: var(--tinta);
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--r-sm);
+  padding: 0.5rem 0.65rem;
+  min-height: 2.5rem;
+  width: 100%;
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
 }
-.aviso.erro { border-color: var(--erro); background: var(--erro-claro); }
-.aviso h3 { font-family: var(--sans); font-size: var(--t-md); font-weight: 600; margin-bottom: 0.2rem; }
-.aviso .acao { margin-top: 0.35rem; color: var(--tinta-suave); }
+textarea { resize: vertical; min-height: 5rem; line-height: 1.45; }
+input:not([type="radio"]):not([type="checkbox"]):hover, select:hover, textarea:hover { border-color: var(--tinta-suave); }
+input:not([type="radio"]):not([type="checkbox"]):focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--foco);
+  box-shadow: 0 0 0 3px rgba(31, 95, 191, 0.18);
+}
+input:disabled, select:disabled, textarea:disabled { background: var(--superficie-2); color: var(--tinta-suave); }
+input::placeholder, textarea::placeholder { color: #8a949c; }
+input[type="radio"], input[type="checkbox"] { accent-color: var(--acento); width: 1.05rem; height: 1.05rem; margin: 0; }
+
+/* ---- Cartões, chips, selos ---- */
+.cartao {
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-md);
+  box-shadow: var(--sombra-1);
+  padding: 1.15rem 1.3rem;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--linha);
+  background: var(--superficie-2);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: var(--t-sm);
+  color: var(--tinta);
+  line-height: 1.3;
+  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+button.chip { cursor: pointer; }
+button.chip:hover, button.chip:focus-visible { border-color: var(--acento); background: var(--acento-claro); }
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--t-xs);
+  font-weight: 500;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--superficie-2);
+  color: var(--tinta-suave);
+  border: 1px solid var(--linha);
+}
+.selo.ok { background: var(--ok-claro); color: var(--ok); border-color: #c3dfc9; }
+.selo.alerta { background: var(--alerta-claro); color: var(--alerta); border-color: var(--alerta-linha); }
+
+/* ---- Avisos (callouts) ---- */
+.aviso, .callout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.7rem;
+  border: 1px solid var(--alerta-linha);
+  background: var(--alerta-claro);
+  color: var(--tinta);
+  padding: 0.85rem 1rem;
+  border-radius: var(--r-md);
+}
+.aviso > :not(.callout-icone), .callout > :not(.callout-icone) { grid-column: 2; }
+.callout-icone { grid-row: 1 / span 9; color: var(--alerta); margin-top: 0.1rem; }
+.aviso.erro, .callout.erro { border-color: var(--erro-linha); background: var(--erro-claro); }
+.aviso.erro .callout-icone, .callout.erro .callout-icone { color: var(--erro); }
+.callout.info { border-color: var(--info-linha); background: var(--info-claro); }
+.callout.info .callout-icone { color: var(--info); }
+.aviso h3, .callout h3 { font-family: var(--sans); font-size: var(--t-md); font-weight: 600; margin-bottom: 0.15rem; }
+.aviso .acao, .callout .acao { margin-top: 0.3rem; color: var(--tinta-suave); }
+
+/* ---- Transições reutilizáveis ---- */
+.folha-enter-active { transition: opacity var(--dur-3) var(--ease), transform var(--dur-3) var(--ease); }
+.folha-enter-from { opacity: 0; transform: translateY(10px) scale(0.995); }
+.folha-leave-active { display: none; }
+.esmaecer-enter-active, .esmaecer-leave-active { transition: opacity var(--dur-2) var(--ease); }
+.esmaecer-enter-from, .esmaecer-leave-to { opacity: 0; }
 
 .visualmente-oculto {
   position: absolute; width: 1px; height: 1px; overflow: hidden;
@@ -102,5 +214,6 @@ button:disabled { cursor: not-allowed; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

@@ -1,0 +1,47 @@
+# Relatório — novo visual da interface ("capa dos autos refinada")
+
+- **Pedido do usuário (10/11/2026):** as telas estão bagunçadas. Ele quer um visual moderno, agradável e fácil de usar, com animações suaves.
+- **Plano aprovado:** `~/.claude/plans/delightful-nibbling-sunrise.md`, em 3 fases.
+- **Decisões:**
+  - manter a identidade (pasta, aba bordô no PADS e azul-petróleo na SR), sem tema escuro;
+  - no processamento, etapas à esquerda e abas (Análise, Suas respostas, Autos);
+  - ajustes funcionais P1, P2, P3 e itens 1 e 2 na Fase 1;
+  - galeria local com capturas sem GPU.
+- **Restrições:**
+  - sem dependência npm nova (continua com 40 npm);
+  - `data-teste` preservados;
+  - sem mudança em regras jurídicas, golden ou V4.
+
+## Fase 1: fundação, galeria e ajustes pendentes
+- **Base visual (`frontend/src/estilo.css`):**
+  - tokens de cor, forma (raios e sombras em dois níveis) e movimento (`--dur-*`, `--ease`);
+  - `--acento` definido pelo `App.vue` conforme o tipo da tarefa;
+  - estilos globais de campos, botões (`.primario` na cor do procedimento, `.icone`), `.cartao`, `.chip`, `.selo` e callouts com ícone;
+  - transições `folha` e `esmaecer`;
+  - `prefers-reduced-motion` respeitado.
+  - Saíram os estilos de campo duplicados em `CartaoPergunta`, `Montagem`, `CampoBusca`, `ConfigGemini`, `EditorEnquadramento`, `PainelSEI` e `VisualizadorFontes`.
+- **Componentes `components/ui/`:**
+  - `Icone.vue`: 20 ícones SVG embutidos;
+  - `Recolhivel.vue`: altura animada e conteúdo mantido no DOM;
+  - `Abas.vue`: `tablist` com setas do teclado, sublinhado deslizante e painéis em `v-show`.
+  - `AvisoErro.vue` passou a ser callout com ícone.
+- **Galeria de telas (só desenvolvimento; não entra no `.exe`):**
+  - arquivos: `frontend/galeria.html`, `src/galeria/` (API falsa, cenários sintéticos, entrada) e `vite.galeria.config.ts`;
+  - para abrir: `npm run galeria`, com a tela escolhida por `#cenario`.
+  - O `index.html`, o `vite.config.ts` e o `embed.go` não mudaram.
+- **Ajustes funcionais:**
+  - **P1:** a conclusão da SR leva o sindicado no título ("Conclusão sobre o fato F-1: …"), e "Suas respostas" distingue as duas.
+  - **P2:**
+    - orientação na seção Ofendidos;
+    - aviso quando o nome parece instituição (Administração, Estado, Fazenda, Polícia…);
+    - na conferência, a opção "Menor de 13 anos" fica escondida para esses nomes.
+  - **P3:**
+    - depoente com o mesmo nome de pessoa já cadastrada recebe "Esta pessoa já está cadastrada como …" com o botão **Usar a mesma**, que vincula e remove a pessoa duplicada;
+    - na conferência, avisos (que não impedem concluir) para sindicado com outro papel no depoimento e para pessoa cadastrada mais de uma vez.
+  - **Item 1:** o acusado do PADS vem com o posto do cadastro também quando a IA não lê nenhum acusado.
+  - **Item 2:** grupo sem conteúdo nem campo visível não aparece ("Transgressão anterior 1…5" antes do "Sim").
+- **Verificação:**
+  - vitest 35/35 (3 testes novos) e `vue-tsc` + `vite build`;
+  - `go test` em pipeline e workflow (teste novo do item 1), `GOOS=windows go vet`, `rulescov -estrito`;
+  - licenças com 45 módulos Go e 40 npm; golden sem diff;
+  - capturas da galeria revisadas: cadastro SR, configurações e entrada, sem regressão.

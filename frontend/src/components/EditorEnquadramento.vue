@@ -83,6 +83,6 @@ function retirar(i: number) {
 .diploma { border: 0; padding: 0; margin: 0; display: flex; gap: 1.2rem; flex-wrap: wrap; }
 .diploma legend { font-weight: 600; margin-bottom: 0.3rem; }
 .natureza { display: grid; gap: 0.25rem; max-width: 34rem; }
-.natureza select { font: inherit; padding: 0.35rem; max-width: 14rem; }
+.natureza select { max-width: 14rem; }
 .natureza small { color: var(--tinta-suave); }
 </style>

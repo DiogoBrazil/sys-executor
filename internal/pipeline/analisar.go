@@ -677,7 +677,13 @@ func confirmacoesSR(c *workflow.Contexto, d *Dados) bool {
 			for _, k := range []string{"INDICIOS", "AUSENCIA", "INCONCLUSIVO"} {
 				ops = append(ops, workflow.OpcaoVisao{ID: k, Rotulo: rotuloConclusao[k]})
 			}
-			c.Perguntar(workflow.Pergunta{ID: id, Titulo: "Conclusão sobre o fato " + f, Revisavel: true,
+			// O título leva o sindicado: com dois sindicados no mesmo fato,
+			// "Suas respostas" distingue as duas conclusões.
+			titulo := "Conclusão sobre o fato " + f
+			if nome := e.nomes[s]; nome != "" {
+				titulo += ": " + nome
+			}
+			c.Perguntar(workflow.Pergunta{ID: id, Titulo: titulo, Revisavel: true,
 				Contexto: "Confira a proposta e as fontes. A conclusão é sua: a IA apenas sugere.",
 				Grupos:   []workflow.GrupoCampos{g},
 				Opcoes:   []workflow.Opcao{{ID: "confirmar", Rotulo: "Confirmar", Validar: true}},

@@ -67,3 +67,12 @@ func TestMesmaPessoaComPalavrasGrudadas(t *testing.T) {
 		t.Fatal("pessoas diferentes")
 	}
 }
+
+// Sem acusado lido no Memorando, o campo vem do cadastro com o posto.
+// Regra: PADS-ESC-001
+func TestCadastroAcusadoComPostoSemLeitura(t *testing.T) {
+	c := conferirComCadastro(analise.PropostaDelimitacaoPADS{}, cadastroArt17XI())
+	if c.acusado != "CB QPPM CARLOS INVENTADO DA SILVA" {
+		t.Fatalf("%q", c.acusado)
+	}
+}

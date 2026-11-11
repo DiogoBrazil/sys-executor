@@ -167,7 +167,7 @@ h2 { font-size: var(--t-lg); }
 .situacao.invalida, .situacao.sem_conexao { color: var(--alerta); }
 .chave { display: grid; gap: 0.35rem; }
 .chave .linha { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-.chave input { flex: 1 1 22rem; min-width: 0; font: inherit; padding: 0.5rem 0.7rem; border: 1px solid var(--linha-forte); border-radius: var(--raio); background: #fff; }
+.chave input { flex: 1 1 22rem; min-width: 0; width: auto; }
 dl { margin: 0; display: grid; gap: 0.3rem; }
 dl div { display: grid; grid-template-columns: 11rem 1fr; gap: 0.8rem; }
 dt { color: var(--tinta-suave); }

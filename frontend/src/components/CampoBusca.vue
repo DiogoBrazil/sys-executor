@@ -55,7 +55,7 @@ function escolher(o: Opcao) {
 
 <style scoped>
 .busca { display: grid; gap: 0.35rem; }
-.busca input { font: inherit; padding: 0.45rem 0.6rem; border: 1px solid var(--linha-forte); border-radius: var(--raio); background: #fff; }
+
 .lista { list-style: none; margin: 0; padding: 0; max-height: 16rem; overflow: auto; border: 1px solid var(--linha); border-radius: var(--raio); }
 .lista button { display: block; width: 100%; text-align: left; font: inherit; font-size: var(--t-sm); background: none; border: 0; border-bottom: 1px solid var(--linha); padding: 0.4rem 0.6rem; cursor: pointer; }
 .lista button:hover, .lista button:focus { background: var(--papel); }

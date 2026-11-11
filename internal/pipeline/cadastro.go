@@ -332,7 +332,7 @@ func conferirComCadastro(r analise.PropostaDelimitacaoPADS, cad *workflow.Cadast
 	if ps, ok := cad.Pessoa(cad.AcusadoID); ok {
 		switch len(r.Acusados) {
 		case 0:
-			out.acusado = ps.Nome
+			out.acusado = nomeComPosto(ps)
 		case 1:
 			if mesmaPessoa(ps.Nome, r.Acusados[0].Nome) {
 				// A mesma pessoa: vale a grafia do cadastro, com o posto.
@@ -345,6 +345,7 @@ func conferirComCadastro(r analise.PropostaDelimitacaoPADS, cad *workflow.Cadast
 		default:
 			for _, a := range r.Acusados {
 				if mesmaPessoa(ps.Nome, a.Nome) {
+					// O campo é uma escolha entre os lidos: o valor é o nome lido.
 					out.acusado = a.Nome
 					break
 				}

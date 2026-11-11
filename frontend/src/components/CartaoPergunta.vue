@@ -31,6 +31,11 @@ function visivel(c: Campo, prof = 0): boolean {
   return !pai || visivel(pai, prof + 1);
 }
 
+// Grupo sem descrição, alertas, fontes e campos visíveis não aparece (ex.:
+// "Transgressão anterior 1…5" antes de responder "Sim").
+const grupoVisivel = (g: GrupoCampos) =>
+  !!(g.descricao?.length || g.alertas?.length || g.fontes?.length) || doGrupo(g).some((c) => visivel(c));
+
 const reData = /^(\d{2})\/(\d{2})\/(\d{4})$/;
 function dataValida(s: string): boolean {
   const m = reData.exec(s.trim());
@@ -87,7 +92,8 @@ function rotuloFonte(f: Fonte) {
     <h2 :id="'perg-' + pergunta.id">{{ pergunta.titulo }}</h2>
     <p class="contexto">{{ pergunta.contexto }}</p>
 
-    <section v-for="g in grupos" :key="g.id" class="grupo" :data-teste="'grupo-' + g.id">
+    <template v-for="g in grupos" :key="g.id">
+    <section v-if="grupoVisivel(g)" class="grupo" :data-teste="'grupo-' + g.id">
       <h3>{{ g.titulo }}</h3>
       <p v-for="(d, i) in g.descricao" :key="i" class="desc">{{ d }}</p>
       <ul v-if="g.alertas?.length" class="alertas" role="list">
@@ -144,6 +150,7 @@ function rotuloFonte(f: Fonte) {
         </div>
       </template>
     </section>
+    </template>
 
     <template v-for="c in soltos" :key="'s' + c.id">
       <div v-if="visivel(c)" class="campo" :class="{ invalido: invalidos[c.id] }">
@@ -222,16 +229,8 @@ function rotuloFonte(f: Fonte) {
 .campo legend { margin-bottom: 0.3rem; }
 .rotulo { font-weight: 600; font-size: var(--t-sm); }
 .radio { display: inline-flex; gap: 0.35rem; align-items: center; }
-.campo input:not([type="radio"]), .campo select, .campo textarea {
-  font: inherit;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid var(--linha-forte);
-  border-radius: var(--raio);
-  background: #fff;
-  color: var(--tinta);
-}
-.campo textarea { resize: vertical; }
-.invalido input:not([type="radio"]), .invalido select, .invalido textarea { border-color: var(--erro); }
+
+.invalido input:not([type="radio"]), .invalido select, .invalido textarea { border-color: var(--erro); box-shadow: 0 0 0 3px rgba(155, 28, 28, 0.12); }
 .ajuda { font-size: var(--t-xs); color: var(--tinta-suave); }
 .msg { color: var(--erro); font-size: var(--t-sm); }
 .opcoes { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 0.3rem; }

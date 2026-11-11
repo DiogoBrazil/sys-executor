@@ -216,13 +216,7 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid var(--linha);
 }
 .nav, .busca { display: flex; gap: 0.5rem; align-items: center; }
-.busca input {
-  font: inherit;
-  padding: 0.5rem 0.7rem;
-  border: 1px solid var(--linha-forte);
-  border-radius: var(--raio);
-  min-width: 16rem;
-}
+.busca input { min-width: 16rem; width: auto; }
 .corpo { display: flex; min-height: 0; }
 .resultados {
   width: 290px;
