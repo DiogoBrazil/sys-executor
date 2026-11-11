@@ -95,6 +95,9 @@ func publicarPainel(c *workflow.Contexto, d *Dados) {
 	if len(prop.Itens) > 0 {
 		p.Secoes = append(p.Secoes, prop)
 	}
+	if sc, ok := secaoCalculo(d); ok {
+		p.Secoes = append(p.Secoes, sc)
+	}
 	if sf, ok := secaoFontes(d); ok {
 		p.Secoes = append(p.Secoes, sf)
 	}

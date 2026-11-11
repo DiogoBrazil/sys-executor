@@ -175,7 +175,7 @@ func (d *documentoPdfium) Pagina(ctx context.Context, i int) (Pagina, error) {
 			continue
 		}
 		pp := c.PointPosition
-		car := Caractere{Runa: rs[0]}
+		car := Caractere{Runa: runaDeTexto(rs[0])}
 		if pp.Right-pp.Left <= 0 && pp.Top-pp.Bottom == 0 {
 			car.SemCaixa = true
 		} else {
@@ -184,6 +184,16 @@ func (d *documentoPdfium) Pagina(ctx context.Context, i int) (Pagina, error) {
 		p.Caracteres = append(p.Caracteres, car)
 	}
 	return p, nil
+}
+
+// runaDeTexto troca o marcador U+0002 pelo hífen. O pdfium usa esse
+// marcador no lugar do hífen que cai no fim de uma linha e junta as duas
+// partes; sem a troca, "Verifica-se" seria lido como "Verificase".
+func runaDeTexto(r rune) rune {
+	if r == 0x02 {
+		return '-'
+	}
+	return r
 }
 
 // normalizar converte a posição do pdfium (origem embaixo à esquerda, Y para

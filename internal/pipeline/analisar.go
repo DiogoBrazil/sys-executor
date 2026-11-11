@@ -29,7 +29,7 @@ var rotuloNatureza = map[string]string{"LEVE": "leve", "MEDIA": "média", "GRAVE
 // mídias, análise por alvo e confirmações do usuário.
 func (p *Pipeline) analisar(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
 	d := dados(c)
-	d.Fontes = nil // refeitas depois da análise (as respostas podem ter mudado)
+	d.Fontes, d.Calculo = nil, nil // refeitos depois da análise (as respostas podem ter mudado)
 	// A autorização vale para o provedor e o modelo atuais: se mudaram
 	// depois dela (ex.: ao corrigir uma falha), pergunta de novo.
 	if aguardar, err := p.autorizarEnvio(c, d); err != nil {

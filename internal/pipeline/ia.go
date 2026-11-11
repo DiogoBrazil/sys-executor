@@ -89,6 +89,7 @@ func novoEstadoIA() *EstadoIA {
 	g.Depende("reincidencia:*", "resultado:*", "conexao")
 	g.Depende("servicos", "resultado:*")
 	g.Depende("historico", "comportamento")
+	g.Depende(perguntaCalculo, "resultado:*", "conexao", "comportamento", "historico", "reincidencia:*", "servicos")
 	return &EstadoIA{dag: g, Extracoes: map[string]analise.Extracao{}, Analises: map[string]analise.AnaliseImputacao{},
 		AnalisesSR: map[string]analise.AnaliseFatoPessoa{}, autorizacoesFeitas: map[string]string{}, nomes: map[string]string{}}
 }
@@ -123,6 +124,10 @@ func (d *Dados) Revisar(perguntaID string) (workflow.Estado, []string, bool) {
 	// concretas dependem do conjunto/objeto atual).
 	descartar := perguntasComPrefixo(d, afetados)
 	recomecar := workflow.Analisando
+	if n == perguntaCalculo {
+		// Só os dias mudam: nada da análise é refeito.
+		return workflow.Calculando, []string{perguntaCalculo}, true
+	}
 	for _, a := range afetados {
 		switch {
 		case a == "delimitacao":

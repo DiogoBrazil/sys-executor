@@ -23,7 +23,7 @@ O aplicativo (Go + Wails 3 + Vue, para Windows) percorre:
 4. a delimitação com **enquadramento manual**;
 5. a análise das provas com o **Gemini** (chave do usuário) ou o **ChatGPT** (*Sign in with ChatGPT*, plano do usuário).
 
-Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recupera da biblioteca local os dispositivos das imputações e a base do julgamento. O PADS para em **"Calculando comportamento e sanção" (TAR-004)** e a SR em "Elaborando a minuta". O cálculo, a minuta, o DOCX/PDF e o instalador ficam para as fases F6 a F8.
+Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recupera da biblioteca local os dispositivos das imputações e a base do julgamento. Desde a parte 1 da F6, o PADS também **calcula a sanção e o comportamento** e mostra a memória de cálculo para conferência. PADS e SR param em **"Elaborando a minuta" (TAR-004)**. A minuta, o DOCX/PDF e o instalador ficam para o restante da F6 e para as F7 e F8.
 
 ### 1.1 O que já foi testado e o que não foi
 | Item | Automatizado | Manual no Windows (usuário) |
@@ -56,6 +56,7 @@ Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recu
 7. `CONTINUIDADE_MIGRACAO_GEMINI.md`: histórico da migração para o Gemini.
 8. **Interface:** `docs/planning/PLANO_INTERFACE.md` (plano aprovado, 3 fases) e `docs/planning/RELATORIO_INTERFACE.md` (o que cada fase fez).
 9. **Biblioteca jurídica:** `docs/planning/RELATORIO_FASE5.md` (o que entrou no recorte essencial e o que ficou adiado).
+10. **Cálculo e minuta do PADS:** `docs/planning/RELATORIO_FASE6.md` (partes entregues e o que falta).
 
 ---
 
@@ -226,6 +227,7 @@ Os cenários estão em `src/galeria/cenarios.ts`, com a altura de cada um. Em ou
   - dados embutidos em `internal/legal/dados/` (`manifesto.yaml`, `acervo.json.gz`, `notas_vigencia.yaml`, `tesauro.yaml`);
   - gerador do acervo: `cmd/bibgen`;
   - etapa do pipeline: `internal/pipeline/fontes.go`.
+- **Cálculo oficial do PADS (F6, parte 1):** `internal/pipeline/calculo.go`, sobre o motor de `internal/rules/engine`.
 - **Governança:**
   - `internal/rules/catalog/*.yaml`;
   - `docs/planning/MATRIZ_REQUISITOS_V4.md`;
@@ -276,7 +278,9 @@ Os cenários estão em `src/galeria/cenarios.ts`, com a altura de cada um. Em ou
 2. **F6 para o PADS** (cálculo ligado ao pipeline, composição da minuta, validadores). **Autorizada pelo usuário em 11/11/2026.** Decisões dele:
    - o art. 5º, LV, da Constituição entra como **texto fixo**; a Lei nº 2.484/2011 fica pendente de confirmação dele (não citar até lá);
    - os modelos de `docs/draft_templates/PADS` podem ser usados como referência de forma (§5.6).
-3. **Hífen de fim de linha na leitura dos autos** (autorizado em 11/11/2026): o pdfium marca esse hífen com U+0002, e "Verifica-se" vira "Verificase".
+   - **Parte 1 (cálculo oficial): feita**, sem commit, com teste do usuário pendente. Roteiro: PADS sintético com uma imputação procedente; depois de "Relevantes serviços" vem a pergunta **"Confira a dosimetria e o comportamento proposto"**, com os dias e os sete itens da memória; confirmar leva a "Elaborando a minuta" (TAR-004); o painel mostra "Cálculo oficial"; alterar uma resposta anterior refaz o cálculo.
+   - **Próxima: parte 2 (redação da minuta)**, pelo `RELATORIO_FASE6.md`.
+3. **Hífen de fim de linha na leitura dos autos:** corrigido junto com a parte 1 da F6 (sem commit).
 4. **F7 para o PADS** (DOCX/PDF, prévia, aprovar e finalizar). Exige autorização e o brasão/cabeçalho (D-04).
 5. **Depois:** SR nas F6 e F7; Fases 2 e 3 do visual; restante da F5 (§5.5).
 6. **Teste C, Gemini de ponta a ponta** (§6.1-C). Pode ser feito com o `.exe` de qualquer fase.

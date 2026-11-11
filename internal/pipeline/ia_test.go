@@ -13,6 +13,7 @@ import (
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/autos"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/segment"
 	"github.com/DiogoBrazil/sys-executor/internal/policy"
+	"github.com/DiogoBrazil/sys-executor/internal/rules/engine"
 	"github.com/DiogoBrazil/sys-executor/internal/session"
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
 )
@@ -222,6 +223,19 @@ func perguntaAtual(t *testing.T, g *workflow.Gerenciador) *workflow.PerguntaVisa
 	}).Pergunta
 }
 
+// confirmarCalculo confere que a pergunta atual é a do cálculo e confirma
+// com os dias propostos.
+func confirmarCalculo(t *testing.T, g *workflow.Gerenciador) *workflow.PerguntaVisao {
+	t.Helper()
+	p := esperar(t, g, func(v *workflow.Visao) bool { return v.Pergunta != nil && v.Pergunta.ID == perguntaCalculo }).Pergunta
+	vals := map[string]string{}
+	for _, c := range p.Campos {
+		vals[c.ID] = c.Valor
+	}
+	responder(t, g, perguntaCalculo, "confirmar", vals)
+	return p
+}
+
 func campo(p *workflow.PerguntaVisao, id string) workflow.Campo {
 	for _, c := range p.Campos {
 		if c.ID == id {
@@ -308,11 +322,24 @@ func TestFluxoPADSComIA(t *testing.T) {
 	responder(t, g, "reincidencia:MEDIA", "confirmar", map[string]string{"possui": "nao"})
 	responder(t, g, perguntaServicos, "confirmar", map[string]string{"relevantes": "nao"})
 
-	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Calculando })
-	if v.Erro == nil || v.Erro.Codigo != "TAR-004" || len(v.Respostas) != 9 || v.Respostas[0].PerguntaID != PerguntaEnvioIA {
-		t.Fatalf("parada na Fase 6: %+v %+v", v.Erro, v.Respostas)
+	// Fase 6: o motor calcula e o usuário confere. Uma média procedente, sem
+	// atenuante nem agravante: detenção de 2 dias; 25 − 2 = 23 pontos, bom.
+	pc := confirmarCalculo(t, g)
+	if campo(pc, "dias_IMP-1").Valor != "2" || !strings.Contains(js(pc), "quantidades iguais → 2 dias") || !strings.Contains(js(pc), "Propõe-se 23 pontos, comportamento bom") {
+		t.Fatalf("memória de cálculo: %s", js(pc))
+	}
+	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Redigindo })
+	if v.Erro == nil || v.Erro.Codigo != "TAR-004" || len(v.Respostas) != 10 || v.Respostas[0].PerguntaID != PerguntaEnvioIA {
+		t.Fatalf("parada na redação: %+v %+v", v.Erro, v.Respostas)
 	}
 	d := g.Dados().(*Dados)
+	if c := d.Calculo; c == nil || !c.Confirmado || len(c.Sancoes) != 1 || c.Sancoes[0].Sancao != engine.Detencao || c.Sancoes[0].Dias != 2 ||
+		!c.Pontuacao.Concluido || c.Pontuacao.PontosFinais != 23 || c.Pontuacao.ComportamentoFinal != engine.Bom {
+		t.Fatalf("cálculo oficial: %+v", d.Calculo)
+	}
+	if !strings.Contains(js(v.Painel), "Cálculo oficial") {
+		t.Fatal("painel sem o cálculo oficial")
+	}
 	// Fase 5: a biblioteca devolveu o dispositivo de cada imputação e a base
 	// do julgamento (com punição, porque há procedência), sem lacunas.
 	conferirFontesPADS(t, d, v)
@@ -341,7 +368,13 @@ func TestFluxoPADSComIA(t *testing.T) {
 	responder(t, g, "resultado:IMP-1", "confirmar", map[string]string{"resultado": "PROCEDENTE"})
 	responder(t, g, "reincidencia:MEDIA", "confirmar", map[string]string{"possui": "sim", "termino": "10/01/2025"})
 	responder(t, g, perguntaServicos, "confirmar", map[string]string{"relevantes": "nao"})
-	esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Calculando })
+	// A resposta revista derruba a confirmação do cálculo: ele é refeito e
+	// conferido de novo (agora com a reincidência informada).
+	pc = confirmarCalculo(t, g)
+	if campo(pc, "dias_IMP-1").Valor != "3" || !strings.Contains(js(pc), "Agravantes contadas: art. 39, III.") || !strings.Contains(js(pc), "mais agravantes → 3 dias") {
+		t.Fatalf("cálculo refeito sem a reincidência: %s", js(pc))
+	}
+	esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Redigindo })
 	if m.conta("extracao") != extracoes || m.conta("analise_imputacao") != analises {
 		t.Fatal("rever um resultado não deveria reler peças nem reanalisar")
 	}
@@ -628,7 +661,8 @@ func TestRevisaoNoMeioDaEtapaENenhumMarcadorNoEstado(t *testing.T) {
 	responder(t, g, perguntaHistorico, "confirmar", map[string]string{"tem": "nao"})
 	responder(t, g, "reincidencia:MEDIA", "confirmar", map[string]string{"possui": "nao"})
 	responder(t, g, perguntaServicos, "confirmar", map[string]string{"relevantes": "nao"})
-	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Calculando })
+	confirmarCalculo(t, g)
+	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Redigindo })
 	if v.Erro == nil || v.Erro.Codigo != "TAR-004" {
 		t.Fatalf("fim da fase: %+v", v.Erro)
 	}

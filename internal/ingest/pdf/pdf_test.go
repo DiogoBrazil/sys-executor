@@ -217,3 +217,9 @@ func TestSepararPorFaixas(t *testing.T) {
 		t.Fatal("faixa fora do documento deveria falhar")
 	}
 }
+
+func TestMarcadorDeHifenDoPdfiumViraHifen(t *testing.T) {
+	if runaDeTexto(0x02) != '-' || runaDeTexto('a') != 'a' || runaDeTexto('-') != '-' {
+		t.Fatal("o marcador U+0002 deve virar hífen, e o resto ficar como está")
+	}
+}

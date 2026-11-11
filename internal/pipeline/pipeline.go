@@ -37,6 +37,12 @@ type Dados struct {
 	// Fontes: dispositivos recuperados da biblioteca jurídica (Fase 5), nil
 	// antes da consulta.
 	Fontes *FontesJuridicas
+	// Calculo: resultado do motor determinístico no PADS (Fase 6), nil antes
+	// do cálculo e quando não há imputação procedente.
+	Calculo *CalculoOficial
+	// diasConfirmados: por imputação, a proposta do motor e os dias da
+	// última confirmação do usuário (ver perguntaCalculoPADS).
+	diasConfirmados map[string][2]int
 }
 
 // Liberar fecha o índice em memória (chamado pela tarefa ao terminar).
@@ -94,6 +100,7 @@ func (p *Pipeline) Etapas() map[workflow.Estado]workflow.Etapa {
 		workflow.Delimitando:       p.comRevisao(workflow.Delimitando, p.delimitar),
 		workflow.Analisando:        p.comRevisao(workflow.Analisando, p.analisar),
 		workflow.ConsultandoFontes: p.consultarFontes,
+		workflow.Calculando:        p.calcular,
 	}
 }
 
