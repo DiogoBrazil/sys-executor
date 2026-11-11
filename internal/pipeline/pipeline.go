@@ -2,7 +2,8 @@
 // (plano §7). Fase 2: verificação, extração/OCR, classificação das peças e
 // compatibilidade procedimento × autos. As etapas analíticas seguintes
 // (delimitação em diante) chegam nas Fases 3–6. Fase 4: delimitação e
-// análise com a IA local (etapas 2–9 do plano §5.4).
+// análise com a IA (etapas 2–9 do plano §5.4). Fase 5: consulta à
+// biblioteca jurídica (etapa 11).
 package pipeline
 
 import (
@@ -16,6 +17,7 @@ import (
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/ocr"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/pdf"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/segment"
+	"github.com/DiogoBrazil/sys-executor/internal/legal"
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
 )
 
@@ -32,6 +34,9 @@ type Dados struct {
 	Declaradas []segment.Declarada
 	// IA: estado das etapas de IA (Fase 4), nil antes da delimitação.
 	IA *EstadoIA
+	// Fontes: dispositivos recuperados da biblioteca jurídica (Fase 5), nil
+	// antes da consulta.
+	Fontes *FontesJuridicas
 }
 
 // Liberar fecha o índice em memória (chamado pela tarefa ao terminar).
@@ -58,6 +63,8 @@ type Pipeline struct {
 	// Juntador monta os autos a partir do cadastro de peças (nil: usa o
 	// Extrator, se ele souber juntar).
 	Juntador pdf.Juntador
+	// Biblioteca abre a biblioteca jurídica (nil = o acervo inicial embutido).
+	Biblioteca func() (*legal.Biblioteca, error)
 
 	once   sync.Once
 	motor  ocr.Motor
@@ -79,13 +86,14 @@ func (p *Pipeline) ocr() ocr.Motor {
 // Etapas devolve as etapas desta fase, por estado.
 func (p *Pipeline) Etapas() map[workflow.Estado]workflow.Etapa {
 	return map[workflow.Estado]workflow.Etapa{
-		workflow.SEIConectividade: p.obterSEI,
-		workflow.Verificando:      p.verificar,
-		workflow.Extraindo:        p.extrair,
-		workflow.Classificando:    p.classificar,
-		workflow.Compatibilidade:  p.compatibilidade,
-		workflow.Delimitando:      p.comRevisao(workflow.Delimitando, p.delimitar),
-		workflow.Analisando:       p.comRevisao(workflow.Analisando, p.analisar),
+		workflow.SEIConectividade:  p.obterSEI,
+		workflow.Verificando:       p.verificar,
+		workflow.Extraindo:         p.extrair,
+		workflow.Classificando:     p.classificar,
+		workflow.Compatibilidade:   p.compatibilidade,
+		workflow.Delimitando:       p.comRevisao(workflow.Delimitando, p.delimitar),
+		workflow.Analisando:        p.comRevisao(workflow.Analisando, p.analisar),
+		workflow.ConsultandoFontes: p.consultarFontes,
 	}
 }
 

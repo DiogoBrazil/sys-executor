@@ -2,12 +2,14 @@
 
 > **Comece por aqui.** Ponto de entrada para retomar o trabalho em qualquer máquina.
 >
-> - **Atualizado em:** 10/11/2026 (noite). Depois deste guia:
+> - **Atualizado em:** 11/11/2026. Depois deste guia:
 >   - os testes A (SEI real) e B (SR) passaram, com dois ajustes (commit `8596de3`);
->   - a **Fase 1 do novo visual** está implementada (§5.3).
+>   - a **Fase 1 do novo visual** está implementada (§5.3);
+>   - a **F5 essencial (biblioteca jurídica)** está implementada e commitada (§5.5).
+> - **Prioridade do usuário (11/11/2026):** chegar a um **Julgamento de PADS completo**. Ordem: F5 → F6 → F7, começando pelo PADS. As Fases 2 e 3 do visual ficam para depois.
 > - **Decisão do usuário:** **sem mais bench**. Os testes são manuais, no `.exe` (§3, §6.2).
 > - **Branch:** `add-mode-apikey-oauth`. O push é feito pelo usuário. Não há merge com a `main`.
-> - **Em uma linha:** o D-11 está implementado. Dos testes manuais, A e B passaram e falta o C (Gemini). Em paralelo, há uma melhoria da interface em 3 fases: a 1 está pronta (com teste do usuário pendente), e a 2 e a 3 faltam.
+> - **Em uma linha:** o D-11 está implementado e a F5 essencial também. Dos testes manuais, A e B passaram; faltam o C (Gemini) e o teste da F5. O próximo passo de código é a F6 (cálculo e minuta do PADS), que **precisa de autorização**.
 > - **Próximos passos:** **§6.0**.
 
 ---
@@ -21,7 +23,7 @@ O aplicativo (Go + Wails 3 + Vue, para Windows) percorre:
 4. a delimitação com **enquadramento manual**;
 5. a análise das provas com o **Gemini** (chave do usuário) ou o **ChatGPT** (*Sign in with ChatGPT*, plano do usuário).
 
-O processamento para em **"Consultando fontes jurídicas" (TAR-004)**, que é o fim previsto do escopo D-11. A minuta, o DOCX/PDF e o instalador ficam para as fases F5 a F8, fora deste escopo.
+Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recupera da biblioteca local os dispositivos das imputações e a base do julgamento. O PADS para em **"Calculando comportamento e sanção" (TAR-004)** e a SR em "Elaborando a minuta". O cálculo, a minuta, o DOCX/PDF e o instalador ficam para as fases F6 a F8.
 
 ### 1.1 O que já foi testado e o que não foi
 | Item | Automatizado | Manual no Windows (usuário) |
@@ -31,6 +33,7 @@ O processamento para em **"Consultando fontes jurídicas" (TAR-004)**, que é o 
 | Cadastro de peças SR | ✅ | ✅ 10/11/2026, ChatGPT, até TAR-004 (ajustes P1 a P3 na Fase 1 da interface) |
 | SEI com seleção no computador (etapa 7) | ✅ CAD-SEI-01 (simulado, pdfium real) | ✅ 10/11/2026, processo real, ChatGPT, até TAR-004 (depois dos ajustes do `8596de3`) |
 | Novo visual, Fase 1 (base, P1 a P3, itens 1 e 2) | ✅ vitest 35/35, galeria | ❌ **pendente** (§6.0, passo 1) |
+| Biblioteca jurídica, F5 essencial (§5.5) | ✅ leitor, acervo, busca, D-01 e etapa no fluxo do PADS | ✅ 11/11/2026, PADS sintético, ChatGPT |
 | Gemini no app, de ponta a ponta | ✅ | ⚠️ **parcial**: a cota gratuita acabou no teste de 09/11/2026. A conta está no nível pago desde 10/11 (§6.1-C) |
 | Bench Gemini `gemini-3.6-flash` (casos sintéticos) | ✅ dentro dos limiares; vazamento 0 | — |
 | Bench ChatGPT `gpt-6-luna` | ⚠️ abaixo dos limiares de JSON 1ª e de resultado; vazamento 0 | Bench encerrado por decisão do usuário (§6.2); a qualidade é avaliada nos testes manuais |
@@ -52,6 +55,7 @@ O processamento para em **"Consultando fontes jurídicas" (TAR-004)**, que é o 
    - `RELATORIO_ETAPA6_CADASTRO.md`, `RELATORIO_ETAPA7_SEI.md`, `RELATORIO_ETAPA8_BENCH.md`.
 7. `CONTINUIDADE_MIGRACAO_GEMINI.md`: histórico da migração para o Gemini.
 8. **Interface:** `docs/planning/PLANO_INTERFACE.md` (plano aprovado, 3 fases) e `docs/planning/RELATORIO_INTERFACE.md` (o que cada fase fez).
+9. **Biblioteca jurídica:** `docs/planning/RELATORIO_FASE5.md` (o que entrou no recorte essencial e o que ficou adiado).
 
 ---
 
@@ -130,11 +134,12 @@ gofmt -l ./internal ./cmd                                   # vazio
 GOOS=windows go vet ./...
 go vet ./internal/... ./cmd/rulescov/... ./cmd/licencas/... ./cmd/bench/...
 go test ./internal/... ./cmd/bench/...                      # -race nos pacotes alterados
-cd frontend && npx vitest run && npm run build && cd ..     # vitest 31/31; vue-tsc + vite
+cd frontend && npx vitest run && npm run build && cd ..     # vitest 35/35; vue-tsc + vite
 go run ./cmd/rulescov -estrito                              # 202 regras; 124/124 IDs da V4
 go run ./cmd/bench -provedor falso -entrada memoria,monolitica,pecas   # vazamento 0, sem rede
 (cd poc/sei-mapa && go test .)                              # só se mexer no sei-mapa
 go run ./cmd/licencas                                       # 45 módulos Go, 40 npm
+go run ./cmd/bibgen -conferir                               # acervo da biblioteca em dia com docs/law_library
 git diff --stat -- internal/policy/testdata                 # golden: vazio
 ```
 
@@ -216,6 +221,11 @@ Os cenários estão em `src/galeria/cenarios.ts`, com a altura de cada um. Em ou
   - `cmd/bench/` (`provedores.go`, `vazamento.go`, `entrada.go`);
   - casos sintéticos em `internal/testutil/casos`, com `Pessoas`/`Identificadores`.
 - **Mapeamento do SEI (observação):** `poc/sei-mapa/`, com o comando `mapear` e as linhas `[post-gerar]`. O roteiro está no `LEIA-ME.md`.
+- **Biblioteca jurídica (F5):**
+  - `internal/legal/` (`norma.go`, `acervo.go`, `biblioteca.go`, `referencia.go`, `vigencia.go`);
+  - dados embutidos em `internal/legal/dados/` (`manifesto.yaml`, `acervo.json.gz`, `notas_vigencia.yaml`, `tesauro.yaml`);
+  - gerador do acervo: `cmd/bibgen`;
+  - etapa do pipeline: `internal/pipeline/fontes.go`.
 - **Governança:**
   - `internal/rules/catalog/*.yaml`;
   - `docs/planning/MATRIZ_REQUISITOS_V4.md`;
@@ -223,24 +233,54 @@ Os cenários estão em `src/galeria/cenarios.ts`, com a altura de cada um. Em ou
   - `policies/CHANGELOG.md`;
   - `policies/V4.lock`.
 
+### 5.5 Fase 5 — biblioteca jurídica, recorte essencial (11/11/2026)
+- **Relatório:** `docs/planning/RELATORIO_FASE5.md`.
+- **Decisões do usuário:** busca **somente lexical** (V4 §47.7); recorte essencial agora; PADS primeiro.
+- **Feito:**
+  - leitor de normas (artigo, §, inciso, alínea; redação histórica × atual; partes de um documento composto);
+  - acervo inicial de `docs/law_library` **embutido no `.exe`** (14 documentos; 2 escaneados lidos por OCR);
+  - busca por referência exata e por palavras (FTS5), com tesauro;
+  - nota de vigência do art. 41, § 3º do RDPM (D-01);
+  - etapa "Consultando fontes jurídicas" no PADS, com a seção "Fontes jurídicas" na aba Análise.
+- **Adiado** (para depois da F7): tela de gestão do acervo, tela de duplicidade RDPM × Coletânea e pesquisa web.
+- **Ao mudar um PDF de `docs/law_library` ou o manifesto:** rode `go run ./cmd/bibgen`. Os dois originais escaneados precisam do Tesseract só se mudarem:
+  ```bash
+  T=/mnt/c/Users/<usuário>/Documents/testes-sys-executor/componentes/tesseract
+  go run ./cmd/bibgen -tesseract $T/tesseract.exe -tessdata "$(wslpath -w $T/tessdata)"
+  ```
+- **Situação:** implementada, commitada e **testada pelo usuário** em 11/11/2026 (PADS sintético, ChatGPT, até "Calculando"). Do teste saíram dois ajustes: o hífen de fim de linha do PDF e o texto do aviso de parada.
+
+### 5.6 Modelos de minuta (`docs/draft_templates/`)
+- O usuário criou `docs/draft_templates/PADS` e `docs/draft_templates/SR` com julgamentos e relatórios já feitos, para servirem de **referência de forma e estilo** na F6 e na F7 (D-04).
+- **Não entram em commit** (decisão do usuário). A pasta está no `.gitignore`. O usuário autorizou a leitura dos modelos como estão (11/11/2026).
+- **Atenção:** os dois modelos de PADS trazem nomes completos, números de processo e códigos do SEI (só a matrícula está mascarada). Trate-os como dados reais: nada deles vai para o código, para fixtures, para o chat ou para a IA do aplicativo. Os modelos de SR ainda não foram lidos.
+
 ---
 
 ## 6. O que falta
 
 ### 6.0 Próximos passos (em ordem)
-1. **Testar a Fase 1 do visual** (`.exe` gerado no fim da Fase 1; em outra máquina, gere de novo pelo §4.3):
-   - **SR por upload** (`pecas-sr-sintetico\`):
+1. **Testar o `.exe` atual** (F5 essencial + Fase 1 do visual):
+   - **PADS por upload** (`pecas-pads-sintetico\`), até o fim:
+     - a etapa "Consultando fontes jurídicas" passa sozinha, em instantes;
+     - o processamento para em **"Calculando comportamento e sanção"** com o aviso TAR-004 (esperado);
+     - na aba **Análise**, a seção **"Fontes jurídicas"** mostra o dispositivo de cada imputação ("enquadramento da IMP-n") e os artigos do RDPM ("base do julgamento"), com arquivo, página e versão;
+     - com alguma imputação procedente, aparecem os arts. 36 a 39, 41, 45, 50, 58, 70 e 71; o art. 41 vem **sem** o § 3º;
+     - em "Histórico disciplinar recente", os títulos "Transgressão anterior N" só aparecem depois do "Sim"; o acusado aparece com o posto em "Objeto do procedimento".
+   - **SR por upload** (`pecas-sr-sintetico\`), Fase 1 do visual:
      - em Ofendidos, digite "Administração Pública": deve aparecer o aviso de instituição;
      - num depoimento, digite o nome de um sindicado: deve aparecer "Esta pessoa já está cadastrada como sindicado. [Usar a mesma]";
      - na conferência, confira os avisos de papel e de pessoa repetida;
-     - siga até as conclusões: em "Suas respostas", cada conclusão deve mostrar o sindicado.
-   - **PADS:** em "Histórico disciplinar recente", os títulos "Transgressão anterior N" só aparecem depois do "Sim"; o acusado aparece com o posto em "Objeto do procedimento".
-   - A Fase 1 já está commitada. Se o teste apontar algo, corrija antes da Fase 2.
-2. **Fase 2 do visual** (processamento e perguntas), pelo `PLANO_INTERFACE.md`. Conferir pela galeria, gerar o `.exe` e passar o roteiro ao usuário.
-3. **Fase 3 do visual** (cadastro, início, entrada e configurações). Mesmo processo.
-4. **Teste C, Gemini de ponta a ponta** (§6.1-C). Pode ser feito com o `.exe` de qualquer fase.
-5. **Decisões do usuário para fechar o D-11** (§6.3).
-6. Registrar a conclusão do D-11 (§6.5). O usuário decide o merge com a `main` e a autorização da F5 (§6.6).
+     - em "Suas respostas", cada conclusão deve mostrar o sindicado;
+     - a SR para em "Elaborando a minuta" (TAR-004).
+2. **F6 para o PADS** (cálculo ligado ao pipeline, composição da minuta, validadores). **Autorizada pelo usuário em 11/11/2026.** Decisões dele:
+   - o art. 5º, LV, da Constituição entra como **texto fixo**; a Lei nº 2.484/2011 fica pendente de confirmação dele (não citar até lá);
+   - os modelos de `docs/draft_templates/PADS` podem ser usados como referência de forma (§5.6).
+3. **Hífen de fim de linha na leitura dos autos** (autorizado em 11/11/2026): o pdfium marca esse hífen com U+0002, e "Verifica-se" vira "Verificase".
+4. **F7 para o PADS** (DOCX/PDF, prévia, aprovar e finalizar). Exige autorização e o brasão/cabeçalho (D-04).
+5. **Depois:** SR nas F6 e F7; Fases 2 e 3 do visual; restante da F5 (§5.5).
+6. **Teste C, Gemini de ponta a ponta** (§6.1-C). Pode ser feito com o `.exe` de qualquer fase.
+7. **Decisões do usuário para fechar o D-11** (§6.3) e registro da conclusão (§6.5).
 
 
 ### 6.1 Testes manuais do usuário no Windows (bloqueiam a conclusão)
@@ -319,7 +359,7 @@ Use um processo de teste ou já encerrado.
 - o usuário decide o merge com a `main`.
 
 ### 6.6 Depois do D-11 (cada fase exige autorização própria)
-- **F5:** biblioteca jurídica. Decidir antes entre busca lexical e embeddings (V4 §47.7).
+- **F5:** biblioteca jurídica. Recorte essencial **feito** (§5.5), com busca lexical. Faltam a gestão do acervo, a tela de duplicidade e a pesquisa web.
 - **F6/F7:** composição da minuta, DOCX/PDF (Typst) e revisão humana. O motor de cálculo existe, mas o pipeline ainda não o chama. Precisa dos materiais institucionais (D-04).
 - **F8:** instalador (certificado, WiX, Tesseract sem GPL, Liberation Serif).
 

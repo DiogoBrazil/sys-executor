@@ -1,0 +1,81 @@
+# Acervo inicial da biblioteca jurídica (V4 §40.2): os arquivos de
+# docs/law_library, com a identificação curada de cada um.
+#
+# "siglas" são os nomes pelos quais a norma é citada ("art. 39 do RDPM").
+# A categoria segue a V4 §40.5: LEGISLACAO, REGULAMENTO_DISCIPLINAR,
+# NORMA_INSTITUCIONAL, JURISPRUDENCIA ou OUTROS.
+#
+# Depois de mudar este arquivo ou os PDFs: go run ./cmd/bibgen
+versao: 1
+documentos:
+  - id: rdpm
+    arquivo: "RDPM-RO.pdf"
+    titulo: "Regulamento Disciplinar da Polícia Militar do Estado de Rondônia — RDPM/RO (Decreto nº 13.255/2007)"
+    siglas: ["RDPM", "RDPM/RO", "RDPM-RO", "Regulamento Disciplinar", "Decreto 13255", "Decreto 13.255"]
+    categoria: REGULAMENTO_DISCIPLINAR
+  - id: estatuto
+    arquivo: "DECRETO-LEI, Nº 09-A, DE 09 DE MARÇO DE 1982.pdf"
+    titulo: "Estatuto dos Policiais Militares do Estado de Rondônia (Decreto-Lei nº 09-A/1982)"
+    siglas: ["Estatuto", "Estatuto dos Policiais Militares", "Decreto-Lei 09-A", "Decreto-Lei 9-A", "DL 09-A"]
+    categoria: LEGISLACAO
+  - id: lob
+    arquivo: "LEI N. 4.302, DE 25 DE JUNHO DE 2018.pdf"
+    titulo: "Lei de Organização Básica da PMRO (Lei nº 4.302/2018)"
+    siglas: ["LOB", "Lei de Organização Básica", "Lei 4302", "Lei 4.302"]
+    categoria: LEGISLACAO
+  - id: regulamento-geral
+    arquivo: "DECRETO N° 26.648, DE 17 DE DEZEMBRO DE 2021.pdf"
+    titulo: "Regulamento Geral da PMRO — R-12-PM (Decreto nº 26.648/2021)"
+    siglas: ["Regulamento Geral", "R-12-PM", "Decreto 26648", "Decreto 26.648"]
+    categoria: LEGISLACAO
+  - id: coletanea
+    arquivo: "COLETÂNEA DE LEGISLAÇÃO CORREICIONAL.pdf"
+    titulo: "Coletânea de Legislação Relativa à Atividade Correicional (CL-2-PM)"
+    siglas: ["Coletânea", "CL-2-PM"]
+    categoria: NORMA_INSTITUCIONAL
+    composto: true
+  - id: da-004-2017
+    arquivo: "DIRETRIZ ADMINISTRATIVA Nº004-CORREGEPOM-2017.pdf"
+    titulo: "Diretriz Administrativa nº 004/CORREGEPOM/2017 (violência doméstica)"
+    siglas: ["Diretriz Administrativa 004", "DA 004"]
+    categoria: NORMA_INSTITUCIONAL
+  - id: dao
+    arquivo: "DIRETRIZES DE AÇÃO OPERACIONAL.pdf"
+    titulo: "Diretrizes de Ação Operacional — D-3-PM (Resolução nº 169/2008)"
+    siglas: ["DAO", "D-3-PM", "Diretrizes de Ação Operacional", "Resolução 169"]
+    categoria: NORMA_INSTITUCIONAL
+  - id: pop-4-6
+    arquivo: "PROCEDIMENTO OPERACIONAL PADRÃO DE ENCERRAMENTO DE OCORRÊNCIA.pdf"
+    titulo: "Procedimento Operacional Padrão nº 4.6 — encerramento de ocorrência"
+    siglas: ["POP 4.6"]
+    categoria: NORMA_INSTITUCIONAL
+  - id: res-234-2019
+    arquivo: "RESOLUÇÃO N. 0234, DE 10 DE JUNHO DE 2019-2019-PM-CMTGERAL.pdf"
+    titulo: "Resolução nº 234/2019/PM-CMTGERAL (assédio moral e sexual)"
+    siglas: ["Resolução 234", "Resolução 0234"]
+    categoria: NORMA_INSTITUCIONAL
+  - id: res-208-2017
+    arquivo: "RESOLUÇÃO N.208-CPO, DE 14 DE FEVEREIRO DE 2017.pdf"
+    titulo: "Resolução nº 208/CPO, de 14 de fevereiro de 2017"
+    siglas: ["Resolução 208"]
+    categoria: NORMA_INSTITUCIONAL
+  - id: res-148-2002
+    arquivo: "RESOLUÇÃO N° 148, DE 16 DE OUTUBRO DE 2002.pdf"
+    titulo: "Resolução nº 148, de 16 de outubro de 2002"
+    siglas: ["Resolução 148"]
+    categoria: NORMA_INSTITUCIONAL
+  - id: res-162-2004
+    arquivo: "RESOLUÇÃO Nº 162, DE 14 DE DEZEMBRO DE 2004.pdf"
+    titulo: "Resolução nº 162/2004 — arma de fogo: aquisição, cadastro, registro, porte e transferência (D-2-PM)"
+    siglas: ["Resolução 162", "D-2-PM"]
+    categoria: NORMA_INSTITUCIONAL
+  - id: res-187-2012
+    arquivo: "RESOLUÇÃO Nº 187 DE 24 OUTUBRO DE 2012.pdf"
+    titulo: "Resolução nº 187/2012 — porte de arma de fogo com restrições médicas ou psicológicas"
+    siglas: ["Resolução 187"]
+    categoria: NORMA_INSTITUCIONAL
+  - id: res-203-2015
+    arquivo: "RESOLUÇÃO Nº 203, DE 03 DE DEZEMBRO DE 2015.pdf"
+    titulo: "Resolução nº 203/2015 — carga pessoal de arma de fogo, munições, coletes e algemas"
+    siglas: ["Resolução 203"]
+    categoria: NORMA_INSTITUCIONAL

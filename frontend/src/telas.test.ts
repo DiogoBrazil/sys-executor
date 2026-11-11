@@ -609,7 +609,7 @@ describe("F4 — revisão, retomada e painel", () => {
     });
     const w = mount(App);
     await flushPromises();
-    expect(w.find('[data-teste="parada"]').text()).toContain("biblioteca jurídica");
+    expect(w.find('[data-teste="parada"]').text()).toContain("redação da minuta");
     expect(w.find('[data-teste="painel-analise"]').text()).toContain("Termo — pág. 2");
     await w.find('[data-teste="revisar-resultado:IMP-1"]').trigger("click");
     await flushPromises();

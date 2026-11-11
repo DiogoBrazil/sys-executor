@@ -95,6 +95,9 @@ func publicarPainel(c *workflow.Contexto, d *Dados) {
 	if len(prop.Itens) > 0 {
 		p.Secoes = append(p.Secoes, prop)
 	}
+	if sf, ok := secaoFontes(d); ok {
+		p.Secoes = append(p.Secoes, sf)
+	}
 	if len(e.Pendencias) > 0 {
 		pend := workflow.SecaoPainel{Titulo: "Limitações e pendências"}
 		for _, l := range e.Pendencias {

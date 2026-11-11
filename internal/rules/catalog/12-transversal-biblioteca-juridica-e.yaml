@@ -19,6 +19,7 @@
   tipo: [DETERMINISTICA]
   enunciado: "Importar `docs/law_library` no preparo inicial; ampliação manual"
   modulo: "legal.Bootstrap"
+  enforced_by: [legal.AcervoInicial, legal.LerManifesto]
   testes: ["T28"]
   versao: 1
 
@@ -29,6 +30,7 @@
   tipo: [DETERMINISTICA]
   enunciado: "Guardar originais + metadados; preservar artigo, §, inciso, alínea e localização"
   modulo: "legal.ParserNormas"
+  enforced_by: [legal.Analisar, legal.Unidade]
   testes: ["LIB-PARSE-01", "LIB-PARSE-02", "LIB-PARSE-03", "LIB-PARSE-04", "LIB-PARSE-05"]
   versao: 1
 
@@ -39,6 +41,7 @@
   tipo: [DETERMINISTICA, VALIDADOR]
   enunciado: "Busca exata + semântica; RAG não prova vigência; conferir a fonte antes de citar"
   modulo: "legal.Busca; validate.LegalRefs"
+  enforced_by: [legal.Biblioteca, legal.Passagem]
   testes: ["A13", "LIB-HYB-01"]
   versao: 1
 
@@ -119,5 +122,6 @@
   tipo: [DETERMINISTICA]
   enunciado: "Nota de vigência curada para o art. 41 § 3º do RDPM; filtrar da redação; sem alerta"
   modulo: "legal.NotaVigencia"
+  enforced_by: [legal.NotaVigencia, legal.NotasVigencia]
   testes: ["LIB-D01-01", "LIB-D01-02"]
   versao: 1

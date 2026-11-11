@@ -8,3 +8,6 @@ poc/wails/bin/
 # App
 /frontend/dist/
 /bin/
+
+# Modelos de minuta do usuário (referência de forma; não versionar)
+/docs/draft_templates/

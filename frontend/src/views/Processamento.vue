@@ -61,7 +61,7 @@ async function confirmarCancelamento() {
       <div v-else-if="v.parada" class="aviso" role="status" data-teste="parada">
         <h3>As próximas etapas ainda não estão disponíveis</h3>
         <p>
-          A consulta à biblioteca jurídica, o cálculo e a redação da minuta chegam nas próximas versões do aplicativo.
+          O cálculo da sanção e a redação da minuta chegam nas próximas versões do aplicativo.
           Você pode conferir a análise abaixo, alterar respostas, consultar os autos e cancelar a tarefa quando terminar.
         </p>
       </div>

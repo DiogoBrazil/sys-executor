@@ -1,0 +1,16 @@
+# Notas de vigência curadas (plano §10; decisão D-01 do usuário).
+#
+# Um dispositivo com nota não é oferecido à redação e não pode ser citado
+# como vigente (TRV-LIB-012). A interface não mostra alerta sobre isso.
+# A nota registra uma decisão funcional do usuário: não é comprovação
+# documental de vigência (V4 §44).
+#
+# Mudança neste arquivo exige decisão do usuário e registro em
+# policies/CHANGELOG.md.
+notas:
+  - documento: rdpm
+    artigo: "41"
+    paragrafo: "3"
+    status: CONSIDERADO_REVOGADO_PELO_USUARIO
+    fonte_revogadora: ""
+    origem: "V4 §4/§10/§44 + D-01"

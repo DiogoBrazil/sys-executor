@@ -1,0 +1,15 @@
+# Tesauro da busca lexical (plano §10, D-09.10): termos de uso comum que
+# levam aos termos das normas. Cada linha é um grupo de equivalentes: a
+# busca por um deles procura todos. Só amplia a busca; não muda regra.
+grupos:
+  - [punição, sanção, pena, penalidade, castigo]
+  - [transgressão, falta, infração]
+  - [reincidência, reincidente, reincidir]
+  - [agravante, agravam, agravar]
+  - [atenuante, atenuam, atenuar]
+  - [justificação, justificam, justificativa, justificar]
+  - [recurso, reconsideração, recorrer]
+  - [prescrição, prescreve, prescrever]
+  - [atraso, atrasado, atrasar, impontualidade]
+  - [embriaguez, embriagado, alcoolizado, álcool]
+  - [arma, armamento]

@@ -308,11 +308,14 @@ func TestFluxoPADSComIA(t *testing.T) {
 	responder(t, g, "reincidencia:MEDIA", "confirmar", map[string]string{"possui": "nao"})
 	responder(t, g, perguntaServicos, "confirmar", map[string]string{"relevantes": "nao"})
 
-	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.ConsultandoFontes })
+	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Calculando })
 	if v.Erro == nil || v.Erro.Codigo != "TAR-004" || len(v.Respostas) != 9 || v.Respostas[0].PerguntaID != PerguntaEnvioIA {
-		t.Fatalf("parada na Fase 5: %+v %+v", v.Erro, v.Respostas)
+		t.Fatalf("parada na Fase 6: %+v %+v", v.Erro, v.Respostas)
 	}
 	d := g.Dados().(*Dados)
+	// Fase 5: a biblioteca devolveu o dispositivo de cada imputação e a base
+	// do julgamento (com punição, porque há procedência), sem lacunas.
+	conferirFontesPADS(t, d, v)
 	if gl, err := d.IA.Julgamento.ResultadoGlobal(); err != nil || gl != "PROCEDENCIA_PARCIAL" {
 		t.Fatalf("PADS-E02: %s %v", gl, err)
 	}
@@ -338,7 +341,7 @@ func TestFluxoPADSComIA(t *testing.T) {
 	responder(t, g, "resultado:IMP-1", "confirmar", map[string]string{"resultado": "PROCEDENTE"})
 	responder(t, g, "reincidencia:MEDIA", "confirmar", map[string]string{"possui": "sim", "termino": "10/01/2025"})
 	responder(t, g, perguntaServicos, "confirmar", map[string]string{"relevantes": "nao"})
-	esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.ConsultandoFontes })
+	esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Calculando })
 	if m.conta("extracao") != extracoes || m.conta("analise_imputacao") != analises {
 		t.Fatal("rever um resultado não deveria reler peças nem reanalisar")
 	}
@@ -490,7 +493,7 @@ func TestFluxoSRComIA(t *testing.T) {
 	}
 	responder(t, g, "conclusao:F-1:S-1", "confirmar", map[string]string{"conclusao": "INCONCLUSIVO"})
 	responder(t, g, "conclusao:F-1:S-N1", "confirmar", map[string]string{"conclusao": "AUSENCIA"})
-	esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.ConsultandoFontes })
+	esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Redigindo })
 	d := g.Dados().(*Dados)
 	if fatos := d.IA.Objeto.FatosAdmitidos(); len(fatos) != 1 || len(d.IA.Objeto.Sindicados()) != 2 || len(d.IA.Objeto.SindicadosOriginais()) != 1 {
 		t.Fatalf("objeto: fatos %v sindicados %v", fatos, d.IA.Objeto.Sindicados())
@@ -625,7 +628,7 @@ func TestRevisaoNoMeioDaEtapaENenhumMarcadorNoEstado(t *testing.T) {
 	responder(t, g, perguntaHistorico, "confirmar", map[string]string{"tem": "nao"})
 	responder(t, g, "reincidencia:MEDIA", "confirmar", map[string]string{"possui": "nao"})
 	responder(t, g, perguntaServicos, "confirmar", map[string]string{"relevantes": "nao"})
-	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.ConsultandoFontes })
+	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Calculando })
 	if v.Erro == nil || v.Erro.Codigo != "TAR-004" {
 		t.Fatalf("fim da fase: %+v", v.Erro)
 	}
@@ -821,5 +824,36 @@ func TestEnquadramentoIgualAoCitadoSemConfirmacao(t *testing.T) {
 	}
 	if ims := g.Dados().(*Dados).IA.Conjunto.Imputacoes(); ims[0].Natureza != "MEDIA" {
 		t.Fatalf("natureza do art. 16: %+v", ims)
+	}
+}
+
+// Regra: TRV-LIB-004, TRV-LIB-012
+func conferirFontesPADS(t *testing.T, d *Dados, v *workflow.Visao) {
+	t.Helper()
+	f := d.Fontes
+	if f == nil || len(f.Lacunas) != 0 {
+		t.Fatalf("fontes jurídicas: %+v", f)
+	}
+	for _, im := range d.IA.Conjunto.Imputacoes() {
+		p, ok := f.Enquadramento[im.ID]
+		if !ok || !p.Exata || p.Texto == "" || p.Versao == "" || p.Pagina == 0 {
+			t.Fatalf("enquadramento da %s (%s): %+v", im.ID, im.Dispositivo, p)
+		}
+	}
+	arts := map[string]string{}
+	for _, p := range f.Base {
+		arts[p.Artigo] = p.Texto
+	}
+	for _, a := range []string{"4", "33", "36", "38", "39", "41", "71"} {
+		if arts[a] == "" {
+			t.Fatalf("base do julgamento sem o art. %s: %v", a, arts)
+		}
+	}
+	// D-01: o art. 41 vem sem o § 3º, e nada dele chega ao painel.
+	if strings.Contains(arts["41"], "Ficam extintas as execuções") || strings.Contains(js(v.Painel), "Ficam extintas as execuções") {
+		t.Fatal("art. 41, § 3º oferecido à redação")
+	}
+	if !strings.Contains(js(v.Painel), "Fontes jurídicas") || !strings.Contains(js(v.Painel), "base do julgamento") {
+		t.Fatal("painel sem a seção de fontes jurídicas")
 	}
 }
