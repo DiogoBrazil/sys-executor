@@ -5,7 +5,7 @@ import { computed } from "vue";
 
 export type NomeIcone =
   | "check" | "alerta" | "info" | "erro" | "pdf" | "pasta" | "pessoa" | "buscar" | "seta" | "chevron"
-  | "lixeira" | "subir" | "descer" | "engrenagem" | "fechar" | "cadeado" | "relogio" | "mais" | "lampada" | "documento";
+  | "lixeira" | "subir" | "descer" | "engrenagem" | "fechar" | "cadeado" | "relogio" | "mais" | "lampada" | "documento" | "expandir" | "ajuda";
 
 const props = withDefaults(defineProps<{ nome: NomeIcone; tamanho?: number }>(), { tamanho: 18 });
 
@@ -29,6 +29,8 @@ const D: Record<NomeIcone, string> = {
   cadeado: "M6.5 11h11a1 1 0 0 1 1 1v7.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V12a1 1 0 0 1 1-1zM8.5 11V8a3.5 3.5 0 0 1 7 0v3",
   relogio: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7.5V12l3 2",
   mais: "M12 5v14M5 12h14",
+  expandir: "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5",
+  ajuda: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17v.1",
   lampada: "M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z",
 };
 const d = computed(() => D[props.nome]);

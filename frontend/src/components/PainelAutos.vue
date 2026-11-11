@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import Icone from "./ui/Icone.vue";
 import type { ResumoAutos } from "../../bindings/github.com/DiogoBrazil/sys-executor/internal/workflow/models";
 
 const props = defineProps<{ autos: ResumoAutos }>();
@@ -61,8 +62,7 @@ function paginas(a: number, b: number) {
 <template>
   <section class="autos" data-teste="painel-autos">
     <div class="cabeca">
-      <h2>Autos lidos</h2>
-      <p>{{ autos.totalPaginas }} páginas</p>
+      <p><strong>{{ autos.totalPaginas }} páginas</strong> no total. Clique numa peça para abri-la no PDF.</p>
     </div>
 
     <ul class="cobertura" aria-label="Cobertura da leitura" data-teste="cobertura">
@@ -77,6 +77,7 @@ function paginas(a: number, b: number) {
     <ol class="pecas" data-teste="pecas">
       <li v-for="p in autos.pecas" :key="p.id" :class="{ central: p.id === autos.pecaCentral }">
         <button class="item" @click="emit('abrir', p.paginaInicial, 0, 0)">
+          <Icone nome="pdf" class="ic" />
           <span class="rotulo">
             {{ p.rotulo }}
             <em v-if="p.provavel" class="selo">provável, pela ordem dos autos</em>
@@ -100,6 +101,7 @@ function paginas(a: number, b: number) {
       <ul class="midias" data-teste="midias">
         <li v-for="g in gruposMidia" :key="g.peca">
           <button class="item" @click="emit('abrir', g.pagina, g.inicio, g.fim)">
+            <Icone nome="relogio" class="ic" />
             <span class="rotulo">{{ g.rotulo }}</span>
             <span class="meta">{{ g.paginas }} — {{ g.termos.slice(0, 4).join(", ") }}<template v-if="g.termos.length > 4">…</template> · {{ g.total }} {{ g.total === 1 ? "menção" : "menções" }}</span>
           </button>
@@ -110,42 +112,41 @@ function paginas(a: number, b: number) {
 </template>
 
 <style scoped>
-.autos {
-  background: var(--superficie);
-  border: 1px solid var(--linha);
-  border-radius: var(--raio);
-  padding: 1.3rem 1.4rem;
-  display: grid;
-  gap: 0.8rem;
-}
-.cabeca { display: flex; align-items: baseline; justify-content: space-between; }
-.cabeca h2 { font-size: var(--t-lg); }
-.cabeca p { color: var(--tinta-suave); }
+.autos { display: grid; gap: 0.8rem; }
+.cabeca p { color: var(--tinta-suave); font-size: var(--t-sm); }
+.cabeca strong { color: var(--tinta); }
 h3 { font-family: var(--sans); font-size: var(--t-md); font-weight: 600; margin-top: 0.4rem; }
 .cobertura { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.cobertura li { font-size: var(--t-sm); padding: 0.2rem 0.6rem; border-radius: 999px; background: var(--papel); border: 1px solid var(--linha); }
-.cobertura li.ILEGIVEL, .cobertura li.OCR_BAIXO { border-color: var(--alerta); color: var(--alerta); background: var(--alerta-claro); }
+.cobertura li { font-size: var(--t-sm); padding: 0.2rem 0.65rem; border-radius: 999px; background: var(--ok-claro); color: var(--ok); border: 1px solid #c3dfc9; }
+.cobertura li.ILEGIVEL, .cobertura li.OCR_BAIXO { border-color: var(--alerta-linha); color: var(--alerta); background: var(--alerta-claro); }
+.cobertura li.VAZIA { background: var(--superficie-2); color: var(--tinta-suave); border-color: var(--linha); }
 .alerta { color: var(--alerta); font-size: var(--t-sm); }
 .link { border: 0; background: none; color: var(--foco); text-decoration: underline; padding: 0 0.2rem; }
-.pecas, .midias { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
-.item {
-  width: 100%;
-  text-align: left;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.3rem 0.8rem;
-  padding: 0.5rem 0.7rem;
-  border: 1px solid transparent;
-  border-radius: var(--raio);
-  background: none;
+.pecas, .midias {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
 }
-.item:hover { border-color: var(--linha-forte); background: var(--papel); }
-.central .item { border-color: var(--linha); }
+.item {
+  width: 100%; height: 100%;
+  text-align: left;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-content: start;
+  gap: 0.15rem 0.6rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--linha);
+  border-radius: var(--r-sm);
+  background: var(--superficie-2);
+  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+.item > :not(.ic) { grid-column: 2; }
+.ic { grid-row: 1 / span 3; color: var(--acento); margin-top: 0.1rem; }
+.item:hover { border-color: var(--acento); background: var(--acento-claro); }
+.central .item { border-color: var(--acento); border-width: 1px 1px 1px 4px; }
 .rotulo { font-weight: 500; }
 .meta { color: var(--tinta-suave); font-size: var(--t-sm); }
 .selo { font-style: normal; font-size: var(--t-xs); color: var(--tinta-suave); margin-left: 0.4rem; }
-.selo.central { color: var(--tinta); font-weight: 600; }
+.selo.central { color: var(--acento); font-weight: 600; }
 .selo.alerta { color: var(--alerta); }
-.nota { color: var(--tinta-suave); font-size: var(--t-sm); max-width: 70ch; }
+.nota { color: var(--tinta-suave); font-size: var(--t-sm); max-width: 80ch; }
 </style>

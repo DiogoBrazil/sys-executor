@@ -626,6 +626,73 @@ describe("F4 — revisão, retomada e painel", () => {
   });
 });
 
+// Ajustes de tela do usuário (11/11/2026): o que alongava a página abre em
+// gaveta ou modal; a figura da espera mostra quem trabalha.
+describe("Telas mais horizontais: gavetas, modais e figura da espera", () => {
+  it("Suas respostas e Autos lidos abrem fora da tela principal", async () => {
+    visaoAtual = visao("ANALISANDO", {
+      autos: resumo,
+      respostas: [{ perguntaId: "delimitacao", titulo: "Confirme as imputações", resumo: "1 imputação(ões)", revisavel: true }],
+    });
+    const w = mount(App, { attachTo: document.body });
+    await flushPromises();
+    const gaveta = () => w.find('[data-teste="respostas"]').element.closest(".fundo-janela") as HTMLElement;
+    expect(gaveta().style.display).toBe("none");
+    await w.find('[data-teste="abrir-respostas"]').trigger("click");
+    expect(gaveta().style.display).toBe("");
+    await w.find('[data-teste="revisar-delimitacao"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain("revisar:delimitacao");
+    const g = w.find('[data-teste="respostas"]'); // fecha ao alterar (ou some com a visão nova)
+    expect(!g.exists() || (g.element.closest(".fundo-janela") as HTMLElement).style.display === "none").toBe(true);
+    visaoAtual = visao("ANALISANDO", { autos: resumo });
+    ganchos.ouvinte?.(visaoAtual);
+    await flushPromises();
+    const autos = () => w.find('[data-teste="painel-autos"]').element.closest(".fundo-janela") as HTMLElement;
+    expect(autos().style.display).toBe("none");
+    await w.find('[data-teste="abrir-autos-lidos"]').trigger("click");
+    expect(autos().style.display).toBe("");
+    w.unmount();
+  });
+
+  it("robô quando a IA trabalha; engrenagens nas etapas locais", async () => {
+    visaoAtual = visao("ANALISANDO");
+    let w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="estado-atual"] svg.robo').exists()).toBe(true);
+    expect(w.find('[data-teste="estado-atual"]').text()).toContain("A IA está trabalhando");
+    visaoAtual = visao("EXTRAINDO");
+    w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="estado-atual"] svg.engrenagens').exists()).toBe(true);
+  });
+
+  it("memória de cálculo em modal, com a proposta à vista", async () => {
+    visaoAtual = visao("AGUARDANDO_ESCLARECIMENTO", {
+      pergunta: {
+        id: "calculo", titulo: "Confira a dosimetria", contexto: "c", revisavel: true,
+        grupos: [{ id: "s_IMP-1", titulo: "IMP-1 — prisão", descricao: ["Natureza grave: prisão."], alertas: [], fontes: [] },
+          { id: "m1", titulo: "1. Pontuação e comportamento atuais", descricao: ["31 pontos"], alertas: [], fontes: [] },
+          { id: "m6", titulo: "6. Pontuação e comportamento propostos", descricao: ["Propõe-se 20 pontos, comportamento bom."], alertas: [], fontes: [] }],
+        campos: [{ id: "dias_IMP-1", rotulo: "Dias de prisão", tipo: "NUMERO", obrigatorio: true, grupo: "s_IMP-1", valor: "2", min: 1, max: 30 }],
+        opcoes: [{ id: "confirmar", rotulo: "Confirmar", validar: true }],
+      },
+    });
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="memoria-resumo"]').text()).toContain("Propõe-se 20 pontos");
+    expect(w.find('[data-teste="abrir-memoria"]').text()).toContain("2 itens");
+    const modal = () => w.find('[data-teste="janela-memoria"]').element.closest(".fundo-janela") as HTMLElement;
+    expect(modal().style.display).toBe("none");
+    await w.find('[data-teste="abrir-memoria"]').trigger("click");
+    expect(modal().style.display).toBe("");
+    expect(w.find('[data-teste="grupo-m1"]').text()).toContain("31 pontos");
+    await w.find('[data-teste="opcao-confirmar"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain('responder:calculo:confirmar:{"dias_IMP-1":"2"}');
+  });
+});
+
 // V4 §§26.3 e 31.3: a minuta aparece com o aviso de revisão obrigatória, os
 // campos a preencher realçados e as fontes dos trechos redigidos pela IA.
 describe("F6 — minuta", () => {
@@ -906,5 +973,79 @@ describe("Enquadramento no formulário das imputações", () => {
     await w.find('[data-teste="opcao-confirmar"]').trigger("click");
     await flushPromises();
     expect(chamadas).toContain('responder:confirmar_delimitacao:confirmar:{"incluir_IMP-1":"nao"}');
+  });
+});
+
+// Protótipo aprovado em 11/11/2026: cadastro em cartões e modais; histórico
+// acrescentado linha a linha; imputações em tabela.
+describe("Telas do protótipo aprovado", () => {
+  const visivelJanela = (el: Element) => (el.closest(".fundo-janela") as HTMLElement).style.display !== "none";
+
+  it("cadastro: o cartão abre a peça num modal; Continuar leva à seguinte", async () => {
+    visaoAtual = visao("RECEBENDO_UPLOAD", { entrada: "UPLOAD", cadastro: cadastroPADS(), pendenciasCadastro: ["Anexe o Memorando Disciplinar."] });
+    const w = mount(App, { attachTo: document.body });
+    await flushPromises();
+    expect(w.find('[data-teste="montagem"] h2').text()).toContain("Cadastre as peças do processo");
+    const nao = w.find('[data-teste="nao-defesa"]');
+    expect(visivelJanela(nao.element)).toBe(false);
+    await w.find('[data-teste="passo-defesa"]').trigger("click");
+    await flushPromises();
+    expect(visivelJanela(nao.element)).toBe(true);
+    await w.find('[data-teste="passo-proximo"]').trigger("click");
+    await flushPromises();
+    expect(w.find('[data-teste="novo-depoimento"]').exists()).toBe(true);
+    w.unmount();
+  });
+
+  const pergHistorico = (tem: string) => ({
+    id: "historico", titulo: "Histórico disciplinar recente", contexto: "c", opcoes: [{ id: "confirmar", rotulo: "Confirmar", validar: true }],
+    grupos: [1, 2, 3, 4, 5].map((k) => ({ id: "h" + k, titulo: "Transgressão anterior " + k, descricao: [], alertas: [], fontes: [] })),
+    campos: [{ id: "tem", rotulo: "Há transgressões anteriores nesse período?", tipo: "SIM_NAO", obrigatorio: true, valor: tem },
+      ...[1, 2, 3, 4, 5].flatMap((k) => [
+        { id: `h${k}_natureza`, rotulo: "Natureza", tipo: "ESCOLHA", obrigatorio: k === 1, grupo: "h" + k, valor: "", mostrarSe: { campo: "tem", valor: "sim" },
+          opcoes: [{ id: "LEVE", rotulo: "Leve" }, { id: "MEDIA", rotulo: "Média" }, { id: "GRAVE", rotulo: "Grave" }] },
+        { id: `h${k}_data`, rotulo: "Data do fato", tipo: "DATA", obrigatorio: k === 1, grupo: "h" + k, valor: "", mostrarSe: { campo: "tem", valor: "sim" } }])],
+  });
+
+  it("histórico: a pergunta vem antes e as transgressões entram uma a uma", async () => {
+    visaoAtual = visao("AGUARDANDO_ESCLARECIMENTO", { pergunta: pergHistorico("") });
+    const w = mount(App);
+    await flushPromises();
+    const html = w.find('[data-teste="pergunta"]').html();
+    expect(html.indexOf("campo-tem-sim")).toBeLessThan(html.indexOf("Natureza") === -1 ? Infinity : html.indexOf("Natureza"));
+    await w.find('[data-teste="campo-tem-sim"]').setValue(true);
+    expect(w.find('[data-teste="grupo-h1"]').exists()).toBe(true);
+    expect(w.find('[data-teste="grupo-h2"]').exists()).toBe(false);
+    await w.find('[data-teste="acrescentar-linha"]').trigger("click");
+    expect(w.find('[data-teste="grupo-h2"]').exists()).toBe(true);
+    await w.find('[data-teste="campo-h1_natureza-GRAVE"]').setValue(true);
+    await w.find('[data-teste="campo-h1_data"]').setValue("05/10/2025");
+    await w.find('[data-teste="opcao-confirmar"]').trigger("click");
+    await flushPromises();
+    expect(chamadas.some((c) => c.startsWith("responder:historico:confirmar:") && c.includes('"h1_natureza":"GRAVE"'))).toBe(true);
+  });
+
+  it("imputações: uma linha por imputação, com a fonte e o alerta na própria linha", async () => {
+    visaoAtual = visao("AGUARDANDO_ESCLARECIMENTO", { pergunta: {
+      id: "confirmar_delimitacao", titulo: "Confirme as imputações do Memorando Disciplinar", contexto: "c",
+      opcoes: [{ id: "confirmar", rotulo: "Confirmar imputações", validar: true }],
+      grupos: [{ id: "acusado", titulo: "Acusado", descricao: [], alertas: [], fontes: [] },
+        { id: "IMP-1", titulo: "IMP-1", descricao: ["usou a viatura", "Natureza declarada no Memorando: grave."], alertas: ["Confira o inciso."],
+          fontes: [{ rotulo: "Memorando", pagina: 1, inicio: 0, fim: 5, trecho: "t" }] }],
+      campos: [{ id: "acusado", rotulo: "Acusado", tipo: "TEXTO", obrigatorio: true, grupo: "acusado", valor: "CB PM FULANO FICTÍCIO" },
+        { id: "incluir_IMP-1", rotulo: "Incluir esta imputação", tipo: "SIM_NAO", obrigatorio: true, grupo: "IMP-1", valor: "sim" },
+        { id: "conduta_IMP-1", rotulo: "Conduta imputada", tipo: "TEXTO_LONGO", obrigatorio: true, grupo: "IMP-1", valor: "usou a viatura", mostrarSe: { campo: "incluir_IMP-1", valor: "sim" } },
+        { id: "data_IMP-1", rotulo: "Data do fato", tipo: "DATA", obrigatorio: true, grupo: "IMP-1", valor: "05/04/2026", mostrarSe: { campo: "incluir_IMP-1", valor: "sim" } }],
+    } });
+    const w = mount(App);
+    await flushPromises();
+    const linha = w.find('[data-teste="grupo-IMP-1"]');
+    expect(linha.classes()).toContain("linha-imp");
+    expect(linha.find(".natureza").text()).toBe("grave");
+    expect(linha.text()).toContain("Confira o inciso.");
+    expect(linha.find('[data-teste="fonte-IMP-1-0"]').text()).toContain("pág. 1");
+    await w.find('[data-teste="campo-incluir_IMP-1-nao"]').setValue(true);
+    expect(w.find('[data-teste="campo-data_IMP-1"]').exists()).toBe(false);
+    expect(w.find('[data-teste="grupo-IMP-1"]').text()).toContain("Não será julgada.");
   });
 });

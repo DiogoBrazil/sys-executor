@@ -21,5 +21,13 @@ if (!c) {
   palco.ia = c.ia ?? iaPadrao;
   if (c.config) estado.verConfigIA = true;
   createApp(App).mount("#app");
+  // Cenários de modal/gaveta: clica no botão que os abre. Sem animações, para a
+  // captura sem GPU (o tempo virtual não avança as transições de CSS).
+  if (c.clicar) {
+    const st = document.createElement("style");
+    st.textContent = "*,*::before,*::after{transition:none!important;animation:none!important}";
+    document.head.appendChild(st);
+  }
+  if (c.clicar) setTimeout(() => document.querySelector<HTMLElement>(`[data-teste="${c.clicar}"]`)?.click(), 300);
   window.addEventListener("hashchange", () => location.reload());
 }

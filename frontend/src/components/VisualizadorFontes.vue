@@ -5,6 +5,8 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import * as pdfjs from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { fontes } from "../api";
+import Carregando from "./ui/Carregando.vue";
+import Icone from "./ui/Icone.vue";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -28,6 +30,11 @@ const erro = ref("");
 const consulta = ref("");
 const resultados = ref<{ pagina: number; inicio: number; fim: number; trecho: string }[]>([]);
 const buscou = ref(false);
+// Loader (pedido do usuário, 11/11/2026): ao abrir os autos e a cada página.
+const abrindo = ref(true);
+const renderizando = ref(false);
+const visivel = ref(false);
+let geracao = 0; // só a última página pedida desliga o loader
 
 let doc: pdfjs.PDFDocumentProxy | null = null;
 let carga: pdfjs.PDFDocumentLoadingTask | null = null;
@@ -60,7 +67,18 @@ async function mostrar(n: number, inicio = 0, fim = 0) {
   if (!doc || n < 1 || n > total.value) return;
   atual = { n, inicio, fim };
   paginaAtual.value = n;
-  const pagina = await doc.getPage(n);
+  const g = ++geracao;
+  renderizando.value = true;
+  try {
+    await desenhar(n, inicio, fim);
+  } finally {
+    if (g === geracao) renderizando.value = false;
+    abrindo.value = false;
+  }
+}
+
+async function desenhar(n: number, inicio: number, fim: number) {
+  const pagina = await doc!.getPage(n);
   const base = pagina.getViewport({ scale: 1 });
   const largura = Math.max(320, (area.value?.clientWidth ?? 800) - 32);
   escala = largura / base.width;
@@ -119,12 +137,15 @@ onMounted(async () => {
     });
     observador.observe(area.value);
   }
+  visivel.value = true;
   fecharBtn.value?.focus();
   try {
     await carregar();
     await mostrar(props.pagina, props.inicio, props.fim);
   } catch {
     erro.value = "Não foi possível abrir os autos no visualizador.";
+  } finally {
+    abrindo.value = false;
   }
 });
 
@@ -145,20 +166,24 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="fundo" @click.self="emit('fechar')">
+  <div class="fundo" :class="{ visivel }" @click.self="emit('fechar')">
     <div class="janela" role="dialog" aria-modal="true" aria-label="Autos do processo" data-teste="visualizador">
       <header class="barra">
         <div class="nav">
-          <button class="botao" :disabled="paginaAtual <= 1" @click="mostrar(paginaAtual - 1)">Página anterior</button>
-          <span aria-live="polite">Página {{ paginaAtual }} de {{ total || "…" }}</span>
-          <button class="botao" :disabled="paginaAtual >= total" @click="mostrar(paginaAtual + 1)">Próxima página</button>
+          <button class="botao icone" :disabled="paginaAtual <= 1 || renderizando" aria-label="Página anterior" title="Página anterior" @click="mostrar(paginaAtual - 1)">
+            <Icone nome="chevron" class="volta" />
+          </button>
+          <span aria-live="polite" class="pag">Página {{ paginaAtual }} de {{ total || "…" }}</span>
+          <button class="botao icone" :disabled="paginaAtual >= total || renderizando" aria-label="Próxima página" title="Próxima página" @click="mostrar(paginaAtual + 1)">
+            <Icone nome="chevron" />
+          </button>
         </div>
         <form class="busca" role="search" @submit.prevent="buscar">
           <label class="visualmente-oculto" for="busca-autos">Buscar nos autos</label>
           <input id="busca-autos" v-model="consulta" type="search" placeholder="Buscar nos autos" />
-          <button class="botao" type="submit">Buscar</button>
+          <button class="botao" type="submit"><Icone nome="buscar" :tamanho="16" />Buscar</button>
         </form>
-        <button ref="fecharBtn" class="botao" @click="emit('fechar')">Fechar</button>
+        <button ref="fecharBtn" class="botao" @click="emit('fechar')"><Icone nome="fechar" :tamanho="16" />Fechar</button>
       </header>
 
       <div class="corpo">
@@ -169,6 +194,7 @@ onBeforeUnmount(() => {
             <span>{{ r.trecho }}</span>
           </button>
         </aside>
+        <Carregando v-if="(abrindo || renderizando) && !erro" sobreposto :texto="abrindo ? 'Abrindo os autos…' : 'Carregando a página…'" />
         <div ref="area" class="area">
           <p v-if="erro" class="aviso erro">{{ erro }}</p>
           <div class="folha">
@@ -193,13 +219,20 @@ onBeforeUnmount(() => {
   background: rgba(28, 37, 48, 0.55);
   display: grid;
   place-items: center;
-  z-index: 10;
+  z-index: 40;
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease);
 }
+.fundo.visivel { opacity: 1; }
+.fundo .janela { transform: translateY(10px) scale(0.98); transition: transform var(--dur-3) var(--ease); }
+.fundo.visivel .janela { transform: none; }
+.volta { transform: rotate(180deg); }
+.pag { font-size: var(--t-sm); min-width: 9rem; text-align: center; }
 .janela {
   width: min(1100px, 96vw);
   height: 92vh;
   background: var(--papel);
-  border-radius: var(--raio);
+  border-radius: var(--r-md);
   display: grid;
   grid-template-rows: auto 1fr;
   overflow: hidden;
@@ -217,7 +250,7 @@ onBeforeUnmount(() => {
 }
 .nav, .busca { display: flex; gap: 0.5rem; align-items: center; }
 .busca input { min-width: 16rem; width: auto; }
-.corpo { display: flex; min-height: 0; }
+.corpo { position: relative; display: flex; min-height: 0; }
 .resultados {
   width: 290px;
   overflow: auto;

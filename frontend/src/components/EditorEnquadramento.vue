@@ -5,6 +5,7 @@
 import { computed } from "vue";
 import type { DispositivoVisao } from "../api";
 import CampoBusca from "./CampoBusca.vue";
+import Icone from "./ui/Icone.vue";
 
 export interface LinhaEnquadramento {
   diploma: string;
@@ -69,19 +70,24 @@ function retirar(i: number) {
         </select>
         <small>O Estatuto não define a natureza: atribua-a pela semelhança de intensidade com as transgressões do RDPM.</small>
       </label>
-      <div><button type="button" class="botao discreto" @click="retirar(i)">Retirar este dispositivo</button></div>
+      <button type="button" class="botao icone retirar" :aria-label="'Retirar o dispositivo ' + (i + 1)" title="Retirar este dispositivo" @click="retirar(i)"><Icone nome="lixeira" :tamanho="16" /></button>
     </div>
     <div>
-      <button type="button" class="botao" :data-teste="teste + '-mais'" @click="acrescentar">Acrescentar dispositivo</button>
+      <button type="button" class="botao" :data-teste="teste + '-mais'" @click="acrescentar"><Icone nome="mais" :tamanho="16" />Acrescentar dispositivo</button>
     </div>
   </div>
 </template>
 
 <style scoped>
 .enq { display: grid; gap: 0.8rem; }
-.linha { display: grid; gap: 0.5rem; padding: 0.8rem; border: 1px solid var(--linha); border-radius: var(--raio); background: #fff; }
-.diploma { border: 0; padding: 0; margin: 0; display: flex; gap: 1.2rem; flex-wrap: wrap; }
-.diploma legend { font-weight: 600; margin-bottom: 0.3rem; }
+.linha {
+  position: relative; display: grid; gap: 0.55rem; padding: 0.75rem 3rem 0.8rem 0.85rem;
+  border: 1px solid var(--linha); border-radius: var(--r-sm); background: var(--superficie-2);
+}
+.retirar { position: absolute; top: 0.4rem; right: 0.4rem; }
+.diploma { border: 0; padding: 0; margin: 0; display: flex; gap: 1.2rem; flex-wrap: wrap; font-size: var(--t-sm); }
+.diploma label { display: inline-flex; gap: 0.35rem; align-items: center; }
+.diploma legend { font-weight: 600; margin-bottom: 0.3rem; padding: 0; }
 .natureza { display: grid; gap: 0.25rem; max-width: 34rem; }
 .natureza select { max-width: 14rem; }
 .natureza small { color: var(--tinta-suave); }

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import type { MinutaVisao } from "../../bindings/github.com/DiogoBrazil/sys-executor/internal/workflow/models";
 import { aprovar, estado, salvarMinuta, solicitarAjuste } from "../estado";
+import Icone from "./ui/Icone.vue";
 
 // emRevisao: a minuta passou pela validação e aguarda o usuário (V4 §31.3).
 // Fora disso (ajuste ou validação em curso) ela é só leitura.
@@ -36,6 +37,22 @@ const texto = computed(() =>
     .trim(),
 );
 
+// Prévia em tela cheia (Esc volta). O mesmo elemento muda de lugar: nada é
+// duplicado na página.
+const cheia = ref(false);
+function tecla(e: KeyboardEvent) {
+  if (e.key === "Escape") cheia.value = false;
+}
+watch(cheia, (c) => {
+  if (c) document.addEventListener("keydown", tecla);
+  else document.removeEventListener("keydown", tecla);
+  document.body.classList.toggle("com-janela", c);
+});
+onBeforeUnmount(() => {
+  document.removeEventListener("keydown", tecla);
+  if (cheia.value) document.body.classList.remove("com-janela");
+});
+
 async function copiar() {
   try {
     await navigator.clipboard.writeText(texto.value);
@@ -64,33 +81,19 @@ function partes(t: string): { texto: string; pendente: boolean }[] {
         {{ minuta.camposPendentes }} campo(s) a preencher
       </span>
       <button type="button" class="botao" data-teste="minuta-copiar" @click="copiar">
-        {{ copiado ? "Texto copiado" : "Copiar o texto" }}
+        <Icone :nome="copiado ? 'check' : 'documento'" :tamanho="16" />{{ copiado ? "Texto copiado" : "Copiar o texto" }}
       </button>
     </header>
 
-    <div class="aviso" role="note" data-teste="minuta-aviso">
-      <p>
-        <strong>Atenção — revisão obrigatória:</strong> esta minuta é um documento de apoio. Confira integralmente os
-        fatos, as provas, a fundamentação, os enquadramentos jurídicos, os cálculos e as conclusões antes de utilizá-la.
-        A revisão, a aprovação e a decisão final cabem à autoridade competente.
-      </p>
-    </div>
-
-    <div v-if="minuta.achados?.length" class="pendencias falhas" role="alert" data-teste="minuta-achados">
-      <h3>A validação automática encontrou falhas que não pôde corrigir</h3>
-      <ul>
-        <li v-for="(a, i) in minuta.achados" :key="i">{{ a }}</li>
-      </ul>
-    </div>
-
-    <div v-if="minuta.pendencias?.length" class="pendencias" data-teste="minuta-pendencias">
-      <h3>O que conferir ou completar</h3>
-      <ul>
-        <li v-for="(p, i) in minuta.pendencias" :key="i">{{ p }}</li>
-      </ul>
-    </div>
-
-    <article class="folha">
+    <div class="colunas">
+    <div class="leitor" :class="{ cheia }">
+      <div class="leitor-barra">
+        <span>Prévia da minuta</span>
+        <button type="button" class="botao" data-teste="minuta-tela-cheia" @click="cheia = !cheia">
+          <Icone :nome="cheia ? 'fechar' : 'expandir'" :tamanho="16" />{{ cheia ? "Sair da tela cheia" : "Ler em tela cheia" }}
+        </button>
+      </div>
+      <article class="folha">
       <template v-for="(b, i) in minuta.blocos" :key="i">
         <h3 v-if="b.tipo === 'TITULO'" class="titulo">{{ b.texto }}</h3>
         <h4 v-else-if="b.tipo === 'SECAO'" class="secao">{{ b.texto }}</h4>
@@ -118,13 +121,36 @@ function partes(t: string): { texto: string; pendente: boolean }[] {
         </div>
       </template>
     </article>
+    </div>
+
+    <aside class="lado">
+    <div class="callout" role="note" data-teste="minuta-aviso">
+      <Icone nome="alerta" class="callout-icone" />
+      <p>
+        <strong>Atenção — revisão obrigatória:</strong> esta minuta é um documento de apoio. Confira integralmente os
+        fatos, as provas, a fundamentação, os enquadramentos jurídicos, os cálculos e as conclusões antes de utilizá-la.
+        A revisão, a aprovação e a decisão final cabem à autoridade competente.
+      </p>
+    </div>
+    <div v-if="minuta.achados?.length" class="pendencias falhas" role="alert" data-teste="minuta-achados">
+      <h3>A validação automática encontrou falhas que não pôde corrigir</h3>
+      <ul>
+        <li v-for="(a, i) in minuta.achados" :key="i">{{ a }}</li>
+      </ul>
+    </div>
+    <div v-if="minuta.pendencias?.length" class="pendencias" data-teste="minuta-pendencias">
+      <h3>O que conferir ou completar</h3>
+      <ul>
+        <li v-for="(p, i) in minuta.pendencias" :key="i">{{ p }}</li>
+      </ul>
+    </div>
     <section v-if="emRevisao" class="revisao" aria-label="Revisão da minuta" data-teste="minuta-revisao">
       <div class="grupo">
         <h3>Arquivos para conferência</h3>
         <p class="dica">O DOCX é editável; o PDF serve para conferir a aparência. Nenhum dos dois leva assinatura.</p>
         <div class="linha-acoes">
-          <button type="button" class="botao" :disabled="estado.ocupado" data-teste="minuta-docx" @click="salvar('docx')">Salvar DOCX</button>
-          <button type="button" class="botao" :disabled="estado.ocupado" data-teste="minuta-pdf" @click="salvar('pdf')">Salvar PDF</button>
+          <button type="button" class="botao" :disabled="estado.ocupado" data-teste="minuta-docx" @click="salvar('docx')"><Icone nome="documento" :tamanho="16" />Salvar DOCX</button>
+          <button type="button" class="botao" :disabled="estado.ocupado" data-teste="minuta-pdf" @click="salvar('pdf')"><Icone nome="pdf" :tamanho="16" />Salvar PDF</button>
           <span v-if="salvos.length" class="feito" role="status" data-teste="minuta-salvo">
             Arquivo salvo ({{ salvos.map((f) => f.toUpperCase()).join(" e ") }}).
           </span>
@@ -181,11 +207,45 @@ function partes(t: string): { texto: string; pendente: boolean }[] {
       Os parágrafos com a barra lateral foram redigidos pela IA a partir dos trechos indicados; o restante é montado pelo
       aplicativo com as suas respostas e o cálculo oficial.
     </p>
+    </aside>
+    </div>
   </section>
 </template>
 
 <style scoped>
 .minuta { display: grid; gap: 0.9rem; }
+.colunas { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); gap: 1.2rem; align-items: start; }
+.lado { display: grid; gap: 0.9rem; min-width: 0; }
+.leitor {
+  position: sticky;
+  top: 1rem;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: calc(100vh - 2rem);
+  border: 1px solid var(--linha);
+  border-radius: var(--r-md);
+  background: var(--superficie-2);
+  overflow: hidden;
+  min-width: 0;
+}
+.leitor-barra {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+  padding: 0.5rem 0.6rem 0.5rem 1rem; border-bottom: 1px solid var(--linha); background: var(--superficie);
+  font-size: var(--t-sm); font-weight: 600; color: var(--tinta-suave);
+}
+.leitor-barra .botao { min-height: 2rem; padding: 0.3rem 0.75rem; font-size: var(--t-sm); }
+.leitor .folha { overflow: auto; margin: 0; border: 0; border-radius: 0; box-shadow: none; overscroll-behavior: contain; }
+.leitor.cheia {
+  position: fixed; inset: 0; z-index: 35; max-height: none; border-radius: 0; border: 0;
+  background: rgba(27, 36, 48, 0.5); animation: entra var(--dur-3) var(--ease);
+}
+.leitor.cheia .leitor-barra { justify-content: center; gap: 1.2rem; }
+.leitor.cheia .folha { width: min(900px, 100%); margin: 1.2rem auto; border-radius: var(--r-sm); box-shadow: var(--sombra-2); }
+@keyframes entra { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 1200px) {
+  .colunas { grid-template-columns: 1fr; }
+  .leitor { position: relative; top: 0; max-height: 75vh; }
+}
 .topo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem; }
 .topo h2 { margin: 0; margin-right: auto; }
 .selo {
@@ -201,7 +261,7 @@ function partes(t: string): { texto: string; pendente: boolean }[] {
 .pendencias.falhas { border-color: var(--erro-linha); background: var(--erro-claro); }
 .revisao {
   display: grid;
-  gap: 1.2rem;
+  gap: 1.1rem;
   background: var(--superficie);
   border: 1px solid var(--linha);
   border-radius: var(--r-md);

@@ -40,7 +40,7 @@ export const cadastro = {
   salvar: (_c: Cadastro) => r(), anexar: (_p: string) => r(), anexarSEI: (_p: string, _d: string[]) => r(),
   remover: (_p: string, _a: string) => r(), mover: (_p: string, _a: string, _d: number) => r(), concluir: r,
   catalogo: (): Promise<DispositivoVisao[]> => Promise.resolve([
-    { id: "RDPM-17-XI", diploma: "RDPM", artigo: 17, inciso: "XI", alinea: "", texto: "empregar força ou medida desnecessária em ato de serviço, ainda que não resulte dano", natureza: "GRAVE", referencia: "art. 17, inciso XI, do RDPM" },
+    { id: "RDPM-17-XI", diploma: "RDPM", artigo: 17, inciso: "XI", alinea: "", texto: "empregar força ou medida desnecessária em ato de serviço, ainda que não resulte dano", natureza: "GRAVE", referencia: "art. 17, inciso XI, do RDPM", rotulo: "art. 17, XI — empregar força ou medida desnecessária em ato de serviço, ainda que não resulte dano" },
     { id: "RDPM-16-V", diploma: "RDPM", artigo: 16, inciso: "V", alinea: "", texto: "faltar ao serviço", natureza: "MEDIA", referencia: "art. 16, inciso V, do RDPM" },
   ] as any),
 };

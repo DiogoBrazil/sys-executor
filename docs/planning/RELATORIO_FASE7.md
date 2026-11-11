@@ -34,4 +34,4 @@
 
 ## A fazer
 - SR (título "RELATÓRIO DE SINDICÂNCIA REGULAR", alíneas, estrutura própria).
-- Decisões do usuário listadas no guia §6.0, item 4.
+- Decisões do usuário listadas no guia §6.0, item 2.
