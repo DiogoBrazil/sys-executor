@@ -86,6 +86,15 @@ vi.mock("./api", () => ({
   tarefa: {
     revisar: (id: string) => { chamadas.push("revisar:" + id); return resp(visao("DELIMITANDO")); },
     retomar: () => { chamadas.push("retomar"); return resp(visao("DELIMITANDO")); },
+    solicitarAjuste: (t: string) => { chamadas.push("ajuste:" + t); return resp(visao("AJUSTANDO", { minuta: visaoAtual.minuta })); },
+    aprovar: () => { chamadas.push("aprovar"); return resp(visao("FINALIZADA", { terminal: true })); },
+    salvarMinuta: (f: string) => {
+      chamadas.push("salvar:" + f);
+      if (f === "pdf") {
+        return Promise.resolve({ visao: visaoAtual, erro: { codigo: "EXP-002", titulo: "Gerador de PDF não encontrado", mensagem: "m", acao: "a" }, salvo: false, formato: f });
+      }
+      return Promise.resolve({ visao: visaoAtual, erro: null, salvo: true, formato: f });
+    },
   },
   ia: {
     estado: () => { chamadas.push("ia"); return Promise.resolve(iaAtual); },
@@ -614,6 +623,81 @@ describe("F4 — revisão, retomada e painel", () => {
     await w.find('[data-teste="revisar-resultado:IMP-1"]').trigger("click");
     await flushPromises();
     expect(chamadas).toContain("revisar:resultado:IMP-1");
+  });
+});
+
+// V4 §§26.3 e 31.3: a minuta aparece com o aviso de revisão obrigatória, os
+// campos a preencher realçados e as fontes dos trechos redigidos pela IA.
+describe("F6 — minuta", () => {
+  it("mostra a minuta, o aviso de revisão, as pendências e as fontes", async () => {
+    visaoAtual = visao("AGUARDANDO_REVISAO", {
+      minuta: {
+        validada: true, versao: 2, achados: [], camposPendentes: 1, pendencias: ["Falta redigir a fundamentação."],
+        ajustes: [{ pedido: "Detalhe o relatório.", resultado: "Ajuste aplicado em: relatório.", aplicado: true }],
+        blocos: [
+          { tipo: "TITULO", texto: "JULGAMENTO DE PADS", origem: "FIXO", pendente: false, fontes: [] },
+          { tipo: "CABECALHO", texto: "Referência: PADS nº [A PREENCHER]", origem: "FIXO", pendente: true, fontes: [] },
+          { tipo: "PARAGRAFO", texto: "A testemunha declarou a ausência.", origem: "IA", pendente: false, fontes: [{ rotulo: "Termo, pág. 2", pagina: 2, inicio: 0, fim: 5, trecho: "t" }] },
+        ],
+      },
+    });
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find("h1").text()).toBe("Minuta pronta para revisão");
+    expect(w.find('[data-teste="em-revisao"]').text()).toContain("não substitui a sua revisão");
+    expect(w.find('[data-teste="atividade"]').exists()).toBe(false); // nada "em andamento" enquanto espera o usuário
+    const m = w.find('[data-teste="minuta"]');
+    expect(m.find('[data-teste="minuta-versao"]').text()).toContain("versão 2");
+    expect(m.find('[data-teste="minuta-validada"]').exists()).toBe(true);
+    expect(m.find('[data-teste="minuta-ajustes"]').text()).toContain("Ajuste aplicado em: relatório.");
+    expect(m.text()).toContain("JULGAMENTO DE PADS");
+    expect(m.find('[data-teste="minuta-aviso"]').text()).toContain("revisão obrigatória");
+    expect(m.find('[data-teste="minuta-pendentes"]').text()).toContain("1 campo(s) a preencher");
+    expect(m.find('[data-teste="minuta-pendencias"]').text()).toContain("Falta redigir a fundamentação.");
+    expect(m.find("mark").text()).toBe("[A PREENCHER]");
+    expect(m.find(".bloco.ia .fonte").text()).toBe("Termo, pág. 2");
+
+    // Arquivos: o DOCX é salvo; o PDF sem o componente mostra o erro e não conta como salvo.
+    await m.find('[data-teste="minuta-docx"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain("salvar:docx");
+    expect(m.find('[data-teste="minuta-salvo"]').text()).toContain("DOCX");
+    await m.find('[data-teste="minuta-pdf"]').trigger("click");
+    await flushPromises();
+    expect(w.text()).toContain("Gerador de PDF não encontrado");
+    expect(m.find('[data-teste="minuta-salvo"]').text()).not.toContain("PDF");
+
+    // Ajuste: pedido curto demais não é enviado; o texto some do campo depois do envio.
+    const botaoAjuste = m.find('[data-teste="minuta-ajustar"]');
+    expect(botaoAjuste.attributes("disabled")).toBeDefined();
+    await m.find('[data-teste="minuta-pedido"]').setValue("No relatório, cite a escala de serviço.");
+    await botaoAjuste.trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain("ajuste:No relatório, cite a escala de serviço.");
+    // Durante o ajuste a minuta anterior fica só para leitura.
+    expect(w.find('[data-teste="minuta"]').exists()).toBe(true);
+    expect(w.find('[data-teste="minuta-revisao"]').exists()).toBe(false);
+  });
+
+  it("finalizar exige confirmação e avisa quando nada foi salvo", async () => {
+    visaoAtual = visao("AGUARDANDO_REVISAO", {
+      minuta: { validada: false, versao: 1, achados: ["a punição escrita difere do cálculo oficial"], camposPendentes: 0, pendencias: [], ajustes: [],
+        blocos: [{ tipo: "TITULO", texto: "JULGAMENTO DE PADS", origem: "FIXO", pendente: false, fontes: [] }] },
+    });
+    const w = mount(App);
+    await flushPromises();
+    expect(w.find('[data-teste="minuta-achados"]').text()).toContain("difere do cálculo oficial");
+    expect(w.find('[data-teste="minuta-validada"]').exists()).toBe(false);
+    await w.find('[data-teste="minuta-aprovar"]').trigger("click");
+    expect(chamadas).not.toContain("aprovar");
+    expect(w.find('[data-teste="minuta-confirmar"]').text()).toContain("não pode ser retomada");
+    expect(w.find('[data-teste="minuta-nao-salva"]').exists()).toBe(true);
+    await w.find('[data-teste="minuta-confirmar-aprovar"]').trigger("click");
+    await flushPromises();
+    expect(chamadas).toContain("aprovar");
+    expect(w.find("h1").text()).toBe("Tarefa finalizada");
+    expect(w.find('[data-teste="finalizada"]').text()).toContain("foram descartados");
+    expect(w.find('[data-teste="minuta"]').exists()).toBe(false);
   });
 });
 

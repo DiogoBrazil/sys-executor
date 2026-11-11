@@ -18,6 +18,7 @@ export {
     ModeloChatGPTIA,
     ModeloIA,
     Resposta,
+    RespostaArquivo,
     RespostaBusca,
     RespostaDestaque,
     RespostaEndereco,

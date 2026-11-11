@@ -3,6 +3,7 @@ import { computed, defineAsyncComponent, ref } from "vue";
 import { abrirConfigIA, cancelar, estado, retomar, revisar, voltarAoInicio } from "../estado";
 import AvisoErro from "../components/AvisoErro.vue";
 import CartaoPergunta from "../components/CartaoPergunta.vue";
+import MinutaPrevia from "../components/MinutaPrevia.vue";
 import PainelAnalise from "../components/PainelAnalise.vue";
 import PainelAutos from "../components/PainelAutos.vue";
 // O PDF.js só é carregado quando o usuário abre os autos.
@@ -17,6 +18,9 @@ function abrir(pagina: number, inicio: number, fim: number) {
 
 // Falhas do serviço de IA (chave, conta, modelo, cota, conexão): atalho para as configurações.
 const erroDeIA = computed(() => (v.value.erro?.codigo ?? "").startsWith("IA-"));
+
+// A minuta validada aguarda o usuário (V4 §31.3).
+const emRevisao = computed(() => v.value.estado === "AGUARDANDO_REVISAO");
 
 const percentual = computed(() => {
   const p = v.value.progresso;
@@ -43,7 +47,8 @@ async function confirmarCancelamento() {
 <template>
   <main class="proc">
     <section class="painel">
-      <h1 v-if="!v.terminal">Processando os autos</h1>
+      <h1 v-if="emRevisao">Minuta pronta para revisão</h1>
+      <h1 v-else-if="!v.terminal">Processando os autos</h1>
       <h1 v-else>{{ tituloFinal }}</h1>
 
       <CartaoPergunta v-if="v.pergunta" :pergunta="v.pergunta" @abrir="abrir" />
@@ -61,8 +66,16 @@ async function confirmarCancelamento() {
       <div v-else-if="v.parada" class="aviso" role="status" data-teste="parada">
         <h3>As próximas etapas ainda não estão disponíveis</h3>
         <p>
-          A redação da minuta chega nas próximas versões do aplicativo.
+          A redação da minuta deste procedimento chega nas próximas versões do aplicativo.
           Você pode conferir a análise abaixo, alterar respostas, consultar os autos e cancelar a tarefa quando terminar.
+        </p>
+      </div>
+
+      <div v-else-if="emRevisao" class="aviso" role="status" data-teste="em-revisao">
+        <h3>Leia a minuta inteira antes de usar</h3>
+        <p>
+          Ela passou pela validação automática, que não substitui a sua revisão. Você pode salvar o DOCX e o PDF, pedir
+          ajustes quantas vezes precisar e alterar respostas. A tarefa só termina quando você mandar finalizar.
         </p>
       </div>
 
@@ -89,6 +102,9 @@ async function confirmarCancelamento() {
       </div>
 
       <AvisoErro v-if="!v.terminal && v.erro && !v.parada" :erro="v.erro" tipo="aviso" />
+      <p v-if="v.estado === 'FINALIZADA'" class="nota" data-teste="finalizada">
+        Os autos, a análise e a minuta foram descartados deste computador. Os arquivos que você salvou permanecem onde os gravou.
+      </p>
       <AvisoErro v-if="v.terminal && v.erro && v.estado === 'FALHA'" :erro="v.erro" />
       <p v-else-if="v.terminal && v.erro" class="nota">{{ v.erro.mensagem }}</p>
       <AvisoErro v-if="v.aviso" :erro="v.aviso" tipo="aviso" />
@@ -114,6 +130,7 @@ async function confirmarCancelamento() {
       <button v-if="v.autos && !v.terminal" class="botao" data-teste="consultar-autos" @click="abrir(1, 0, 0)">
         Consultar os autos
       </button>
+      <MinutaPrevia v-if="v.minuta && !v.terminal" :minuta="v.minuta" :em-revisao="emRevisao" @abrir="abrir" />
       <PainelAnalise v-if="v.painel && !v.terminal" :painel="v.painel" @abrir="abrir" />
       <section v-if="v.respostas?.length && !v.terminal" class="respostas" aria-label="Respostas dadas" data-teste="respostas">
         <h2>Suas respostas</h2>

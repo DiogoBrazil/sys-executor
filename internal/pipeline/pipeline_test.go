@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"image"
 	"os"
@@ -52,16 +53,28 @@ func montar(t *testing.T, conf float64) (*workflow.Gerenciador, string) {
 	return g, raiz
 }
 
+// prazoEspera: -race no CI deixa o pdfium (wasm) lento.
+var prazoEspera = 4 * time.Minute
+
 func esperar(t *testing.T, g *workflow.Gerenciador, cond func(*workflow.Visao) bool) *workflow.Visao {
 	t.Helper()
-	fim := time.Now().Add(4 * time.Minute) // -race no CI deixa o pdfium (wasm) lento
+	prazo := prazoEspera
+	if d, err := time.ParseDuration(os.Getenv("SYSEXEC_TESTE_PRAZO")); err == nil {
+		prazo = d // diagnóstico local de um teste parado
+	}
+	fim := time.Now().Add(prazo) // -race no CI deixa o pdfium (wasm) lento
 	for time.Now().Before(fim) {
 		if v := g.Visao(); v != nil && cond(v) {
 			return v
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	t.Fatalf("tempo esgotado: %+v", g.Visao())
+	v := g.Visao()
+	if v != nil && v.Pergunta != nil {
+		b, _ := json.Marshal(v.Pergunta.Campos)
+		t.Fatalf("tempo esgotado na pergunta %q (%s) %.600s: %+v", v.Pergunta.ID, v.Pergunta.Titulo, b, v)
+	}
+	t.Fatalf("tempo esgotado: %+v", v)
 	return nil
 }
 

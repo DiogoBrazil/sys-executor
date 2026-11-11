@@ -29,6 +29,7 @@ type Visao struct {
 	Retomavel bool            `json:"retomavel"` // parada por erro recuperável: "Tentar novamente"
 	Atividade string          `json:"atividade"`
 	Painel    *PainelAnalise  `json:"painel"`
+	Minuta    *MinutaVisao    `json:"minuta"`
 	Respostas []RespostaVisao `json:"respostas"`
 	// Sequencia cresce a cada visão montada. A interface descarta uma visão
 	// mais antiga que a que já mostra: a resposta de um comando pode chegar

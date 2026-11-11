@@ -75,6 +75,10 @@ func (p *Pipeline) calcular(_ context.Context, c *workflow.Contexto) (workflow.E
 	if e == nil || e.Julgamento == nil {
 		return workflow.Calculando, erros.Novo(erros.TarefaOrdemInvalida)
 	}
+	if d.Minuta != nil { // o cálculo vai ser conferido de novo: a minuta é refeita depois
+		d.Minuta = nil
+		c.PublicarMinuta(nil)
+	}
 	if len(e.Julgamento.Procedentes(nil)) == 0 {
 		d.Calculo = nil
 		c.Esquecer(perguntaCalculo)

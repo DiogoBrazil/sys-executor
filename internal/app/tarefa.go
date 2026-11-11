@@ -7,9 +7,11 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
 	"github.com/DiogoBrazil/sys-executor/internal/session"
@@ -35,11 +37,33 @@ type TarefaService struct {
 	lerArquivo func(string) ([]byte, error)
 	// SelecionarArquivos: diálogo de vários PDFs do cadastro de peças.
 	SelecionarArquivos SeletorArquivos
+	// Documento gera o DOCX ou o PDF da minuta em revisão.
+	Documento GeradorDocumento
+	// SelecionarDestino: diálogo "Salvar como" ("" se cancelado).
+	SelecionarDestino SeletorDestino
+	gravarArquivo     func(string, []byte) error
+}
+
+// GeradorDocumento produz o arquivo da minuta e sugere o nome.
+type GeradorDocumento func(ctx context.Context, dados any, pasta, formato string) (conteudo []byte, nome string, err error)
+
+// SeletorDestino abre o diálogo "Salvar como" com o nome sugerido.
+type SeletorDestino func(nomeSugerido, formato string) (string, error)
+
+// RespostaArquivo é o retorno de SalvarMinuta.
+type RespostaArquivo struct {
+	Visao *workflow.Visao     `json:"visao"`
+	Erro  *workflow.ErroVisao `json:"erro"`
+	// Salvo: o arquivo foi gravado (false também quando o usuário fechou o
+	// diálogo). Formato: "docx" ou "pdf".
+	Salvo   bool   `json:"salvo"`
+	Formato string `json:"formato"`
 }
 
 // NovaTarefaService cria o serviço.
 func NovaTarefaService(g *workflow.Gerenciador, sel SeletorPDF) *TarefaService {
-	return &TarefaService{g: g, selecionar: sel, lerArquivo: os.ReadFile}
+	return &TarefaService{g: g, selecionar: sel, lerArquivo: os.ReadFile,
+		gravarArquivo: func(caminho string, b []byte) error { return os.WriteFile(caminho, b, 0o600) }}
 }
 
 func (s *TarefaService) responder(v *workflow.Visao, err error) Resposta {
@@ -122,6 +146,52 @@ func (s *TarefaService) InformarCredenciais(pedidoID, usuario, senha, orgao, pro
 // reautenticação pedidos pelo SEI.
 func (s *TarefaService) InformarSegredo(pedidoID, valor string) Resposta {
 	return s.responder(s.g.Fornecer(pedidoID, workflow.RespostaPedido{Segredo: session.NovoSegredo([]byte(strings.TrimSpace(valor)))}))
+}
+
+// SolicitarAjuste envia o pedido de ajuste da minuta em revisão (V4 §31.3).
+func (s *TarefaService) SolicitarAjuste(texto string) Resposta {
+	return s.responder(s.g.SolicitarAjuste(texto))
+}
+
+// Aprovar finaliza a tarefa: descarta os autos, a análise e a minuta. Os
+// arquivos já salvos pelo usuário permanecem (V4 §29.1).
+func (s *TarefaService) Aprovar() Resposta { return s.responder(s.g.Aprovar()) }
+
+// SalvarMinuta gera o DOCX ou o PDF da minuta em revisão e grava no local
+// que o usuário escolher. O caminho escolhido não é guardado.
+func (s *TarefaService) SalvarMinuta(formato string) RespostaArquivo {
+	falha := func(err error) RespostaArquivo {
+		return RespostaArquivo{Visao: s.g.Visao(), Erro: workflow.VisaoErro(erros.De(err)), Formato: formato}
+	}
+	dados, pasta, ok := s.g.EmRevisao()
+	if !ok || s.Documento == nil || s.SelecionarDestino == nil {
+		return falha(erros.Novo(erros.TarefaOrdemInvalida))
+	}
+	ctx, cancelar := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancelar()
+	conteudo, nome, err := s.Documento(ctx, dados, pasta, formato)
+	if err != nil {
+		return falha(err)
+	}
+	caminho, err := s.SelecionarDestino(nome, formato)
+	if err != nil {
+		return falha(erros.Com(erros.ArquivoEscrita, err))
+	}
+	if caminho == "" { // usuário fechou o diálogo
+		return RespostaArquivo{Visao: s.g.Visao(), Formato: formato}
+	}
+	if !strings.HasSuffix(strings.ToLower(caminho), "."+formato) {
+		caminho += "." + formato
+	}
+	if err := s.gravarArquivo(caminho, conteudo); err != nil {
+		// Sem o caminho na causa (pode conter nome de pessoa ou de processo).
+		causa := errors.Unwrap(err)
+		if causa == nil {
+			causa = err
+		}
+		return falha(erros.Com(erros.ArquivoEscrita, causa))
+	}
+	return RespostaArquivo{Visao: s.g.Visao(), Salvo: true, Formato: formato}
 }
 
 // Cancelar interrompe a tarefa e descarta os temporários.

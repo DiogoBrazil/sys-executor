@@ -6,6 +6,38 @@
 import { Create as $Create } from "@wailsio/runtime";
 
 /**
+ * AjusteVisao é um pedido de ajuste e o seu resultado.
+ */
+export class AjusteVisao {
+    "pedido": string;
+    "resultado": string;
+    "aplicado": boolean;
+
+    /** Creates a new AjusteVisao instance. */
+    constructor($$source: Partial<AjusteVisao> = {}) {
+        if (!("pedido" in $$source)) {
+            this["pedido"] = "";
+        }
+        if (!("resultado" in $$source)) {
+            this["resultado"] = "";
+        }
+        if (!("aplicado" in $$source)) {
+            this["aplicado"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AjusteVisao instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AjusteVisao {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new AjusteVisao($$parsedSource as Partial<AjusteVisao>);
+    }
+}
+
+/**
  * ArquivoCadastro é um arquivo de uma peça (o conteúdo fica na sessão).
  */
 export class ArquivoCadastro {
@@ -50,6 +82,54 @@ export class ArquivoCadastro {
     static createFrom($$source: any = {}): ArquivoCadastro {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new ArquivoCadastro($$parsedSource as Partial<ArquivoCadastro>);
+    }
+}
+
+/**
+ * BlocoMinuta é um bloco da minuta na interface (título, seção, parágrafo…).
+ */
+export class BlocoMinuta {
+    "tipo": string;
+    "texto": string;
+
+    /**
+     * Origem: "FIXO" (composto pelo aplicativo) ou "IA" (redigido pela IA).
+     */
+    "origem": string;
+    "pendente": boolean;
+    "fontes": Fonte[];
+
+    /** Creates a new BlocoMinuta instance. */
+    constructor($$source: Partial<BlocoMinuta> = {}) {
+        if (!("tipo" in $$source)) {
+            this["tipo"] = "";
+        }
+        if (!("texto" in $$source)) {
+            this["texto"] = "";
+        }
+        if (!("origem" in $$source)) {
+            this["origem"] = "";
+        }
+        if (!("pendente" in $$source)) {
+            this["pendente"] = false;
+        }
+        if (!("fontes" in $$source)) {
+            this["fontes"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new BlocoMinuta instance from a string or object.
+     */
+    static createFrom($$source: any = {}): BlocoMinuta {
+        const $$createField4_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("fontes" in $$parsedSource) {
+            $$parsedSource["fontes"] = $$createField4_0($$parsedSource["fontes"]);
+        }
+        return new BlocoMinuta($$parsedSource as Partial<BlocoMinuta>);
     }
 }
 
@@ -128,11 +208,11 @@ export class Cadastro {
      * Creates a new Cadastro instance from a string or object.
      */
     static createFrom($$source: any = {}): Cadastro {
-        const $$createField1_0 = $$createType1;
-        const $$createField3_0 = $$createType3;
-        const $$createField5_0 = $$createType4;
-        const $$createField6_0 = $$createType4;
-        const $$createField8_0 = $$createType6;
+        const $$createField1_0 = $$createType3;
+        const $$createField3_0 = $$createType5;
+        const $$createField5_0 = $$createType6;
+        const $$createField6_0 = $$createType6;
+        const $$createField8_0 = $$createType8;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("pessoas" in $$parsedSource) {
             $$parsedSource["pessoas"] = $$createField1_0($$parsedSource["pessoas"]);
@@ -220,8 +300,8 @@ export class Campo {
      * Creates a new Campo instance from a string or object.
      */
     static createFrom($$source: any = {}): Campo {
-        const $$createField3_0 = $$createType8;
-        const $$createField10_0 = $$createType10;
+        const $$createField3_0 = $$createType10;
+        const $$createField10_0 = $$createType1;
         const $$createField11_0 = $$createType12;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("opcoes" in $$parsedSource) {
@@ -587,9 +667,9 @@ export class GrupoCampos {
      * Creates a new GrupoCampos instance from a string or object.
      */
     static createFrom($$source: any = {}): GrupoCampos {
-        const $$createField2_0 = $$createType4;
-        const $$createField3_0 = $$createType10;
-        const $$createField4_0 = $$createType4;
+        const $$createField2_0 = $$createType6;
+        const $$createField3_0 = $$createType1;
+        const $$createField4_0 = $$createType6;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("descricao" in $$parsedSource) {
             $$parsedSource["descricao"] = $$createField2_0($$parsedSource["descricao"]);
@@ -635,8 +715,8 @@ export class ItemPainel {
      * Creates a new ItemPainel instance from a string or object.
      */
     static createFrom($$source: any = {}): ItemPainel {
-        const $$createField2_0 = $$createType4;
-        const $$createField3_0 = $$createType10;
+        const $$createField2_0 = $$createType6;
+        const $$createField3_0 = $$createType1;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("linhas" in $$parsedSource) {
             $$parsedSource["linhas"] = $$createField2_0($$parsedSource["linhas"]);
@@ -717,6 +797,86 @@ export class MidiaResumo {
     static createFrom($$source: any = {}): MidiaResumo {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new MidiaResumo($$parsedSource as Partial<MidiaResumo>);
+    }
+}
+
+/**
+ * MinutaVisao é a minuta mostrada ao usuário para revisão (V4 §31.3).
+ */
+export class MinutaVisao {
+    "blocos": BlocoMinuta[];
+    "pendencias": string[];
+    "camposPendentes": number;
+
+    /**
+     * Validada: passou pela validação automática (V4 §42) sem falha.
+     */
+    "validada": boolean;
+
+    /**
+     * Achados: falhas da validação que não puderam ser corrigidas sozinhas.
+     */
+    "achados": string[];
+
+    /**
+     * Versao da minuta nesta tarefa (cresce a cada versão diferente).
+     */
+    "versao": number;
+
+    /**
+     * Ajustes pedidos nesta tarefa e o que foi feito (só memória).
+     */
+    "ajustes": AjusteVisao[];
+
+    /** Creates a new MinutaVisao instance. */
+    constructor($$source: Partial<MinutaVisao> = {}) {
+        if (!("blocos" in $$source)) {
+            this["blocos"] = [];
+        }
+        if (!("pendencias" in $$source)) {
+            this["pendencias"] = [];
+        }
+        if (!("camposPendentes" in $$source)) {
+            this["camposPendentes"] = 0;
+        }
+        if (!("validada" in $$source)) {
+            this["validada"] = false;
+        }
+        if (!("achados" in $$source)) {
+            this["achados"] = [];
+        }
+        if (!("versao" in $$source)) {
+            this["versao"] = 0;
+        }
+        if (!("ajustes" in $$source)) {
+            this["ajustes"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new MinutaVisao instance from a string or object.
+     */
+    static createFrom($$source: any = {}): MinutaVisao {
+        const $$createField0_0 = $$createType16;
+        const $$createField1_0 = $$createType6;
+        const $$createField4_0 = $$createType6;
+        const $$createField6_0 = $$createType18;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("blocos" in $$parsedSource) {
+            $$parsedSource["blocos"] = $$createField0_0($$parsedSource["blocos"]);
+        }
+        if ("pendencias" in $$parsedSource) {
+            $$parsedSource["pendencias"] = $$createField1_0($$parsedSource["pendencias"]);
+        }
+        if ("achados" in $$parsedSource) {
+            $$parsedSource["achados"] = $$createField4_0($$parsedSource["achados"]);
+        }
+        if ("ajustes" in $$parsedSource) {
+            $$parsedSource["ajustes"] = $$createField6_0($$parsedSource["ajustes"]);
+        }
+        return new MinutaVisao($$parsedSource as Partial<MinutaVisao>);
     }
 }
 
@@ -812,7 +972,7 @@ export class PainelAnalise {
      * Creates a new PainelAnalise instance from a string or object.
      */
     static createFrom($$source: any = {}): PainelAnalise {
-        const $$createField0_0 = $$createType16;
+        const $$createField0_0 = $$createType20;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("secoes" in $$parsedSource) {
             $$parsedSource["secoes"] = $$createField0_0($$parsedSource["secoes"]);
@@ -888,8 +1048,8 @@ export class PecaCadastro {
      * Creates a new PecaCadastro instance from a string or object.
      */
     static createFrom($$source: any = {}): PecaCadastro {
-        const $$createField5_0 = $$createType4;
-        const $$createField9_0 = $$createType18;
+        const $$createField5_0 = $$createType6;
+        const $$createField9_0 = $$createType22;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("pessoaIds" in $$parsedSource) {
             $$parsedSource["pessoaIds"] = $$createField5_0($$parsedSource["pessoaIds"]);
@@ -992,7 +1152,7 @@ export class PedidoVisao {
      * Creates a new PedidoVisao instance from a string or object.
      */
     static createFrom($$source: any = {}): PedidoVisao {
-        const $$createField2_0 = $$createType20;
+        const $$createField2_0 = $$createType24;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("alerta" in $$parsedSource) {
             $$parsedSource["alerta"] = $$createField2_0($$parsedSource["alerta"]);
@@ -1040,9 +1200,9 @@ export class PerguntaVisao {
      * Creates a new PerguntaVisao instance from a string or object.
      */
     static createFrom($$source: any = {}): PerguntaVisao {
-        const $$createField3_0 = $$createType8;
-        const $$createField4_0 = $$createType22;
-        const $$createField5_0 = $$createType24;
+        const $$createField3_0 = $$createType10;
+        const $$createField4_0 = $$createType26;
+        const $$createField5_0 = $$createType28;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("opcoes" in $$parsedSource) {
             $$parsedSource["opcoes"] = $$createField3_0($$parsedSource["opcoes"]);
@@ -1097,7 +1257,7 @@ export class PessoaCadastro {
      * Creates a new PessoaCadastro instance from a string or object.
      */
     static createFrom($$source: any = {}): PessoaCadastro {
-        const $$createField3_0 = $$createType4;
+        const $$createField3_0 = $$createType6;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("grafias" in $$parsedSource) {
             $$parsedSource["grafias"] = $$createField3_0($$parsedSource["grafias"]);
@@ -1214,9 +1374,9 @@ export class ResumoAutos {
      * Creates a new ResumoAutos instance from a string or object.
      */
     static createFrom($$source: any = {}): ResumoAutos {
-        const $$createField1_0 = $$createType26;
-        const $$createField2_0 = $$createType28;
-        const $$createField3_0 = $$createType30;
+        const $$createField1_0 = $$createType30;
+        const $$createField2_0 = $$createType32;
+        const $$createField3_0 = $$createType34;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("paginas" in $$parsedSource) {
             $$parsedSource["paginas"] = $$createField1_0($$parsedSource["paginas"]);
@@ -1254,7 +1414,7 @@ export class SecaoPainel {
      * Creates a new SecaoPainel instance from a string or object.
      */
     static createFrom($$source: any = {}): SecaoPainel {
-        const $$createField1_0 = $$createType32;
+        const $$createField1_0 = $$createType36;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("itens" in $$parsedSource) {
             $$parsedSource["itens"] = $$createField1_0($$parsedSource["itens"]);
@@ -1391,6 +1551,7 @@ export class Visao {
     "retomavel": boolean;
     "atividade": string;
     "painel": PainelAnalise | null;
+    "minuta": MinutaVisao | null;
     "respostas": RespostaVisao[];
 
     /**
@@ -1466,6 +1627,9 @@ export class Visao {
         if (!("painel" in $$source)) {
             this["painel"] = null;
         }
+        if (!("minuta" in $$source)) {
+            this["minuta"] = null;
+        }
         if (!("respostas" in $$source)) {
             this["respostas"] = [];
         }
@@ -1489,18 +1653,19 @@ export class Visao {
      * Creates a new Visao instance from a string or object.
      */
     static createFrom($$source: any = {}): Visao {
-        const $$createField6_0 = $$createType34;
-        const $$createField7_0 = $$createType36;
-        const $$createField8_0 = $$createType20;
-        const $$createField9_0 = $$createType20;
-        const $$createField10_0 = $$createType38;
-        const $$createField11_0 = $$createType40;
-        const $$createField12_0 = $$createType42;
-        const $$createField16_0 = $$createType44;
-        const $$createField17_0 = $$createType46;
-        const $$createField19_0 = $$createType48;
-        const $$createField20_0 = $$createType4;
-        const $$createField21_0 = $$createType50;
+        const $$createField6_0 = $$createType38;
+        const $$createField7_0 = $$createType40;
+        const $$createField8_0 = $$createType24;
+        const $$createField9_0 = $$createType24;
+        const $$createField10_0 = $$createType42;
+        const $$createField11_0 = $$createType44;
+        const $$createField12_0 = $$createType46;
+        const $$createField16_0 = $$createType48;
+        const $$createField17_0 = $$createType50;
+        const $$createField18_0 = $$createType52;
+        const $$createField20_0 = $$createType54;
+        const $$createField21_0 = $$createType6;
+        const $$createField22_0 = $$createType56;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("etapas" in $$parsedSource) {
             $$parsedSource["etapas"] = $$createField6_0($$parsedSource["etapas"]);
@@ -1526,71 +1691,80 @@ export class Visao {
         if ("painel" in $$parsedSource) {
             $$parsedSource["painel"] = $$createField16_0($$parsedSource["painel"]);
         }
+        if ("minuta" in $$parsedSource) {
+            $$parsedSource["minuta"] = $$createField17_0($$parsedSource["minuta"]);
+        }
         if ("respostas" in $$parsedSource) {
-            $$parsedSource["respostas"] = $$createField17_0($$parsedSource["respostas"]);
+            $$parsedSource["respostas"] = $$createField18_0($$parsedSource["respostas"]);
         }
         if ("cadastro" in $$parsedSource) {
-            $$parsedSource["cadastro"] = $$createField19_0($$parsedSource["cadastro"]);
+            $$parsedSource["cadastro"] = $$createField20_0($$parsedSource["cadastro"]);
         }
         if ("pendenciasCadastro" in $$parsedSource) {
-            $$parsedSource["pendenciasCadastro"] = $$createField20_0($$parsedSource["pendenciasCadastro"]);
+            $$parsedSource["pendenciasCadastro"] = $$createField21_0($$parsedSource["pendenciasCadastro"]);
         }
         if ("documentosSei" in $$parsedSource) {
-            $$parsedSource["documentosSei"] = $$createField21_0($$parsedSource["documentosSei"]);
+            $$parsedSource["documentosSei"] = $$createField22_0($$parsedSource["documentosSei"]);
         }
         return new Visao($$parsedSource as Partial<Visao>);
     }
 }
 
 // Private type creation functions
-const $$createType0 = PessoaCadastro.createFrom;
+const $$createType0 = Fonte.createFrom;
 const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = FatoCadastro.createFrom;
+const $$createType2 = PessoaCadastro.createFrom;
 const $$createType3 = $Create.Array($$createType2);
-const $$createType4 = $Create.Array($Create.Any);
-const $$createType5 = PecaCadastro.createFrom;
-const $$createType6 = $Create.Array($$createType5);
-const $$createType7 = OpcaoVisao.createFrom;
+const $$createType4 = FatoCadastro.createFrom;
+const $$createType5 = $Create.Array($$createType4);
+const $$createType6 = $Create.Array($Create.Any);
+const $$createType7 = PecaCadastro.createFrom;
 const $$createType8 = $Create.Array($$createType7);
-const $$createType9 = Fonte.createFrom;
+const $$createType9 = OpcaoVisao.createFrom;
 const $$createType10 = $Create.Array($$createType9);
 const $$createType11 = Condicao.createFrom;
 const $$createType12 = $Create.Nullable($$createType11);
 const $$createType13 = EnquadramentoCadastro.createFrom;
 const $$createType14 = $Create.Array($$createType13);
-const $$createType15 = SecaoPainel.createFrom;
+const $$createType15 = BlocoMinuta.createFrom;
 const $$createType16 = $Create.Array($$createType15);
-const $$createType17 = ArquivoCadastro.createFrom;
+const $$createType17 = AjusteVisao.createFrom;
 const $$createType18 = $Create.Array($$createType17);
-const $$createType19 = ErroVisao.createFrom;
-const $$createType20 = $Create.Nullable($$createType19);
-const $$createType21 = Campo.createFrom;
+const $$createType19 = SecaoPainel.createFrom;
+const $$createType20 = $Create.Array($$createType19);
+const $$createType21 = ArquivoCadastro.createFrom;
 const $$createType22 = $Create.Array($$createType21);
-const $$createType23 = GrupoCampos.createFrom;
-const $$createType24 = $Create.Array($$createType23);
-const $$createType25 = PaginaResumo.createFrom;
+const $$createType23 = ErroVisao.createFrom;
+const $$createType24 = $Create.Nullable($$createType23);
+const $$createType25 = Campo.createFrom;
 const $$createType26 = $Create.Array($$createType25);
-const $$createType27 = PecaResumo.createFrom;
+const $$createType27 = GrupoCampos.createFrom;
 const $$createType28 = $Create.Array($$createType27);
-const $$createType29 = MidiaResumo.createFrom;
+const $$createType29 = PaginaResumo.createFrom;
 const $$createType30 = $Create.Array($$createType29);
-const $$createType31 = ItemPainel.createFrom;
+const $$createType31 = PecaResumo.createFrom;
 const $$createType32 = $Create.Array($$createType31);
-const $$createType33 = Marco.createFrom;
+const $$createType33 = MidiaResumo.createFrom;
 const $$createType34 = $Create.Array($$createType33);
-const $$createType35 = Progresso.createFrom;
-const $$createType36 = $Create.Nullable($$createType35);
-const $$createType37 = PerguntaVisao.createFrom;
-const $$createType38 = $Create.Nullable($$createType37);
-const $$createType39 = PedidoVisao.createFrom;
+const $$createType35 = ItemPainel.createFrom;
+const $$createType36 = $Create.Array($$createType35);
+const $$createType37 = Marco.createFrom;
+const $$createType38 = $Create.Array($$createType37);
+const $$createType39 = Progresso.createFrom;
 const $$createType40 = $Create.Nullable($$createType39);
-const $$createType41 = ResumoAutos.createFrom;
+const $$createType41 = PerguntaVisao.createFrom;
 const $$createType42 = $Create.Nullable($$createType41);
-const $$createType43 = PainelAnalise.createFrom;
+const $$createType43 = PedidoVisao.createFrom;
 const $$createType44 = $Create.Nullable($$createType43);
-const $$createType45 = RespostaVisao.createFrom;
-const $$createType46 = $Create.Array($$createType45);
-const $$createType47 = Cadastro.createFrom;
+const $$createType45 = ResumoAutos.createFrom;
+const $$createType46 = $Create.Nullable($$createType45);
+const $$createType47 = PainelAnalise.createFrom;
 const $$createType48 = $Create.Nullable($$createType47);
-const $$createType49 = DocumentoSEI.createFrom;
-const $$createType50 = $Create.Array($$createType49);
+const $$createType49 = MinutaVisao.createFrom;
+const $$createType50 = $Create.Nullable($$createType49);
+const $$createType51 = RespostaVisao.createFrom;
+const $$createType52 = $Create.Array($$createType51);
+const $$createType53 = Cadastro.createFrom;
+const $$createType54 = $Create.Nullable($$createType53);
+const $$createType55 = DocumentoSEI.createFrom;
+const $$createType56 = $Create.Array($$createType55);

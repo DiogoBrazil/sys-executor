@@ -21,7 +21,10 @@ export const fontes = {
   buscar: (_c: string): Promise<RespostaBusca> => Promise.resolve({ ocorrencias: [], erro: null } as any),
 };
 export const responder = (_p: string, _o: string, _v: Record<string, string> = {}) => r();
-export const tarefa = { revisar: (_p: string) => r(), retomar: r };
+export const tarefa = {
+  revisar: (_p: string) => r(), retomar: r, solicitarAjuste: (_t: string) => r(), aprovar: r,
+  salvarMinuta: async (formato: string) => ({ ...(await r()), salvo: true, formato }),
+};
 const i = (): Promise<VisaoIA> => Promise.resolve(palco.ia);
 export const ia = {
   estado: i, salvarChave: (_c: string) => i(), removerChave: i, verificar: i, selecionarModelo: (_m: string) => i(),

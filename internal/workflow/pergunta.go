@@ -242,6 +242,38 @@ type ItemPainel struct {
 	Fontes   []Fonte  `json:"fontes"`
 }
 
+// BlocoMinuta é um bloco da minuta na interface (título, seção, parágrafo…).
+type BlocoMinuta struct {
+	Tipo  string `json:"tipo"`
+	Texto string `json:"texto"`
+	// Origem: "FIXO" (composto pelo aplicativo) ou "IA" (redigido pela IA).
+	Origem   string  `json:"origem"`
+	Pendente bool    `json:"pendente"`
+	Fontes   []Fonte `json:"fontes"`
+}
+
+// MinutaVisao é a minuta mostrada ao usuário para revisão (V4 §31.3).
+type MinutaVisao struct {
+	Blocos          []BlocoMinuta `json:"blocos"`
+	Pendencias      []string      `json:"pendencias"`
+	CamposPendentes int           `json:"camposPendentes"`
+	// Validada: passou pela validação automática (V4 §42) sem falha.
+	Validada bool `json:"validada"`
+	// Achados: falhas da validação que não puderam ser corrigidas sozinhas.
+	Achados []string `json:"achados"`
+	// Versao da minuta nesta tarefa (cresce a cada versão diferente).
+	Versao int `json:"versao"`
+	// Ajustes pedidos nesta tarefa e o que foi feito (só memória).
+	Ajustes []AjusteVisao `json:"ajustes"`
+}
+
+// AjusteVisao é um pedido de ajuste e o seu resultado.
+type AjusteVisao struct {
+	Pedido    string `json:"pedido"`
+	Resultado string `json:"resultado"`
+	Aplicado  bool   `json:"aplicado"`
+}
+
 // ResumoAutos é o que a interface mostra sobre os autos lidos (cobertura,
 // peças e mídias). Não contém texto dos autos.
 type ResumoAutos struct {

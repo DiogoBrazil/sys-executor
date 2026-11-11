@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/autos"
@@ -18,6 +19,7 @@ import (
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/pdf"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/segment"
 	"github.com/DiogoBrazil/sys-executor/internal/legal"
+	"github.com/DiogoBrazil/sys-executor/internal/minuta"
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
 )
 
@@ -43,6 +45,20 @@ type Dados struct {
 	// diasConfirmados: por imputação, a proposta do motor e os dias da
 	// última confirmação do usuário (ver perguntaCalculoPADS).
 	diasConfirmados map[string][2]int
+	// Redacao: trechos já redigidos pela IA; Minuta: documento composto
+	// (Fase 6). Ambos nil antes da redação.
+	Redacao *Redacao
+	Minuta  *minuta.Documento
+	// entradaMinuta: o que compôs a minuta (a validação confere contra ela).
+	entradaMinuta *minuta.EntradaPADS
+	// Achados da validação determinística da versão atual (V4 §42).
+	Achados []minuta.Achado
+	// Ajustes pedidos pelo usuário nesta tarefa (só memória; V4 §31.3).
+	Ajustes []Ajuste
+	// versaoMinuta cresce a cada versão diferente apresentada ao usuário.
+	versaoMinuta   int
+	textoVersao    string
+	ajusteAplicado map[string]bool // trechos já reescritos do ajuste em curso
 }
 
 // Liberar fecha o índice em memória (chamado pela tarefa ao terminar).
@@ -71,6 +87,11 @@ type Pipeline struct {
 	Juntador pdf.Juntador
 	// Biblioteca abre a biblioteca jurídica (nil = o acervo inicial embutido).
 	Biblioteca func() (*legal.Biblioteca, error)
+	// Componentes: pasta dos componentes empacotados (Typst e logotipo do
+	// cabeçalho, para os arquivos da minuta).
+	Componentes string
+	// Agora: relógio do nome dos arquivos (nil = time.Now).
+	Agora func() time.Time
 
 	once   sync.Once
 	motor  ocr.Motor
@@ -101,6 +122,9 @@ func (p *Pipeline) Etapas() map[workflow.Estado]workflow.Etapa {
 		workflow.Analisando:        p.comRevisao(workflow.Analisando, p.analisar),
 		workflow.ConsultandoFontes: p.consultarFontes,
 		workflow.Calculando:        p.calcular,
+		workflow.Redigindo:         p.comRevisao(workflow.Redigindo, p.redigir),
+		workflow.Validando:         p.comRevisao(workflow.Validando, p.validar),
+		workflow.Ajustando:         p.comRevisao(workflow.Ajustando, p.ajustar),
 	}
 }
 

@@ -258,6 +258,55 @@ export class Resposta {
 }
 
 /**
+ * RespostaArquivo é o retorno de SalvarMinuta.
+ */
+export class RespostaArquivo {
+    "visao": workflow$0.Visao | null;
+    "erro": workflow$0.ErroVisao | null;
+
+    /**
+     * Salvo: o arquivo foi gravado (false também quando o usuário fechou o
+     * diálogo). Formato: "docx" ou "pdf".
+     */
+    "salvo": boolean;
+    "formato": string;
+
+    /** Creates a new RespostaArquivo instance. */
+    constructor($$source: Partial<RespostaArquivo> = {}) {
+        if (!("visao" in $$source)) {
+            this["visao"] = null;
+        }
+        if (!("erro" in $$source)) {
+            this["erro"] = null;
+        }
+        if (!("salvo" in $$source)) {
+            this["salvo"] = false;
+        }
+        if (!("formato" in $$source)) {
+            this["formato"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RespostaArquivo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RespostaArquivo {
+        const $$createField0_0 = $$createType4;
+        const $$createField1_0 = $$createType2;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("visao" in $$parsedSource) {
+            $$parsedSource["visao"] = $$createField0_0($$parsedSource["visao"]);
+        }
+        if ("erro" in $$parsedSource) {
+            $$parsedSource["erro"] = $$createField1_0($$parsedSource["erro"]);
+        }
+        return new RespostaArquivo($$parsedSource as Partial<RespostaArquivo>);
+    }
+}
+
+/**
  * RespostaBusca traz as ocorrências encontradas nos autos.
  */
 export class RespostaBusca {

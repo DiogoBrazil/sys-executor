@@ -38,6 +38,16 @@ export function AnexarDocumentosSEI(pecaID: string, documentos: string[]): $Canc
 }
 
 /**
+ * Aprovar finaliza a tarefa: descarta os autos, a análise e a minuta. Os
+ * arquivos já salvos pelo usuário permanecem (V4 §29.1).
+ */
+export function Aprovar(): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(3449549627).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
  * Atual devolve a tarefa atual (nula se não houver).
  */
 export function Atual(): $CancellablePromise<$models.Resposta> {
@@ -187,11 +197,30 @@ export function SalvarCadastro(c: workflow$0.Cadastro): $CancellablePromise<$mod
 }
 
 /**
+ * SalvarMinuta gera o DOCX ou o PDF da minuta em revisão e grava no local
+ * que o usuário escolher. O caminho escolhido não é guardado.
+ */
+export function SalvarMinuta(formato: string): $CancellablePromise<$models.RespostaArquivo> {
+    return $Call.ByID(3798155625, formato).then(($result: any) => {
+        return $$createType3($result);
+    });
+}
+
+/**
  * SelecionarPDF abre o diálogo nativo e envia o arquivo escolhido. Não pede
  * credenciais nem acessa o SEI (T02). O nome do arquivo não é guardado.
  */
 export function SelecionarPDF(): $CancellablePromise<$models.Resposta> {
     return $Call.ByID(3811370973).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * SolicitarAjuste envia o pedido de ajuste da minuta em revisão (V4 §31.3).
+ */
+export function SolicitarAjuste(texto: string): $CancellablePromise<$models.Resposta> {
+    return $Call.ByID(1487003344, texto).then(($result: any) => {
         return $$createType0($result);
     });
 }
@@ -209,3 +238,4 @@ export function VoltarParaEntrada(): $CancellablePromise<$models.Resposta> {
 const $$createType0 = $models.Resposta.createFrom;
 const $$createType1 = $models.DispositivoVisao.createFrom;
 const $$createType2 = $Create.Array($$createType1);
+const $$createType3 = $models.RespostaArquivo.createFrom;

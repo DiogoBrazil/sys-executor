@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
@@ -117,6 +118,30 @@ func (c *Contexto) PublicarPainel(p *PainelAnalise) {
 	}
 }
 
+// PublicarMinuta atualiza a minuta mostrada ao usuário (nil = retira).
+func (c *Contexto) PublicarMinuta(m *MinutaVisao) {
+	c.g.mu.Lock()
+	defer c.g.mu.Unlock()
+	if c.g.t == c.t {
+		c.t.minuta = m
+		c.g.emitirLocked()
+	}
+}
+
+// Ajuste devolve o pedido de ajuste em curso ("" se não houver).
+func (c *Contexto) Ajuste() string {
+	c.g.mu.Lock()
+	defer c.g.mu.Unlock()
+	return c.t.ajuste
+}
+
+// ConcluirAjuste marca o pedido de ajuste como tratado.
+func (c *Contexto) ConcluirAjuste() {
+	c.g.mu.Lock()
+	defer c.g.mu.Unlock()
+	c.t.ajuste = ""
+}
+
 // Revisavel é implementado pelos dados do pipeline que sabem refazer o que
 // depende de uma resposta (DAG de invalidação, F4-05): devolve o estado onde
 // recomeçar e as respostas que deixam de valer.
@@ -150,6 +175,8 @@ type tarefa struct {
 	respondidas    []respondida // ordem em que foram respondidas
 	atividade      string
 	painel         *PainelAnalise
+	minuta         *MinutaVisao
+	ajuste         string // pedido de ajuste em curso (V4 §31.3); só memória
 	pedido         *Pedido
 	respostaPedido chan RespostaPedido
 	rodando        bool // há uma goroutine de etapas em execução
@@ -230,7 +257,7 @@ func (g *Gerenciador) visaoLocked() *Visao {
 		ID: t.id, Tipo: t.tipo, Entrada: t.entrada, Estado: t.estado,
 		Descricao: descricoes[t.estado], Terminal: t.estado.Terminal(),
 		Etapas: marcos(t.tipo, t.ref, t.estado), Erro: visaoErro(t.erro), Aviso: visaoErro(t.aviso),
-		Autos: t.autos, Parada: t.parada, Atividade: t.atividade, Painel: t.painel,
+		Autos: t.autos, Parada: t.parada, Atividade: t.atividade, Painel: t.painel, Minuta: t.minuta,
 		Retomavel: t.parada && !t.rodando && t.erro != nil && t.erro.Codigo != erros.TarefaEtapaIndisponiv,
 	}
 	g.seq++
@@ -434,6 +461,7 @@ func (g *Gerenciador) receberAutosLocked(dados []byte) (*Visao, error) {
 	}
 	// Autos novos: análise anterior (se houver) descartada.
 	t.autos, t.pergunta, t.erro, t.parada, t.painel, t.atividade = nil, nil, nil, false, nil, ""
+	t.minuta = nil
 	t.respostas, t.anteriores, t.respondidas = map[string]Resposta{}, map[string]Resposta{}, nil
 	liberarDados(t)
 	if err := g.mover(Verificando); err != nil {
@@ -581,6 +609,62 @@ func (g *Gerenciador) Retomar() (*Visao, error) {
 	}
 	t.erro = nil
 	g.iniciarProcessamentoLocked()
+	return g.emitirUnlock()
+}
+
+// EmRevisao devolve os dados e a pasta da sessão quando a minuta está em
+// revisão e nenhuma etapa está em execução (para gerar o DOCX e o PDF).
+func (g *Gerenciador) EmRevisao() (dados any, pasta string, ok bool) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	t := g.t
+	if t == nil || t.estado != AguardandoRevisao || t.rodando || t.contexto == nil || t.sessao == nil {
+		return nil, "", false
+	}
+	return t.contexto.Dados, t.sessao.Dir(), true
+}
+
+// MaxAjuste é o tamanho máximo de um pedido de ajuste.
+const MaxAjuste = 2000
+
+// SolicitarAjuste recebe o pedido de ajuste do usuário, com a minuta em
+// revisão (V4 §31.3). O texto fica só na memória da tarefa.
+func (g *Gerenciador) SolicitarAjuste(texto string) (*Visao, error) {
+	g.mu.Lock()
+	t := g.t
+	if t == nil || t.estado != AguardandoRevisao || t.rodando {
+		g.mu.Unlock()
+		return nil, erros.Novo(erros.TarefaOrdemInvalida)
+	}
+	texto = strings.TrimSpace(texto)
+	if n := len([]rune(texto)); n < 5 || n > MaxAjuste {
+		g.mu.Unlock()
+		return nil, erros.Com(erros.TarefaRespostaInvalid, fmt.Errorf("descreva o ajuste em até %d caracteres", MaxAjuste))
+	}
+	if err := g.mover(Ajustando); err != nil {
+		g.mu.Unlock()
+		return nil, err
+	}
+	t.ajuste, t.erro = texto, nil
+	g.iniciarProcessamentoLocked()
+	return g.emitirUnlock()
+}
+
+// Aprovar é o comando inequívoco de finalização (V4 §§11 e 29.1): encerra a
+// tarefa e descarta os autos, a análise e a minuta. Os arquivos que o
+// usuário salvou fora da sessão permanecem.
+func (g *Gerenciador) Aprovar() (*Visao, error) {
+	g.mu.Lock()
+	t := g.t
+	if t == nil || t.estado != AguardandoRevisao || t.rodando {
+		g.mu.Unlock()
+		return nil, erros.Novo(erros.TarefaOrdemInvalida)
+	}
+	if err := g.mover(Finalizando); err != nil {
+		g.mu.Unlock()
+		return nil, err
+	}
+	g.encerrarLocked(Finalizada, nil)
 	return g.emitirUnlock()
 }
 
@@ -789,6 +873,8 @@ func (g *Gerenciador) encerrarLocked(estado Estado, e *erros.Erro) {
 	t.pergunta = nil
 	t.autos = nil
 	t.painel = nil
+	t.minuta = nil
+	t.ajuste = ""
 	t.atividade = ""
 	t.respondidas, t.anteriores = nil, nil
 	t.parada = false

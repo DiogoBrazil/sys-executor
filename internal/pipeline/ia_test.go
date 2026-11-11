@@ -1,13 +1,18 @@
 package pipeline
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
+	"github.com/DiogoBrazil/sys-executor/internal/analise"
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
 	"github.com/DiogoBrazil/sys-executor/internal/inference"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/autos"
@@ -37,6 +42,10 @@ type motorRoteiro struct {
 	usuario map[string][]string
 	// morrerNa: nome do schema em que a conexão cai uma vez (IA-007).
 	morrerNa string
+	// naoSuporta: quantas verificações de fundamentação devolvem NAO_SUPORTA.
+	naoSuporta int
+	// ajuste: resposta da classificação do pedido de ajuste.
+	ajuste map[string]any
 }
 
 func (m *motorRoteiro) Contexto() int { return 16384 }
@@ -107,10 +116,87 @@ func (m *motorRoteiro) Gerar(_ context.Context, p inference.Pedido) (inference.R
 		out = js(map[string]any{"imputacao_id": imp, "resultado_proposto": "IMPROCEDENTE",
 			"fundamentos":  []map[string]any{{"texto": "A defesa apresentou atestado.", "evid_refs": ev[:1]}},
 			"teses_defesa": []any{}, "atenuantes": []any{}, "agravantes": []any{}, "justificacoes": []any{}, "lacunas": []string{}})
+	case "relatorio_pads":
+		texto := "No Termo de Inquirição incluído nos autos, a testemunha declarou que o acusado não compareceu ao quartel no dia dos fatos."
+		if strings.Contains(p.Usuario, "TRECHO_EM_REESCRITA") {
+			texto = "Ouvida no Termo de Inquirição incluído nos autos, a testemunha declarou que o acusado não compareceu ao quartel no dia dos fatos."
+		}
+		out = js(map[string]any{"paragrafos": []map[string]any{{"texto": texto, "evid_refs": evidDoSchema(p.Schema)[:1]}}, "lacunas": []string{}})
+	case "verificacao_suporte":
+		var sch struct {
+			Properties struct {
+				Verificacoes struct {
+					MinItems int `json:"minItems"`
+				} `json:"verificacoes"`
+			}
+		}
+		json.Unmarshal(p.Schema, &sch)
+		fund := strings.Contains(p.Usuario, "RESULTADO_CONFIRMADO")
+		m.mu.Lock()
+		ruim := fund && m.naoSuporta > 0
+		if ruim {
+			m.naoSuporta--
+		}
+		m.mu.Unlock()
+		var vs []map[string]any
+		for i := 1; i <= sch.Properties.Verificacoes.MinItems; i++ {
+			v := map[string]any{"n": i, "suporte": "SUPORTA", "motivo": ""}
+			if ruim {
+				v["suporte"], v["motivo"] = "NAO_SUPORTA", "A evidência citada não fala do atestado."
+			}
+			if fund {
+				v["coerencia"] = "COERENTE"
+			}
+			vs = append(vs, v)
+		}
+		out = js(map[string]any{"verificacoes": vs})
+	case "classificacao_ajuste":
+		m.mu.Lock()
+		out = js(m.ajuste)
+		m.mu.Unlock()
+	case "fundamentacao_imputacao":
+		var sch struct {
+			Properties struct {
+				Imputacao struct{ Enum []string } `json:"imputacao_id"`
+				Resultado struct{ Enum []string } `json:"resultado"`
+			}
+		}
+		json.Unmarshal(p.Schema, &sch)
+		out = js(map[string]any{"imputacao_id": sch.Properties.Imputacao.Enum[0], "resultado": sch.Properties.Resultado.Enum[0],
+			"paragrafos": []map[string]any{{"texto": "A prova testemunhal confirma a ausência ao serviço, e o atestado alegado pela defesa não foi juntado.",
+				"evid_refs": evidDoSchema(p.Schema)[:1]}}, "lacunas": []string{}})
+		if strings.Contains(p.Usuario, "problemas_apontados") {
+			out = strings.Replace(out, ", e o atestado alegado pela defesa não foi juntado", "", 1)
+		}
+	case "fatores_art36":
+		var fs []map[string]any
+		for i := 1; i <= 7; i++ {
+			f := map[string]any{"inciso": i, "texto": analise.AusenciaDeElementos, "evid_refs": []string{}}
+			if i == 3 {
+				f = map[string]any{"inciso": i, "texto": "A falta atingiu a regularidade do serviço para o qual o acusado estava escalado.", "evid_refs": evidDoSchema(p.Schema)[:1]}
+			}
+			fs = append(fs, f)
+		}
+		out = js(map[string]any{"fatores": fs})
 	default:
 		out = js(map[string]any{"funcao": "INDETERMINADA", "trecho_literal": ""})
 	}
 	return inference.Resposta{Conteudo: []byte(out)}, nil
+}
+
+var reEvidTeste = regexp.MustCompile(`EV-\d+`)
+
+// evidDoSchema devolve os identificadores de evidência aceitos pelo schema.
+func evidDoSchema(schema []byte) []string {
+	vistos := map[string]bool{}
+	var out []string
+	for _, e := range reEvidTeste.FindAllString(string(schema), -1) {
+		if !vistos[e] {
+			vistos[e] = true
+			out = append(out, e)
+		}
+	}
+	return out
 }
 
 type fonteFalsa struct {
@@ -249,7 +335,7 @@ func campo(p *workflow.PerguntaVisao, id string) workflow.Campo {
 // Cobre: T08, A08, A09, PADS-E01, PADS-E02, PADS-E05, SEG-INJ-02
 // Regra: PADS-ESC-001, PADS-ESC-004, PADS-REI-009, PADS-CMP-002, PADS-DOS-005, TRV-PRV-004, TRV-UI-008
 func TestFluxoPADSComIA(t *testing.T) {
-	m := &motorRoteiro{pedidos: map[string]int{}, usuario: map[string][]string{}}
+	m := &motorRoteiro{pedidos: map[string]int{}, usuario: map[string][]string{}, naoSuporta: 1}
 	fonte := &fonteFalsa{m: m, falhas: 1}
 	g := gerenciadorIA(t, fonte)
 	_, _ = g.Iniciar()
@@ -328,9 +414,19 @@ func TestFluxoPADSComIA(t *testing.T) {
 	if campo(pc, "dias_IMP-1").Valor != "2" || !strings.Contains(js(pc), "quantidades iguais → 2 dias") || !strings.Contains(js(pc), "Propõe-se 23 pontos, comportamento bom") {
 		t.Fatalf("memória de cálculo: %s", js(pc))
 	}
-	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Redigindo })
-	if v.Erro == nil || v.Erro.Codigo != "TAR-004" || len(v.Respostas) != 10 || v.Respostas[0].PerguntaID != PerguntaEnvioIA {
-		t.Fatalf("parada na redação: %+v %+v", v.Erro, v.Respostas)
+	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Estado == workflow.AguardandoRevisao })
+	if v.Erro != nil || v.Parada || len(v.Respostas) != 10 || v.Respostas[0].PerguntaID != PerguntaEnvioIA {
+		t.Fatalf("minuta em revisão: %+v %+v", v.Erro, v.Respostas)
+	}
+	conferirMinutaPADS(t, g.Dados().(*Dados), v, "2 (dois) dias de DETENÇÃO")
+	// Parte 3 da F6 (V4 §42): a verificação recusou a fundamentação uma vez;
+	// o trecho foi reescrito e conferido de novo, sem sobrar pendência dele.
+	// Regra: TRV-VAL-001, TRV-VAL-002, TRV-VAL-009
+	if !v.Minuta.Validada || v.Minuta.Versao != 1 || len(v.Minuta.Achados) != 0 || m.conta("fundamentacao_imputacao") != 2 {
+		t.Fatalf("validação: %+v (fundamentações pedidas: %d)", v.Minuta, m.conta("fundamentacao_imputacao"))
+	}
+	if txt := g.Dados().(*Dados).Minuta.Texto(); strings.Contains(txt, "não foi juntado") || strings.Contains(js(v.Minuta.Pendencias), "A evidência citada não fala") {
+		t.Fatalf("a correção automática não foi aplicada:\n%s", txt)
 	}
 	d := g.Dados().(*Dados)
 	if c := d.Calculo; c == nil || !c.Confirmado || len(c.Sancoes) != 1 || c.Sancoes[0].Sancao != engine.Detencao || c.Sancoes[0].Dias != 2 ||
@@ -374,9 +470,80 @@ func TestFluxoPADSComIA(t *testing.T) {
 	if campo(pc, "dias_IMP-1").Valor != "3" || !strings.Contains(js(pc), "Agravantes contadas: art. 39, III.") || !strings.Contains(js(pc), "mais agravantes → 3 dias") {
 		t.Fatalf("cálculo refeito sem a reincidência: %s", js(pc))
 	}
-	esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Redigindo })
+	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Estado == workflow.AguardandoRevisao })
+	conferirMinutaPADS(t, g.Dados().(*Dados), v, "3 (três) dias de DETENÇÃO")
+	if !strings.Contains(g.Dados().(*Dados).Minuta.Texto(), "art. 39, inciso III — reincidência") {
+		t.Fatal("minuta sem a agravante da reincidência")
+	}
 	if m.conta("extracao") != extracoes || m.conta("analise_imputacao") != analises {
 		t.Fatal("rever um resultado não deveria reler peças nem reanalisar")
+	}
+
+	// Parte 4 da F6 (V4 §31.3): o pedido de ajuste reescreve só o trecho
+	// atingido; o resto fica igual, e só o trecho mudado é conferido de novo.
+	// Regra: TRV-UI-008, TRV-UI-009, TRV-VAL-010
+	versao, verificacoes, fund := v.Minuta.Versao, m.conta("verificacao_suporte"), m.conta("fundamentacao_imputacao")
+	m.mu.Lock()
+	m.ajuste = map[string]any{"tipo": "REDACAO", "trechos": []string{"relatorio"}}
+	m.mu.Unlock()
+	pedirAjuste(t, g, "Deixe claro, no relatório, que a testemunha foi ouvida.")
+	v = esperar(t, g, func(v *workflow.Visao) bool {
+		return v.Estado == workflow.AguardandoRevisao && len(v.Minuta.Ajustes) == 1
+	})
+	txt := g.Dados().(*Dados).Minuta.Texto()
+	if a := v.Minuta.Ajustes[0]; !a.Aplicado || !strings.Contains(a.Resultado, "relatório") || v.Minuta.Versao != versao+1 || !v.Minuta.Validada ||
+		!strings.Contains(txt, "Ouvida no Termo de Inquirição") || !strings.Contains(txt, "A prova testemunhal confirma a ausência ao serviço") ||
+		m.conta("verificacao_suporte") != verificacoes+1 || m.conta("fundamentacao_imputacao") != fund {
+		t.Fatalf("ajuste de redação: %+v\n%s", v.Minuta.Ajustes, txt)
+	}
+	if u := strings.Join(m.usuario["relatorio_pads"], "\n"); !strings.Contains(u, "que a testemunha foi ouvida") {
+		t.Fatal("o pedido do usuário não chegou à reescrita")
+	}
+	conferirMinutaPADS(t, g.Dados().(*Dados), v, "3 (três) dias de DETENÇÃO")
+	// Pedido que muda decisão confirmada: nada é reescrito; o usuário é
+	// orientado a alterar a resposta.
+	m.mu.Lock()
+	m.ajuste = map[string]any{"tipo": "DECISAO", "trechos": []string{}}
+	m.mu.Unlock()
+	pedirAjuste(t, g, "Troque a punição por repreensão.")
+	v = esperar(t, g, func(v *workflow.Visao) bool {
+		return v.Estado == workflow.AguardandoRevisao && len(v.Minuta.Ajustes) == 2
+	})
+	if a := v.Minuta.Ajustes[1]; a.Aplicado || !strings.Contains(a.Resultado, "Suas respostas") || v.Minuta.Versao != versao+1 ||
+		g.Dados().(*Dados).Minuta.Texto() != txt || m.conta("verificacao_suporte") != verificacoes+1 {
+		t.Fatalf("ajuste de decisão não devia mudar a minuta: %+v", v.Minuta.Ajustes)
+	}
+	if _, err := g.SolicitarAjuste("  "); err == nil {
+		t.Fatal("pedido de ajuste vazio devia ser recusado")
+	}
+
+	// F7: o DOCX sai da minuta em revisão, com a versão no nome; sem o
+	// componente Typst, o PDF devolve o erro próprio (o DOCX não depende dele).
+	// Regra: TRV-UI-007, TRV-EXP-004
+	var dadosRev any
+	var pasta string
+	for i := 0; ; i++ {
+		var ok bool
+		if dadosRev, pasta, ok = g.EmRevisao(); ok {
+			break
+		}
+		if i > 200 {
+			t.Fatal("a minuta devia estar em revisão")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Setenv("SYSEXEC_TYPST", "")
+	t.Setenv("SYSEXEC_LOGO", "")
+	gerador := &Pipeline{Componentes: t.TempDir(), Agora: func() time.Time { return time.Date(2026, 11, 11, 9, 30, 0, 0, time.UTC) }}
+	docx, nome, err := gerador.GerarDocumento(context.Background(), dadosRev, pasta, "docx")
+	if err != nil || nome != fmt.Sprintf("Minuta_Julgamento_PADS_v%d_2026-11-11_0930.docx", versao+1) || !bytes.HasPrefix(docx, []byte("PK")) {
+		t.Fatalf("DOCX: %q %v", nome, err)
+	}
+	if _, _, err := gerador.GerarDocumento(context.Background(), dadosRev, pasta, "pdf"); erros.De(err).Codigo != erros.ExportacaoSemPDF {
+		t.Fatalf("PDF sem Typst: %v", err)
+	}
+	if _, _, err := gerador.GerarDocumento(context.Background(), dadosRev, pasta, "odt"); err == nil {
+		t.Fatal("formato desconhecido devia falhar")
 	}
 
 	// Rever a delimitação: a proposta da IA é reaproveitada (sem nova
@@ -457,6 +624,30 @@ func (m *motorSR) Gerar(_ context.Context, p inference.Pedido) (inference.Respos
 		out = js(map[string]any{"fato_id": "F-1", "sindicado_id": s.Properties.Sind.Enum[0], "conclusao_proposta": "INCONCLUSIVO",
 			"ocorrencia_do_fato": "DEMONSTRADA", "autoria": "INCERTA", "lacunas": []string{"sem perícia na reserva"}, "diligencias": []string{},
 			"fundamentos": []map[string]any{{"texto": "A testemunha situa o sindicado na reserva.", "evid_refs": ev[:1]}}})
+	case "relatorio_pads":
+		out = js(map[string]any{"paragrafos": []map[string]any{{"texto": "No Termo de Inquirição incluído nos autos, a testemunha declarou que o acusado não compareceu ao quartel no dia dos fatos.",
+			"evid_refs": evidDoSchema(p.Schema)[:1]}}, "lacunas": []string{}})
+	case "fundamentacao_imputacao":
+		var sch struct {
+			Properties struct {
+				Imputacao struct{ Enum []string } `json:"imputacao_id"`
+				Resultado struct{ Enum []string } `json:"resultado"`
+			}
+		}
+		json.Unmarshal(p.Schema, &sch)
+		out = js(map[string]any{"imputacao_id": sch.Properties.Imputacao.Enum[0], "resultado": sch.Properties.Resultado.Enum[0],
+			"paragrafos": []map[string]any{{"texto": "A prova testemunhal confirma a ausência ao serviço, e o atestado alegado pela defesa não foi juntado.",
+				"evid_refs": evidDoSchema(p.Schema)[:1]}}, "lacunas": []string{}})
+	case "fatores_art36":
+		var fs []map[string]any
+		for i := 1; i <= 7; i++ {
+			f := map[string]any{"inciso": i, "texto": analise.AusenciaDeElementos, "evid_refs": []string{}}
+			if i == 3 {
+				f = map[string]any{"inciso": i, "texto": "A falta atingiu a regularidade do serviço para o qual o acusado estava escalado.", "evid_refs": evidDoSchema(p.Schema)[:1]}
+			}
+			fs = append(fs, f)
+		}
+		out = js(map[string]any{"fatores": fs})
 	default:
 		out = js(map[string]any{"funcao": "INDETERMINADA", "trecho_literal": ""})
 	}
@@ -662,8 +853,8 @@ func TestRevisaoNoMeioDaEtapaENenhumMarcadorNoEstado(t *testing.T) {
 	responder(t, g, "reincidencia:MEDIA", "confirmar", map[string]string{"possui": "nao"})
 	responder(t, g, perguntaServicos, "confirmar", map[string]string{"relevantes": "nao"})
 	confirmarCalculo(t, g)
-	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Redigindo })
-	if v.Erro == nil || v.Erro.Codigo != "TAR-004" {
+	v = esperar(t, g, func(v *workflow.Visao) bool { return v.Estado == workflow.AguardandoRevisao })
+	if v.Erro != nil || v.Minuta == nil {
 		t.Fatalf("fim da fase: %+v", v.Erro)
 	}
 
@@ -690,6 +881,45 @@ func TestRevisaoNoMeioDaEtapaENenhumMarcadorNoEstado(t *testing.T) {
 	}
 	if !strings.Contains(string(b), "FULANO DE TAL") {
 		t.Fatal("o estado deveria guardar os dados reais restaurados")
+	}
+
+	// "Aprovar e finalizar" (V4 §29.1): a tarefa termina e tudo o que é
+	// dela é descartado (autos, análise, minuta e pasta da sessão).
+	// Regra: TRV-SES-002
+	dir := g.Sessao().Dir()
+	var vf *workflow.Visao
+	for i := 0; ; i++ {
+		if vf, err = g.Aprovar(); err == nil {
+			break
+		}
+		if i > 200 {
+			t.Fatal(err)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if vf.Estado != workflow.Finalizada || !vf.Terminal || vf.Erro != nil || vf.Minuta != nil || vf.Painel != nil || len(vf.Respostas) != 0 || g.Dados() != nil {
+		t.Fatalf("finalização: %+v", vf)
+	}
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Fatalf("a pasta da sessão devia ter sido apagada: %v", err)
+	}
+	if _, err := g.SolicitarAjuste("Mude o relatório, por favor."); err == nil {
+		t.Fatal("tarefa finalizada não aceita ajuste")
+	}
+}
+
+// pedirAjuste envia o pedido assim que a etapa anterior tiver parado.
+func pedirAjuste(t *testing.T, g *workflow.Gerenciador, texto string) {
+	t.Helper()
+	for i := 0; ; i++ {
+		_, err := g.SolicitarAjuste(texto)
+		if err == nil {
+			return
+		}
+		if i > 200 {
+			t.Fatal(err)
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 
@@ -889,5 +1119,58 @@ func conferirFontesPADS(t *testing.T, d *Dados, v *workflow.Visao) {
 	}
 	if !strings.Contains(js(v.Painel), "Fontes jurídicas") || !strings.Contains(js(v.Painel), "base do julgamento") {
 		t.Fatal("painel sem a seção de fontes jurídicas")
+	}
+}
+
+// conferirMinutaPADS: a minuta tem as três seções, a decisão coerente com as
+// respostas e o cálculo, os textos fixos e nenhum trecho proibido.
+// Regra: PADS-RED-001, PADS-RED-002, PADS-RED-004, PADS-RED-005, PADS-RED-007, PADS-RED-010, PADS-DOS-001
+func conferirMinutaPADS(t *testing.T, d *Dados, v *workflow.Visao, punicao string) {
+	t.Helper()
+	if d.Minuta == nil || v.Minuta == nil || len(v.Minuta.Blocos) != len(d.Minuta.Blocos) {
+		t.Fatalf("minuta ausente: %+v", v.Minuta)
+	}
+	txt := d.Minuta.Texto()
+	for _, quero := range []string{
+		"JULGAMENTO DE PADS", "1. RELATÓRIO", "2. FUNDAMENTAÇÃO", "3. DECISÃO",
+		"Acusado(a): SD PM FULANO DE TAL",
+		"art. 16, inciso XVI, do RDPM", // imputação com o texto do dispositivo, da biblioteca
+		"art. 5º, inciso LV, da Constituição Federal",
+		"a testemunha declarou que o acusado não compareceu", // relatório (IA)
+		"A prova testemunhal confirma a ausência ao serviço", // fundamentação da IMP-1 (IA)
+		"Julgar PARCIALMENTE PROCEDENTE",
+		"I – imputação do art. 16, inciso XVI, do RDPM: PROCEDENTE; e",
+		"II – imputação do art. 17, inciso II, do RDPM: IMPROCEDENTE.",
+		"natureza MÉDIA, à qual corresponde a punição de DETENÇÃO, nos termos do art. 41, inciso II, e do art. 58, inciso II, alínea b",
+		"III – A natureza dos fatos e/ou dos atos que a envolveram: A falta atingiu a regularidade do serviço",
+		"VII – As conseqüências da transgressão: " + analise.AusenciaDeElementos,
+		"não foram identificadas causas de justificação",
+		punicao,
+		"Lei nº 2.484, de 06 de junho de 2011", // cláusula de residência (V4 §10)
+		"somente depois de a decisão se tornar irrecorrível",
+		"CUMPRA-SE.",
+	} {
+		if !strings.Contains(txt, quero) {
+			t.Fatalf("minuta sem %q:\n%s", quero, txt)
+		}
+	}
+	// IMP-2 não tem prova extraída: a fundamentação fica a preencher, com pendência.
+	if !strings.Contains(txt, "[A PREENCHER] — fundamentação da imputação do art. 17, inciso II, do RDPM.") || len(d.Minuta.Pendencias) == 0 {
+		t.Fatalf("fundamentação sem prova devia ficar a preencher:\n%s", txt)
+	}
+	for _, proibido := range []string{"EV-0", "IMP-1", "§ 3º", "<<<DOC", "pág."} {
+		if strings.Contains(txt, proibido) {
+			t.Fatalf("minuta com %q:\n%s", proibido, txt)
+		}
+	}
+	// Bloco da IA leva as fontes dos autos para a interface.
+	fontes := 0
+	for _, b := range v.Minuta.Blocos {
+		if b.Origem == "IA" {
+			fontes += len(b.Fontes)
+		}
+	}
+	if fontes == 0 || v.Minuta.CamposPendentes == 0 {
+		t.Fatalf("visão da minuta sem fontes ou sem campos pendentes: %+v", v.Minuta)
 	}
 }

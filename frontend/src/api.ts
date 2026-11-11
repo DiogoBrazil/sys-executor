@@ -1,7 +1,7 @@
 // Fronteira única com o backend (bindings Wails). Os testes substituem este módulo.
 import { Events } from "@wailsio/runtime";
 import * as Tarefa from "../bindings/github.com/DiogoBrazil/sys-executor/internal/app/tarefaservice";
-import type { Resposta } from "../bindings/github.com/DiogoBrazil/sys-executor/internal/app/models";
+import type { Resposta, RespostaArquivo } from "../bindings/github.com/DiogoBrazil/sys-executor/internal/app/models";
 import type { Visao } from "../bindings/github.com/DiogoBrazil/sys-executor/internal/workflow/models";
 import { TarefaVisao } from "../bindings/events";
 
@@ -38,6 +38,10 @@ export const responder = (perguntaID: string, opcaoID: string, valores: Record<s
 export const tarefa = {
   revisar: (perguntaID: string): Promise<Resposta> => Tarefa.Revisar(perguntaID),
   retomar: (): Promise<Resposta> => Tarefa.Retomar(),
+  // Minuta em revisão (V4 §31.3): ajustes, arquivos e finalização.
+  solicitarAjuste: (texto: string): Promise<Resposta> => Tarefa.SolicitarAjuste(texto),
+  aprovar: (): Promise<Resposta> => Tarefa.Aprovar(),
+  salvarMinuta: (formato: "docx" | "pdf"): Promise<RespostaArquivo> => Tarefa.SalvarMinuta(formato),
 };
 
 import * as IA from "../bindings/github.com/DiogoBrazil/sys-executor/internal/app/iaservice";

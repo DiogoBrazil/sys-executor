@@ -118,6 +118,50 @@ const ia = {
 
 const docSEI = (id: string, sei: string, titulo: string, sugestao: string, paginas = 2) => ({ id, sei, titulo, paginas, sugestao, papel: "", usado: "" });
 
+// Minuta sintética (pessoas e fatos fictícios).
+const fonteTermo = { rotulo: "Termo de Inquirição, pág. 2", pagina: 2, inicio: 0, fim: 40, trecho: "A testemunha declarou que o acusado não compareceu." };
+const bl = (tipo: string, texto: string, origem = "FIXO", fontes: unknown[] = []) => ({ tipo, texto, origem, pendente: texto.includes("[A PREENCHER]"), fontes });
+const minuta = {
+  validada: true, camposPendentes: 6, versao: 2, achados: [],
+  ajustes: [{ pedido: "No relatório, diga que a testemunha é sargento.", aplicado: true, resultado: "Ajuste aplicado em: relatório (relato dos fatos, da defesa e das provas). Os demais trechos não foram alterados." }],
+  pendencias: ["Sem pontos de prova sobre a imputação IMP-2, a fundamentação fica a preencher."],
+  blocos: [
+    bl("TITULO", "JULGAMENTO DE PADS"),
+    bl("CABECALHO", "Autoridade disciplinar: [A PREENCHER]"),
+    bl("CABECALHO", "Acusado(a): CB PM CARLOS INVENTADO"),
+    bl("CABECALHO", "Referência: PADS nº [A PREENCHER]"),
+    bl("SECAO", "1. RELATÓRIO"),
+    bl("PARAGRAFO", "Trata-se do Processo Administrativo Disciplinar Sumário (PADS) nº [A PREENCHER], instaurado por meio do Memorando Disciplinar incluído nos autos, em relação a CB PM CARLOS INVENTADO."),
+    bl("PARAGRAFO", "Conforme o Memorando Disciplinar, foram imputadas as seguintes transgressões disciplinares ao(à) acusado(a):"),
+    bl("ITEM", "I – tomar parte em manifestação coletiva de crítica a ato de superior (art. 17, inciso V, do RDPM: “tomar parte em qualquer manifestação coletiva, seja ela de caráter reivindicatório, de crítica ou de apoio a atos de superior”); e"),
+    bl("ITEM", "II – deixar de comunicar a impossibilidade de comparecer ao serviço (art. 15, inciso III, do RDPM)."),
+    bl("PARAGRAFO", "Ao(à) acusado(a) foi assegurado o exercício da ampla defesa e do contraditório, nos termos do art. 5º, inciso LV, da Constituição Federal e do art. 4º do RDPM."),
+    bl("PARAGRAFO", "No Termo de Inquirição incluído nos autos, a testemunha 3º SGT PM JOÃO FICTÍCIO declarou que o acusado participou da reunião no pátio da unidade e leu em voz alta a nota de crítica ao comandante.", "IA", [fonteTermo]),
+    bl("PARAGRAFO", "Nas alegações finais, a defesa sustenta que o acusado apenas passava pelo local e não aderiu à manifestação.", "IA", [{ ...fonteTermo, rotulo: "Alegações finais, pág. 4", pagina: 4 }]),
+    bl("SECAO", "2. FUNDAMENTAÇÃO"),
+    bl("SUBTITULO", "Quanto à imputação do art. 17, inciso V, do RDPM"),
+    bl("PARAGRAFO", "Os dois depoimentos colhidos são coerentes entre si quanto à presença do acusado e à leitura da nota. A versão da defesa não encontra apoio em nenhuma das peças.", "IA", [fonteTermo]),
+    bl("SUBTITULO", "Quanto à imputação do art. 15, inciso III, do RDPM"),
+    bl("PARAGRAFO", "[A PREENCHER] — fundamentação da imputação do art. 15, inciso III, do RDPM."),
+    bl("SECAO", "3. DECISÃO"),
+    bl("PARAGRAFO", "Dito isso, RESOLVO:"),
+    bl("PARAGRAFO", "Julgar PARCIALMENTE PROCEDENTE a acusação descrita no Memorando Disciplinar incluído nos autos, nos seguintes termos:"),
+    bl("ITEM", "I – imputação do art. 17, inciso V, do RDPM: PROCEDENTE; e"),
+    bl("ITEM", "II – imputação do art. 15, inciso III, do RDPM: IMPROCEDENTE."),
+    bl("SUBTITULO", "Quanto à transgressão do art. 17, inciso V, do RDPM"),
+    bl("PARAGRAFO", "Em conformidade com o art. 36, incisos I a VII, do RDPM, verifico o seguinte:"),
+    bl("ITEM", "I – A personalidade do transgressor e seus antecedentes disciplinares: Não há elementos nos autos sobre este fator."),
+    bl("ITEM", "II – Os motivos determinantes: A manifestação foi motivada por discordância quanto à escala de serviço.", "IA", [fonteTermo]),
+    bl("PARAGRAFO", "Assim, com base no art. 41, inciso III, e no art. 58, inciso II, alínea c, do RDPM, e consideradas as circunstâncias acima, imponho a CB PM CARLOS INVENTADO a punição disciplinar de 1 (um) dia de PRISÃO, por ter praticado a transgressão disciplinar do art. 17, inciso V, do RDPM."),
+    bl("PARAGRAFO", "Como próximas providências:"),
+    bl("ITEM", "I – Publicar este julgamento em Boletim Interno; e"),
+    bl("ITEM", "II – Manter os documentos do presente PADS em arquivo."),
+    bl("FECHO", "CUMPRA-SE."),
+    bl("FECHO", "[A PREENCHER] (local), data conforme a assinatura eletrônica."),
+    bl("ASSINATURA", "[A PREENCHER] (nome, posto e função da autoridade disciplinar)"),
+  ],
+};
+
 export const cenarios: Record<string, { titulo: string; visao: any; ia?: any; config?: boolean; altura?: number }> = {
   inicio: { titulo: "Início", visao: null, altura: 900 },
   entrada: { titulo: "Entrada dos autos", visao: visao("TIPO_ESCOLHIDO", { entrada: "", etapas: [] }), altura: 900 },
@@ -131,6 +175,8 @@ export const cenarios: Record<string, { titulo: string; visao: any; ia?: any; co
   resultado: { titulo: "Resultado da imputação", visao: visao("AGUARDANDO_ESCLARECIMENTO", { pergunta: perguntaResultado, autos: resumoAutos, painel, respostas }), altura: 2200 },
   historico: { titulo: "Histórico disciplinar", visao: visao("AGUARDANDO_ESCLARECIMENTO", { pergunta: perguntaHistorico, autos: resumoAutos, painel, respostas }), altura: 1200 },
   parada: { titulo: "Parada TAR-004", visao: visao("CONSULTANDO_FONTES", { etapas: etapas(5), parada: true, erro: { codigo: "TAR-004", titulo: "t", mensagem: "m", acao: "a" }, autos: resumoAutos, painel, respostas }), altura: 1400 },
+  minuta: { titulo: "Minuta em revisão", visao: visao("AGUARDANDO_REVISAO", { etapas: etapas(9), descricao: "A minuta está pronta para sua revisão.", autos: resumoAutos, painel, respostas, minuta }), altura: 4000 },
+  finalizada: { titulo: "Tarefa finalizada", visao: visao("FINALIZADA", { terminal: true, etapas: etapas(10) }), altura: 900 },
   "erro-ia": { titulo: "Erro da IA (retomável)", visao: visao("ANALISANDO", { parada: true, retomavel: true, erro: { codigo: "IA-003", titulo: "A conta do ChatGPT atingiu o limite de uso", mensagem: "O limite de uso do seu plano foi atingido.", acao: "Aguarde a renovação do limite ou escolha outro serviço em Configurações de IA." }, autos: resumoAutos }), altura: 1000 },
   config: { titulo: "Configurações de IA", visao: null, config: true, altura: 1200 },
 };

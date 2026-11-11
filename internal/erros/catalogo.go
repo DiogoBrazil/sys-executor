@@ -72,6 +72,7 @@ const (
 	// Validação e exportação
 	ValidacaoBloqueou Codigo = "VAL-001"
 	ExportacaoFalhou  Codigo = "EXP-001"
+	ExportacaoSemPDF  Codigo = "EXP-002"
 
 	// Pesquisa web
 	PesquisaIndisponivel Codigo = "PESQ-001"
@@ -257,6 +258,9 @@ func init() {
 	def(ExportacaoFalhou, CatExportacao, "Falha ao gerar o arquivo da minuta",
 		"Não foi possível gerar o DOCX ou o PDF da minuta.",
 		"Tente novamente ou escolha outra pasta de destino.")
+	def(ExportacaoSemPDF, CatExportacao, "Gerador de PDF não encontrado",
+		"O componente que gera o PDF da minuta (Typst) não está na pasta de componentes do aplicativo.",
+		"Baixe o DOCX, que não depende desse componente, ou reinstale o componente e tente de novo.")
 
 	def(PesquisaIndisponivel, CatPesquisa, "Pesquisa externa indisponível",
 		"A consulta a fontes oficiais na internet não está disponível agora.",

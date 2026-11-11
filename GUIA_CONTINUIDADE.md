@@ -5,11 +5,14 @@
 > - **Atualizado em:** 11/11/2026. Depois deste guia:
 >   - os testes A (SEI real) e B (SR) passaram, com dois ajustes (commit `8596de3`);
 >   - a **Fase 1 do novo visual** está implementada (§5.3);
->   - a **F5 essencial (biblioteca jurídica)** está implementada e commitada (§5.5).
+>   - a **F5 essencial (biblioteca jurídica)** está implementada e commitada (§5.5);
+>   - a **F6 do PADS** (cálculo, redação, validação, ajustes) e a **F7 do PADS** (DOCX e PDF, aprovar e finalizar) estão implementadas e **commitadas** (§5.7);
+>   - o usuário **gerou um Julgamento de PADS até o fim** no `.exe` e salvou o DOCX e o PDF (11/11/2026).
+> - **Trabalho interrompido em 11/11/2026** para continuar em outra máquina. O usuário avisou que há **ajustes de tela a fazer**, ainda não detalhados: **pergunte quais são antes de mexer** (§6.0, passo 1).
 > - **Prioridade do usuário (11/11/2026):** chegar a um **Julgamento de PADS completo**. Ordem: F5 → F6 → F7, começando pelo PADS. As Fases 2 e 3 do visual ficam para depois.
 > - **Decisão do usuário:** **sem mais bench**. Os testes são manuais, no `.exe` (§3, §6.2).
 > - **Branch:** `add-mode-apikey-oauth`. O push é feito pelo usuário. Não há merge com a `main`.
-> - **Em uma linha:** o D-11 está implementado e a F5 essencial também. Dos testes manuais, A e B passaram; faltam o C (Gemini) e o teste da F5. O próximo passo de código é a F6 (cálculo e minuta do PADS), que **precisa de autorização**.
+> - **Em uma linha:** o PADS está completo de ponta a ponta (autos → análise → cálculo → minuta → validação → revisão → DOCX/PDF → finalizar). Faltam os ajustes de tela que o usuário vai indicar, a mesma cadeia para a SR e o fechamento (§6.0).
 > - **Próximos passos:** **§6.0**.
 
 ---
@@ -23,7 +26,7 @@ O aplicativo (Go + Wails 3 + Vue, para Windows) percorre:
 4. a delimitação com **enquadramento manual**;
 5. a análise das provas com o **Gemini** (chave do usuário) ou o **ChatGPT** (*Sign in with ChatGPT*, plano do usuário).
 
-Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recupera da biblioteca local os dispositivos das imputações e a base do julgamento. Desde a parte 1 da F6, o PADS também **calcula a sanção e o comportamento** e mostra a memória de cálculo para conferência. PADS e SR param em **"Elaborando a minuta" (TAR-004)**. A minuta, o DOCX/PDF e o instalador ficam para o restante da F6 e para as F7 e F8.
+Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recupera da biblioteca local os dispositivos das imputações e a base do julgamento. Desde a parte 1 da F6, o PADS também **calcula a sanção e o comportamento** e mostra a memória de cálculo para conferência. Desde a parte 2 da F6, o PADS também **redige a minuta**. Desde as partes 3 e 4 e a F7, a minuta é **validada** e vai para **"Aguardando sua revisão"**, com **Salvar DOCX**, **Salvar PDF**, **Solicitar ajustes** e **Aprovar e finalizar** (§5.7). A SR ainda para em "Elaborando a minuta" (TAR-004).
 
 ### 1.1 O que já foi testado e o que não foi
 | Item | Automatizado | Manual no Windows (usuário) |
@@ -32,8 +35,9 @@ Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recu
 | Cadastro de peças PADS | ✅ | ✅ 09/11/2026, com ChatGPT |
 | Cadastro de peças SR | ✅ | ✅ 10/11/2026, ChatGPT, até TAR-004 (ajustes P1 a P3 na Fase 1 da interface) |
 | SEI com seleção no computador (etapa 7) | ✅ CAD-SEI-01 (simulado, pdfium real) | ✅ 10/11/2026, processo real, ChatGPT, até TAR-004 (depois dos ajustes do `8596de3`) |
-| Novo visual, Fase 1 (base, P1 a P3, itens 1 e 2) | ✅ vitest 35/35, galeria | ❌ **pendente** (§6.0, passo 1) |
+| Novo visual, Fase 1 (base, P1 a P3, itens 1 e 2) | ✅ vitest, galeria | ⚠️ PADS visto pelo usuário nos testes de 11/11; SR não confirmada |
 | Biblioteca jurídica, F5 essencial (§5.5) | ✅ leitor, acervo, busca, D-01 e etapa no fluxo do PADS | ✅ 11/11/2026, PADS sintético, ChatGPT |
+| PADS completo: cálculo, minuta, validação, revisão, DOCX e PDF (§5.7) | ✅ fluxo inteiro com IA simulada; validadores; DOCX e PDF gerados e lidos de volta | ✅ 11/11/2026: minuta gerada até o fim, DOCX e PDF salvos. O usuário **não relatou** o resultado de "Solicitar ajustes", de "Alterar" na revisão nem de "Aprovar e finalizar": confirme com ele. Ajustes de tela pendentes (§6.0) |
 | Gemini no app, de ponta a ponta | ✅ | ⚠️ **parcial**: a cota gratuita acabou no teste de 09/11/2026. A conta está no nível pago desde 10/11 (§6.1-C) |
 | Bench Gemini `gemini-3.6-flash` (casos sintéticos) | ✅ dentro dos limiares; vazamento 0 | — |
 | Bench ChatGPT `gpt-6-luna` | ⚠️ abaixo dos limiares de JSON 1ª e de resultado; vazamento 0 | Bench encerrado por decisão do usuário (§6.2); a qualidade é avaliada nos testes manuais |
@@ -110,6 +114,8 @@ go test ./internal/... ./cmd/bench/...
 | Conta ChatGPT do bench | `~/.config/sys-executor/chatgpt-dev.json` (0600) | `go run ./cmd/bench -conectar-chatgpt` abre o navegador do Windows e dá 5 min para entrar.<br>`-estado-chatgpt` e `-desconectar-chatgpt`. |
 | Credenciais do app (Windows) | `%LOCALAPPDATA%\sys-executor\credenciais\` (`gemini.dpapi`, `chatgpt.dpapi`, DPAPI) | **Não migram.** Em *Configurações de IA*, cadastre a chave do Gemini e conecte o ChatGPT, que exige conta **com assinatura**; conta gratuita recebe `invalid_grant`. |
 | Tesseract (OCR) do teste manual | `componentes\tesseract\` ao lado do `.exe` (`tesseract.exe`, DLLs, `tessdata\por.traineddata` e `osd.traineddata`) | Copiar a pasta de uma máquina que já a tenha (`~/.cache/sys-executor-dev/bin/win-tesseract/`) ou instalar o Tesseract 5.4 da UB Mannheim e copiar a pasta.<br>Sem ele, página escaneada termina em OCR-001. PDF com texto funciona sem OCR.<br>Não é o binário sem GPL previsto no D-09.7 para o instalador. |
+| Typst (PDF da minuta) | `componentes\typst\typst.exe` ao lado do `.exe` (opcional: `componentes\typst\fonts\` com a Liberation Serif) | Baixar o **Typst 0.15.1** para Windows (`typst-x86_64-pc-windows-msvc.zip`, em github.com/typst/typst/releases) e extrair o `typst.exe` para essa pasta. Sem ele, "Salvar PDF" mostra o erro EXP-002; o DOCX não depende dele. No WSL, os testes usam `SYSEXEC_TYPST` (há um Typst de Linux em `~/.cache/sys-executor-dev/bin/typst/`); sem a variável, o teste do PDF é pulado. |
+| Logotipo do cabeçalho dos documentos | `componentes\cabecalho\` ao lado do `.exe` (`logo-pmro.png` ou `logo-cabecalho-docs.jpeg`) | Copiar o arquivo do usuário (`logo-cabecalho-docs.jpeg`, na raiz do repositório, **não rastreado**). Sem a imagem, o cabeçalho sai só com o texto. No WSL: `SYSEXEC_LOGO`. |
 | Chrome de desenvolvimento (só para `poc/sei-mapa`, `go test .`) | `~/.cache/sys-executor-dev/bin/chrome/chrome-linux64/chrome` ou `SEIMAPA_CHROME` | Opcional. Sem ele, o teste é pulado. |
 | PDFs sintéticos do teste manual | pasta de teste no Windows | `SAIDA_PDF=/mnt/c/Users/<usuário>/Documents/testes-sys-executor go test -count=1 -run TestGerarPDFsSinteticos ./internal/testutil/pdfsint`<br>Gera `pecas-pads-sintetico/`, `pecas-sr-sintetico/` e os consolidados `*-texto.pdf`. |
 
@@ -134,8 +140,8 @@ GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsg
 gofmt -l ./internal ./cmd                                   # vazio
 GOOS=windows go vet ./...
 go vet ./internal/... ./cmd/rulescov/... ./cmd/licencas/... ./cmd/bench/...
-go test ./internal/... ./cmd/bench/...                      # -race nos pacotes alterados
-cd frontend && npx vitest run && npm run build && cd ..     # vitest 35/35; vue-tsc + vite
+go test ./internal/... ./cmd/bench/...                      # -race nos pacotes alterados; com SYSEXEC_TYPST=<typst> o PDF é gerado de verdade (senão o teste é pulado)
+cd frontend && npx vitest run && npm run build && cd ..     # vitest 37/37; vue-tsc + vite
 go run ./cmd/rulescov -estrito                              # 202 regras; 124/124 IDs da V4
 go run ./cmd/bench -provedor falso -entrada memoria,monolitica,pecas   # vazamento 0, sem rede
 (cd poc/sei-mapa && go test .)                              # só se mexer no sei-mapa
@@ -228,6 +234,9 @@ Os cenários estão em `src/galeria/cenarios.ts`, com a altura de cada um. Em ou
   - gerador do acervo: `cmd/bibgen`;
   - etapa do pipeline: `internal/pipeline/fontes.go`.
 - **Cálculo oficial do PADS (F6, parte 1):** `internal/pipeline/calculo.go`, sobre o motor de `internal/rules/engine`.
+- **Minuta do PADS (F6, parte 2):** trechos da IA em `internal/analise/redacao.go`; modelo do documento e textos fixos em `internal/minuta/`; etapa em `internal/pipeline/redigir.go`; tela em `frontend/src/components/MinutaPrevia.vue`.
+- **Validação e ajustes da minuta (F6, partes 3 e 4):** verificação de suporte e classificação do pedido em `internal/analise/validacao.go`; validadores determinísticos em `internal/minuta/validar.go`; etapas em `internal/pipeline/validar.go`; comandos `SolicitarAjuste` e `Aprovar` em `internal/workflow/gerenciador.go`.
+- **Arquivos da minuta (F7):** `internal/documento/` (`docx.go`, `typst.go`, `documento.go`); ligação em `internal/pipeline/documento.go` e `internal/app/tarefa.go` (`SalvarMinuta`).
 - **Governança:**
   - `internal/rules/catalog/*.yaml`;
   - `docs/planning/MATRIZ_REQUISITOS_V4.md`;
@@ -252,9 +261,26 @@ Os cenários estão em `src/galeria/cenarios.ts`, com a altura de cada um. Em ou
   ```
 - **Situação:** implementada, commitada e **testada pelo usuário** em 11/11/2026 (PADS sintético, ChatGPT, até "Calculando"). Do teste saíram dois ajustes: o hífen de fim de linha do PDF e o texto do aviso de parada.
 
+### 5.7 Fases 6 e 7 do PADS — cálculo, minuta, validação, revisão e arquivos (11/11/2026)
+- **Relatórios:** `docs/planning/RELATORIO_FASE6.md` e `docs/planning/RELATORIO_FASE7.md`.
+- **Cadeia completa do PADS:** autos → análise → fontes → cálculo oficial (conferido pelo usuário) → redação por trechos → validação → revisão → DOCX/PDF → finalizar.
+- **Validação (V4 §42):**
+  - a IA confere, trecho a trecho, se as provas citadas sustentam cada parágrafo e se a fundamentação não contraria o resultado confirmado;
+  - o que não se sustenta é reescrito, até 2 vezes por trecho; se persistir, vira item de "O que conferir ou completar";
+  - o aplicativo confere a minuta inteira contra as respostas e o cálculo (seções, resultado de cada imputação, punição, dias, pontos, cláusula de residência, nota de punição, proibições de forma, evidências);
+  - falha dessa conferência não bloqueia a revisão: aparece em destaque (VAL-001).
+- **Revisão (V4 §31.3):** pedido de ajuste em texto livre. A IA classifica o pedido e reescreve **só os trechos atingidos**. Pedido que mexe em decisão confirmada ou em texto fixo não é aplicado, e o usuário é orientado. O pedido fica só na memória da tarefa.
+- **Arquivos (V4 §32):** DOCX por escritor próprio e PDF pelo Typst, do mesmo documento. Times New Roman 12, A4, margens 2/2/3/1,5 cm, recuo de 2,5 cm, cabeçalho com logotipo e as duas linhas, rodapé com a página. `[A PREENCHER]` sai realçado. Sem autor, sem data de geração e sem assinatura.
+- **Finalizar (V4 §29.1):** "Aprovar e finalizar" pede confirmação ("Pode finalizar"), avisa se nada foi salvo e apaga a sessão.
+- **Não feito:**
+  - prévia do PDF dentro do aplicativo (a prévia é a folha em HTML; o PDF é conferido no arquivo salvo);
+  - Liberation Serif empacotada (reserva da Times New Roman);
+  - tudo isso para a SR.
+- **Situação:** implementado, verificado localmente, **commitado** e usado pelo usuário até o DOCX e o PDF (11/11/2026). Ajustes de tela pendentes (§6.0, passo 1).
+
 ### 5.6 Modelos de minuta (`docs/draft_templates/`)
 - O usuário criou `docs/draft_templates/PADS` e `docs/draft_templates/SR` com julgamentos e relatórios já feitos, para servirem de **referência de forma e estilo** na F6 e na F7 (D-04).
-- **Não entram em commit** (decisão do usuário). A pasta está no `.gitignore`. O usuário autorizou a leitura dos modelos como estão (11/11/2026).
+- **Não entram em commit** (decisão do usuário). A pasta está no `.gitignore`. **Ela não existe na outra máquina:** o usuário vai recriá-la lá e pôr os modelos. Se a pasta não existir, nada quebra (nenhum código a lê).
 - **Atenção:** os dois modelos de PADS trazem nomes completos, números de processo e códigos do SEI (só a matrícula está mascarada). Trate-os como dados reais: nada deles vai para o código, para fixtures, para o chat ou para a IA do aplicativo. Os modelos de SR ainda não foram lidos.
 
 ---
@@ -262,30 +288,44 @@ Os cenários estão em `src/galeria/cenarios.ts`, com a altura de cada um. Em ou
 ## 6. O que falta
 
 ### 6.0 Próximos passos (em ordem)
-1. **Testar o `.exe` atual** (F5 essencial + Fase 1 do visual):
-   - **PADS por upload** (`pecas-pads-sintetico\`), até o fim:
-     - a etapa "Consultando fontes jurídicas" passa sozinha, em instantes;
-     - o processamento para em **"Calculando comportamento e sanção"** com o aviso TAR-004 (esperado);
-     - na aba **Análise**, a seção **"Fontes jurídicas"** mostra o dispositivo de cada imputação ("enquadramento da IMP-n") e os artigos do RDPM ("base do julgamento"), com arquivo, página e versão;
-     - com alguma imputação procedente, aparecem os arts. 36 a 39, 41, 45, 50, 58, 70 e 71; o art. 41 vem **sem** o § 3º;
-     - em "Histórico disciplinar recente", os títulos "Transgressão anterior N" só aparecem depois do "Sim"; o acusado aparece com o posto em "Objeto do procedimento".
-   - **SR por upload** (`pecas-sr-sintetico\`), Fase 1 do visual:
-     - em Ofendidos, digite "Administração Pública": deve aparecer o aviso de instituição;
-     - num depoimento, digite o nome de um sindicado: deve aparecer "Esta pessoa já está cadastrada como sindicado. [Usar a mesma]";
-     - na conferência, confira os avisos de papel e de pessoa repetida;
-     - em "Suas respostas", cada conclusão deve mostrar o sindicado;
-     - a SR para em "Elaborando a minuta" (TAR-004).
-2. **F6 para o PADS** (cálculo ligado ao pipeline, composição da minuta, validadores). **Autorizada pelo usuário em 11/11/2026.** Decisões dele:
-   - o art. 5º, LV, da Constituição entra como **texto fixo**; a Lei nº 2.484/2011 fica pendente de confirmação dele (não citar até lá);
-   - os modelos de `docs/draft_templates/PADS` podem ser usados como referência de forma (§5.6).
-   - **Parte 1 (cálculo oficial): feita**, sem commit, com teste do usuário pendente. Roteiro: PADS sintético com uma imputação procedente; depois de "Relevantes serviços" vem a pergunta **"Confira a dosimetria e o comportamento proposto"**, com os dias e os sete itens da memória; confirmar leva a "Elaborando a minuta" (TAR-004); o painel mostra "Cálculo oficial"; alterar uma resposta anterior refaz o cálculo.
-   - **Próxima: parte 2 (redação da minuta)**, pelo `RELATORIO_FASE6.md`.
-3. **Hífen de fim de linha na leitura dos autos:** corrigido junto com a parte 1 da F6 (sem commit).
-4. **F7 para o PADS** (DOCX/PDF, prévia, aprovar e finalizar). Exige autorização e o brasão/cabeçalho (D-04).
-5. **Depois:** SR nas F6 e F7; Fases 2 e 3 do visual; restante da F5 (§5.5).
-6. **Teste C, Gemini de ponta a ponta** (§6.1-C). Pode ser feito com o `.exe` de qualquer fase.
-7. **Decisões do usuário para fechar o D-11** (§6.3) e registro da conclusão (§6.5).
+**Antes de tudo, na máquina nova:** prepare-a pelo §4 (inclusive o `typst.exe` e o logotipo em `componentes\`, §4.2), rode a verificação do §4.4 e gere o `.exe`. Tudo deve estar verde **antes** de qualquer alteração; se não estiver, o problema é do ambiente, não do código.
 
+1. **Ajustes de tela pedidos pelo usuário (11/11/2026).** Ele testou o PADS até salvar o DOCX e o PDF e disse que há ajustes de tela a fazer, **sem dizer quais**. Pergunte e anote aqui antes de alterar. Pergunte também o que ele achou:
+   - do texto da IA (relatório, fundamentação, art. 36) e do que apareceu em "O que conferir ou completar";
+   - do DOCX no Word (cabeçalho, logotipo, margens, fonte) e do PDF;
+   - de "Solicitar ajustes", de "Alterar" durante a revisão e de "Aprovar e finalizar", que ele não comentou.
+2. **Decisões do PADS que estão abertas:**
+   - gênero do acusado nos textos fixos (hoje "o(a) acusado(a)"; perguntar no cadastro?);
+   - logotipo: embutir no `.exe` (o arquivo entra no repositório) ou manter em `componentes\cabecalho\`; e qual imagem (a V4 §32.1 cita o brasão da PMRO, `logo-pmro.png`; o arquivo fornecido é o do Governo do Estado);
+   - prévia do PDF dentro do aplicativo (hoje a prévia é a folha em HTML);
+   - Lei nº 2.484/2011 na cláusula de residência: está citada, pela redação da V4 §10, e aguarda a confirmação dele;
+   - autoridade, nº do PADS, local e assinatura saem `[A PREENCHER]`, sem pergunta (decisão dele; reabrir só se ele pedir).
+3. **SR nas F6 e F7** (exige autorização; é o maior bloco que falta). A SR hoje para em "Elaborando a minuta" (TAR-004). Para chegar ao Relatório de Sindicância Regular:
+   - ler os modelos de `docs/draft_templates/SR` (o usuário vai recriar a pasta; **confirme com ele se pode ler** e trate como dados reais, §5.6);
+   - `internal/minuta/sr.go`: `ComporSR`, com a estrutura da V4 (§§21 a 25) e os textos fixos;
+   - trechos da IA para a SR em `internal/analise/redacao.go` (por fato e por sindicado), com as mesmas conferências;
+   - `internal/pipeline/redigir.go`: hoje `redigir`, `validar` e `ajustar` devolvem TAR-004 quando o tipo não é PADS, e o `redator` é só do PADS. Generalize sem mudar o caminho do PADS;
+   - `internal/minuta/validar.go`: `ValidarSR`;
+   - `internal/documento`: já aceita a SR (título e nome de arquivo); falta o estilo das alíneas, se houver;
+   - a SR não tem cálculo (V4 §21): vai de "Consultando fontes" direto a "Elaborando a minuta".
+4. **Fases 2 e 3 do novo visual** (`docs/planning/PLANO_INTERFACE.md`).
+5. **Restante da F5** (§5.5): tela de gestão do acervo, duplicidade RDPM × Coletânea, pesquisa web.
+6. **Teste C, Gemini de ponta a ponta** (§6.1-C), agora até o DOCX/PDF.
+7. **Fechar o D-11:** decisões do §6.3 e registro da conclusão (§6.5).
+8. **F8, entrega:** instalador (WiX/NSIS, certificado), componentes empacotados (Tesseract, Typst, Liberation Serif, logotipo), manual do usuário, testes de segurança e de desempenho, relatório de riscos e aceite (plano §16).
+9. **Merge com a `main`:** decisão e ação do usuário.
+
+#### O que NÃO refazer e o que não pode regredir
+- **Não reescreva o que está pronto:** biblioteca (`internal/legal`), cálculo (`internal/pipeline/calculo.go`), redação, validação, ajustes e arquivos do PADS (§5.4 e §5.7). Mexa só no que o usuário pedir.
+- **Motor determinístico** (`internal/rules/engine`) e **golden** (`internal/policy/testdata/golden`): não mudam. Os prompts de `policies/` também não mudaram nas F5 a F7: a tarefa de cada chamada vai no pedido (`Chamada.Tarefa`), não no arquivo de política.
+- **A IA nunca escreve** a decisão, a punição, os dias, os pontos, a cláusula de residência, as providências nem o fecho: isso é de `internal/minuta` (plano §5.5).
+- **Toda chamada de IA** passa por `p.comRevisao(...)` e por `prepararIA` (autorização de envio e barreira de privacidade). Etapa nova que chame a IA segue o mesmo molde de `redigir`, `validar` e `ajustar`.
+- **Cuidado com maiúsculas nas instruções à IA:** duas palavras seguidas com inicial maiúscula ou em caixa alta (ex.: "Fora de REDACAO") são tomadas pela barreira por possível nome de pessoa e param a tarefa com a pergunta de revisão. O teste do fluxo do PADS apanha isso.
+- **A minuta só aparece depois da validação** (V4 §42.1) e some quando uma resposta é alterada; não publique a minuta em outra etapa.
+- **Nada da tarefa é gravado fora da sessão**, salvo o arquivo que o usuário manda salvar. Sem logs, sem histórico de pedidos de ajuste.
+- **Anotações `// Regra:`** nos testes precisam de IDs que existem em `internal/rules/catalog` (o `rulescov -estrito` acusa).
+- **Teste parado?** `SYSEXEC_TESTE_PRAZO=30s go test ./internal/pipeline/` encurta a espera e mostra em que pergunta a tarefa ficou.
+- Os testes de fluxo que provam o PADS inteiro: `TestFluxoPADSComIA` e `TestRevisaoNoMeioDaEtapaENenhumMarcadorNoEstado` (`internal/pipeline/ia_test.go`), `internal/minuta/minuta_test.go`, `internal/documento/documento_test.go` e o bloco "F6 — minuta" de `frontend/src/telas.test.ts`. Se algum quebrar, é regressão.
 
 ### 6.1 Testes manuais do usuário no Windows (bloqueiam a conclusão)
 Antes, gere o `.exe` (§4.3) e os PDFs sintéticos e copie o Tesseract (§4.2). Em *Configurações de IA*, conecte o ChatGPT e cadastre a chave do Gemini.
@@ -364,7 +404,7 @@ Use um processo de teste ou já encerrado.
 
 ### 6.6 Depois do D-11 (cada fase exige autorização própria)
 - **F5:** biblioteca jurídica. Recorte essencial **feito** (§5.5), com busca lexical. Faltam a gestão do acervo, a tela de duplicidade e a pesquisa web.
-- **F6/F7:** composição da minuta, DOCX/PDF (Typst) e revisão humana. O motor de cálculo existe, mas o pipeline ainda não o chama. Precisa dos materiais institucionais (D-04).
+- **F6/F7:** **feitas para o PADS** (§5.7). Falta a SR (DocModel próprio, redação por fato e pessoa, validadores, mesmos arquivos).
 - **F8:** instalador (certificado, WiX, Tesseract sem GPL, Liberation Serif).
 
 ---
@@ -372,7 +412,7 @@ Use um processo de teste ou já encerrado.
 ## 7. Como retomar com o Claude
 Na nova sessão, cole algo como:
 
-> Projeto sys-executor, branch `add-mode-apikey-oauth`. Leia o `GUIA_CONTINUIDADE.md` (comece pelo §6.0) e os documentos que ele indica, em especial `docs/planning/PLANO_INTERFACE.md` e `RELATORIO_INTERFACE.md`. Siga as regras do §3: sem bench, testes manuais no `.exe` e commit sem coautor só quando eu pedir. Prepare esta máquina pelo §4 e gere o `.exe` (§4.3). Depois vamos pelo §6.0: <por exemplo, "testei a Fase 1; o resultado foi…" ou "pode seguir para a Fase 2">.
+> Projeto sys-executor, branch `add-mode-apikey-oauth` (já fiz `git pull`). Antes de qualquer ação, leia o `GUIA_CONTINUIDADE.md` (comece pelo §6.0, inclusive "O que NÃO refazer"), depois `docs/planning/RELATORIO_FASE6.md` e `RELATORIO_FASE7.md`. Siga as regras do §3: sem bench, testes manuais no `.exe`, um `.exe` e um roteiro curto a cada ajuste, commit sem coautor só quando eu pedir, nada de GPU, pergunte em caso de dúvida. Prepare esta máquina pelo §4 (com o Typst e o logotipo do §4.2), rode a verificação do §4.4 e gere o `.exe`. Depois me pergunte quais são os ajustes de tela do PADS (§6.0, passo 1).
 
 ---
 
@@ -385,3 +425,5 @@ Na nova sessão, cole algo como:
 6. O backend ainda tem `ReceberUpload` (PDF único) só para os testes legados. A interface não oferece esse caminho (E6).
 7. **Carimbo do SEI no texto:** o nome do documento na árvore, impresso no carimbo de cada página, faz parte do texto da página. Ele segue com as evidências e passa pela pseudonimização (já era assim desde a Fase 2).
 8. Pelo SEI, o processo inteiro é baixado e separado, o que é mais lento em processos grandes. Os documentos não escolhidos ficam só na sessão cifrada até o fim da tarefa.
+9. **PADS, limites conhecidos da minuta:** "o(a) acusado(a)" nos textos fixos; pedido de ajuste que mistura redação e decisão não é aplicado; o texto da IA depende do provedor e do modelo escolhidos; a prévia na tela é HTML, não o PDF.
+10. **Typst e logotipo são componentes ao lado do `.exe`** (§4.2). Sem o Typst, "Salvar PDF" dá EXP-002; sem o logotipo, o cabeçalho sai só com o texto.

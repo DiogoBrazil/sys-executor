@@ -157,6 +157,20 @@ export const responder = (perguntaID: string, opcaoID: string, valores: Record<s
   executar(() => responderApi(perguntaID, opcaoID, valores));
 export const revisar = (perguntaID: string) => executar(() => tarefa.revisar(perguntaID));
 export const retomar = () => executar(tarefa.retomar);
+// Minuta em revisão: o pedido de ajuste não fica guardado na interface.
+export const solicitarAjuste = (texto: string) => executar(() => tarefa.solicitarAjuste(texto));
+export const aprovar = () => executar(tarefa.aprovar);
+// salvarMinuta devolve true quando o arquivo foi gravado (false se o
+// usuário fechou o diálogo ou houve erro, que fica em estado.erro).
+export async function salvarMinuta(formato: "docx" | "pdf"): Promise<boolean> {
+  let salvo = false;
+  await executar(async () => {
+    const r = await tarefa.salvarMinuta(formato);
+    salvo = !!r.salvo;
+    return r;
+  });
+  return salvo;
+}
 export const informarCredenciais = (id: string, usuario: string, senha: string, orgao: string, processo: string) =>
   executar(() => credenciais.informar(id, usuario, senha, orgao, processo));
 export const informarSegredo = (id: string, valor: string) => executar(() => credenciais.segredo(id, valor));

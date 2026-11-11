@@ -65,7 +65,8 @@ func main() {
 		componentes = filepath.Join(filepath.Dir(exe), "componentes")
 	}
 	pipe := &pipeline.Pipeline{
-		Extrator: extrator,
+		Extrator:    extrator,
+		Componentes: componentes, // Typst (PDF da minuta) e logotipo do cabeçalho
 		LocalizarOCR: func() (ocr.Motor, error) {
 			// Sem Tesseract, devolver a interface nula de verdade: um
 			// *Tesseract nulo dentro de ocr.Motor não é nil e derrubava o app.
@@ -148,6 +149,24 @@ func main() {
 	}
 	servTarefa := app.NovaTarefaService(ger, seletor)
 	servTarefa.SelecionarArquivos = seletorVarios
+	// Minuta em revisão (V4 §31.3): o arquivo é gerado e gravado onde o
+	// usuário escolher; o aplicativo não guarda cópia nem o caminho.
+	servTarefa.Documento = pipe.GerarDocumento
+	servTarefa.SelecionarDestino = func(nome, formato string) (string, error) {
+		filtro := "Documento do Word (*.docx)"
+		if formato == "pdf" {
+			filtro = "Documento PDF (*.pdf)"
+		}
+		d := wapp.Dialog.SaveFile().
+			SetMessage("Salvar a minuta").
+			SetFilename(nome).
+			CanCreateDirectories(true).
+			AddFilter(filtro, "*."+formato)
+		if janela != nil {
+			d = d.AttachToWindow(janela)
+		}
+		return d.PromptForSingleSelection()
+	}
 
 	fontes := app.NovaFontesService(ger)
 	servIA := &app.IAService{Fonte: fonteIA, ChatGPT: fonteChatGPT,
