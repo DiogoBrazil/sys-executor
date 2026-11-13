@@ -2,15 +2,34 @@
 
 > **Comece por aqui.** Ponto de entrada para retomar o trabalho em qualquer máquina.
 >
-> - **Atualizado em:** 11/11/2026 (fim do dia). Estado:
+> - **Atualizado em:** 12/11/2026 (fim do dia). **Tudo o que foi feito em 12/11 está commitado**, em partes e sem coautor (§5.8 a §5.11). O push é do usuário.
+>   - Commits: `e12727c` (biblioteca), `2b8164c` (V4, Emendas 3 e 4, prompts), `5600b8d` (SR até a minuta), `b2965da` (barreira), `43f15fd` (cadastro) e `3f362af` (identidade e SEI). Mais o commit deste guia.
+>   - Alguns arquivos misturavam assuntos e foram inteiros para o commit do assunto principal. **Só o último commit garante a árvore verde**: não teste commits intermediários.
+> - **O que entrou em 12/11/2026:**
+>   - **SR completa até a minuta** (§5.8): enquadramento proposto pelo assistente e confirmado pelo usuário, síntese, análise por fato, solução, validação, ajustes, DOCX/PDF e finalização. O usuário testou: "Por hora tudo certo no teste".
+>   - **Emenda 3** (V4 §49): a SR nunca é inconclusiva.
+>   - **Biblioteca em Markdown** (§5.8): o RDPM passou a ser o `.md`, e entraram o CP, o CPM e mais 10 leis (26 documentos).
+>   - **Identidade JURISPM** (§5.9):
+>     - executável `JURISPM.exe` e ícone com escudo e balança;
+>     - "assistente" no lugar de "IA" e sem nomes de serviço nos fluxos (Emenda 4, V4 §50, com o ajuste "sem estimativa de tokens");
+>     - "Configurações do assistente".
+>   - **Ajustes dos testes pelo SEI** (§5.10 e §5.11):
+>     - o formulário do SEI centralizado e uma nova tentativa ao abrir o Edge;
+>     - os sindicados que estão só na capa do processo;
+>     - pessoa militar ou civil e posto/graduação em lista;
+>     - o modal de depoimentos em cartões;
+>     - a Portaria em campos separados;
+>     - menos "possíveis nomes" falsos (vocabulário).
+> - **Próximo passo:** o usuário testa o `.exe` das 21:52 de 12/11 (roteiro no §6.0, passo 1). Depois disso vêm as pendências do §6.0.
+> - **Estado anterior (11/11/2026):**
 >   - os testes A (SEI real) e B (SR) passaram, com dois ajustes (commit `8596de3`);
 >   - a **F5 essencial (biblioteca jurídica)** está implementada e commitada (§5.5);
 >   - a **F6 e a F7 do PADS** (cálculo, redação, validação, ajustes, DOCX/PDF, finalizar) estão implementadas e commitadas (§5.7); o usuário **gerou um Julgamento de PADS até o fim** no `.exe`;
 >   - o **novo visual da interface** foi refeito por **protótipo aprovado pelo usuário** (canvas de design no claude.ai) e implementado no Vue: cadastro em cartões e modais, trilha horizontal de etapas, imputações em tabela, histórico linha a linha, dosimetria em painéis, robô/engrenagens na espera, minuta com prévia rolável. **Testado e aprovado pelo usuário no `.exe` em 11/11/2026** e commitado (§5.3).
-> - **Prioridade do usuário:** Julgamento de PADS completo (feito). O próximo grande bloco é a **SR nas F6 e F7**, que exige autorização (§6.0).
+> - **Prioridade do usuário:** levar PADS e SR ao uso real, com testes manuais no `.exe` e ajustes pedidos por ele (§6.0).
 > - **Decisão do usuário:** **sem mais bench**. Os testes são manuais, no `.exe` (§3, §6.2).
 > - **Branch:** `add-mode-apikey-oauth`. O push é feito pelo usuário. Não há merge com a `main`.
-> - **Em uma linha:** PADS completo de ponta a ponta e com o visual aprovado; faltam as respostas pendentes do usuário sobre a minuta, as decisões abertas do PADS, a mesma cadeia para a SR e o fechamento (§6.0).
+> - **Em uma linha:** PADS e SR completos de ponta a ponta, com a identidade JURISPM. Faltam o teste dos ajustes de 12/11 (noite), o ícone dentro do `.exe`, as decisões abertas do PADS e o fechamento (§6.0).
 > - **Próximos passos:** **§6.0**. **O que não pode regredir:** §6.0, "O que NÃO refazer".
 
 ---
@@ -24,7 +43,7 @@ O aplicativo (Go + Wails 3 + Vue, para Windows) percorre:
 4. a delimitação com **enquadramento manual**;
 5. a análise das provas com o **Gemini** (chave do usuário) ou o **ChatGPT** (*Sign in with ChatGPT*, plano do usuário).
 
-Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recupera da biblioteca local os dispositivos das imputações e a base do julgamento. Desde a parte 1 da F6, o PADS também **calcula a sanção e o comportamento** e mostra a memória de cálculo para conferência. Desde a parte 2 da F6, o PADS também **redige a minuta**. Desde as partes 3 e 4 e a F7, a minuta é **validada** e vai para **"Aguardando sua revisão"**, com **Salvar DOCX**, **Salvar PDF**, **Solicitar ajustes** e **Aprovar e finalizar** (§5.7). A SR ainda para em "Elaborando a minuta" (TAR-004). A interface foi redesenhada por protótipo aprovado (§5.3).
+Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recupera da biblioteca local os dispositivos das imputações e a base do julgamento. Desde a parte 1 da F6, o PADS também **calcula a sanção e o comportamento** e mostra a memória de cálculo para conferência. Desde a parte 2 da F6, o PADS também **redige a minuta**. Desde as partes 3 e 4 e a F7, a minuta é **validada** e vai para **"Aguardando sua revisão"**, com **Salvar DOCX**, **Salvar PDF**, **Solicitar ajustes** e **Aprovar e finalizar** (§5.7). Desde 12/11/2026, a **SR** faz o mesmo caminho até a minuta (§5.8). Nela, o enquadramento das conclusões com indícios é proposto pelo assistente, conferido na biblioteca e confirmado pelo usuário. A interface foi redesenhada por protótipo aprovado (§5.3). O app se chama **JURISPM** (§5.9).
 
 ### 1.1 O que já foi testado e o que não foi
 | Item | Automatizado | Manual no Windows (usuário) |
@@ -36,6 +55,10 @@ Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recu
 | Novo visual, Fase 1 (base, P1 a P3, itens 1 e 2) | ✅ vitest, galeria | ⚠️ PADS visto pelo usuário nos testes de 11/11; SR não confirmada |
 | Telas mais horizontais (Fases 2 e 3 adaptadas aos ajustes de 11/11, §5.3) | ✅ vitest | ✅ robô e minuta aprovados pelo usuário (11/11) |
 | Protótipo aprovado (cadastro em cartões e modais, trilha horizontal, imputações em tabela, histórico linha a linha, dosimetria em painéis, parada e fim) | ✅ vitest 43/43, galeria revisada | ✅ 11/11/2026: testado e aprovado pelo usuário no `.exe` (PADS). SR com o visual novo ainda não testada (§6.0) |
+| SR completa até a minuta; biblioteca em Markdown (§5.8) | ✅ fluxo da SR com IA simulada até DOCX; validadores; leitor `.md` | ✅ 12/11/2026: "Por hora tudo certo no teste" (upload) |
+| Identidade JURISPM, "assistente", Emenda 4 (§5.9) | ✅ vitest (marca, sem nomes de serviço), testes de envio | ✅ 12/11/2026: tela inicial vista e ajustada pelo usuário |
+| SEI pela SR com o processo real (§5.10, §5.11) | ✅ cliente SEI | ⚠️ 12/11/2026: entrou no SEI; parou no objeto (sindicados na capa) e na lista de possíveis nomes. Os dois foram corrigidos e aguardam o reteste |
+| Militar ou civil, posto/graduação em lista, depoimentos em cartões, Portaria em campos (§5.11) | ✅ vitest 45/45, galeria | ⏳ `.exe` de 12/11/2026 (21:52) aguardando o teste |
 | Biblioteca jurídica, F5 essencial (§5.5) | ✅ leitor, acervo, busca, D-01 e etapa no fluxo do PADS | ✅ 11/11/2026, PADS sintético, ChatGPT |
 | PADS completo: cálculo, minuta, validação, revisão, DOCX e PDF (§5.7) | ✅ fluxo inteiro com IA simulada; validadores; DOCX e PDF gerados e lidos de volta | ✅ 11/11/2026: minuta gerada até o fim, DOCX e PDF salvos. O usuário **não relatou** o resultado de "Solicitar ajustes", de "Alterar" na revisão nem de "Aprovar e finalizar": confirme com ele. Ajustes de tela pendentes (§6.0) |
 | Gemini no app, de ponta a ponta | ✅ | ⚠️ **parcial**: a cota gratuita acabou no teste de 09/11/2026. A conta está no nível pago desde 10/11 (§6.1-C) |
@@ -51,6 +74,9 @@ Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recu
 3. `docs/rules/sys-executor_especificacao_consolidada_V4.md`: a especificação. **Prioridade absoluta: as regras jurídicas.**
    - Emenda 1: §47 (Gemini).
    - Emenda 2: §48 (ChatGPT, peças, enquadramento, barreira), com a **revisão de 10/11/2026 da §48.4 (SEI)**.
+   - Emenda 3: §49 (SR sem resultado inconclusivo).
+   - Emenda 4: §50 ("assistente" nos fluxos, sem provedor, modelo nem estimativa de tokens).
+   - O histórico de cada mudança está em `policies/CHANGELOG.md`.
 4. `docs/planning/REGISTRO_DUVIDAS_DECISOES.md`: D-10 e D-11 (E1 a E9, com o **E2 revisado**).
 5. `docs/planning/ADR_010_chatgpt_pecas_barreira.md`: as decisões de arquitetura do D-11.
 6. Relatórios das etapas, em `docs/planning/`:
@@ -58,6 +84,7 @@ Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recu
    - `RELATORIO_ETAPA2_BARREIRA.md`, `RELATORIO_ETAPA3_MULTIPROVEDOR.md`, `RELATORIO_ETAPA4_CHATGPT.md`;
    - `RELATORIO_ETAPA6_CADASTRO.md`, `RELATORIO_ETAPA7_SEI.md`, `RELATORIO_ETAPA8_BENCH.md`.
 7. `CONTINUIDADE_MIGRACAO_GEMINI.md`: histórico da migração para o Gemini.
+8. `docs/planning/PLANO_SR_MINUTA.md`: o plano e a situação da SR até a minuta (12/11/2026).
 8. **Interface:** `docs/planning/PLANO_INTERFACE.md` (plano aprovado, 3 fases) e `docs/planning/RELATORIO_INTERFACE.md` (o que cada fase fez).
 9. **Biblioteca jurídica:** `docs/planning/RELATORIO_FASE5.md` (o que entrou no recorte essencial e o que ficou adiado).
 10. **Cálculo e minuta do PADS:** `docs/planning/RELATORIO_FASE6.md` (partes entregues e o que falta).
@@ -81,7 +108,7 @@ Desde a F5 essencial, a etapa **"Consultando fontes jurídicas"** funciona: recu
 - **Ao fim de cada etapa:** atualizar este guia e o relatório da etapa.
 - **Testes (decisão de 10/11/2026):** **não rodar mais o bench** com IA real. O usuário testa manualmente. Ao terminar uma implementação ou ajuste:
   - rodar só a verificação local, sem rede (§4.4, menos o bench real);
-  - gerar o `sys-executor.exe` na pasta de teste (§4.3);
+  - gerar o `JURISPM.exe` na pasta de teste (§4.3);
   - passar ao usuário um roteiro curto do que abrir e conferir. Economizar tokens: nada de baterias de testes em sequência.
 - **Bibliotecas:** consultar a documentação pelo Context7 ou pela web antes de usar uma API externa.
 
@@ -128,12 +155,12 @@ go test ./internal/... ./cmd/bench/...
 ```bash
 GOOS=windows $(go env GOPATH)/bin/wails3 generate bindings -ts -d frontend/bindings ./cmd/sys-executor  # se mudar serviços em internal/app
 cd frontend && npm run build && cd ..
-GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o /mnt/c/Users/<usuário>/Documents/testes-sys-executor/sys-executor.exe ./cmd/sys-executor
+GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -s -w" -o /mnt/c/Users/<usuário>/Documents/testes-sys-executor/JURISPM.exe ./cmd/sys-executor
 ```
-- **Feche o app antes de substituir o `.exe`.** Confira com `tasklist.exe | grep -i sys-executor`.
+- **Feche o app antes de substituir o `.exe`.** Confira com `tasklist.exe | grep -i -e jurispm -e sys-executor`. O `sys-executor.exe` antigo da pasta de teste pode ser apagado.
 - Pasta de teste usada até aqui: `C:\Users\diogo\Documents\testes-sys-executor\`, com o `.exe`, `componentes\tesseract\`, os PDFs sintéticos e o `sei-mapa.exe`.
 - **Galeria de telas (só desenvolvimento):** `cd frontend && npm run galeria` abre cada tela com dados sintéticos (`galeria.html#resultado`, `#cadastro-sr`…). As capturas são feitas com o `chrome-headless-shell` do Playwright com `--disable-gpu --disable-features=Vulkan`. Ela não entra no `.exe`.
-- **Modo diagnóstico:** mostra a causa técnica, com os dígitos mascarados. No PowerShell: `$env:SYSEXEC_DIAGNOSTICO = "1"; .\sys-executor.exe`.
+- **Modo diagnóstico:** mostra a causa técnica, com os dígitos mascarados. No PowerShell: `$env:SYSEXEC_DIAGNOSTICO = "1"; .\JURISPM.exe`.
 
 ### 4.4 Verificação completa (antes de cada commit)
 ```bash
@@ -141,13 +168,14 @@ gofmt -l ./internal ./cmd                                   # vazio
 GOOS=windows go vet ./...
 go vet ./internal/... ./cmd/rulescov/... ./cmd/licencas/... ./cmd/bench/...
 go test ./internal/... ./cmd/bench/...                      # -race nos pacotes alterados; com SYSEXEC_TYPST=<typst> o PDF é gerado de verdade (senão o teste é pulado)
-cd frontend && npx vitest run && npm run build && cd ..     # vitest 37/37; vue-tsc + vite
+cd frontend && npx vitest run && npx vue-tsc --noEmit && npm run build && cd ..   # vitest 45/45 (o teste "cadastro: o cartão abre a peça num modal" falhou 1 vez por tempo: repita)
 go run ./cmd/rulescov -estrito                              # 202 regras; 124/124 IDs da V4
 go run ./cmd/bench -provedor falso -entrada memoria,monolitica,pecas   # vazamento 0, sem rede
 (cd poc/sei-mapa && go test .)                              # só se mexer no sei-mapa
 go run ./cmd/licencas                                       # 45 módulos Go, 40 npm
-go run ./cmd/bibgen -conferir                               # acervo da biblioteca em dia com docs/law_library
-git diff --stat -- internal/policy/testdata                 # golden: vazio
+go run ./cmd/bibgen -conferir                               # acervo da biblioteca em dia com docs/law_library (PDF e .md)
+go run ./cmd/vocabgen -conferir                             # vocabulário da barreira em dia com o acervo (§5.10)
+git diff --stat -- internal/policy/testdata                 # golden: vazio (mudar golden exige o aval do usuário)
 ```
 
 ---
@@ -302,45 +330,151 @@ Os cenários estão em `src/galeria/cenarios.ts`, com a altura de cada um. O nú
   - tudo isso para a SR.
 - **Situação:** implementado, verificado localmente, **commitado** e usado pelo usuário até o DOCX e o PDF (11/11/2026). Ajustes de tela pendentes (§6.0, passo 1).
 
+### 5.8 SR completa e biblioteca em Markdown (12/11/2026; sem commit, aguardando o teste do usuário)
+- **Plano:** `docs/planning/PLANO_SR_MINUTA.md`. A V4 recebeu a Emenda 3 (§49); o `policies/CHANGELOG.md` tem as duas entradas do dia.
+- **Entrega 1, ajustes do teste da SR:**
+  - ofendido pessoa ou instituição (`PessoaCadastro.Instituicao`, não pseudonimizado);
+  - papel do depoente em `select`;
+  - "Trechos citados": o rádio invisível das opções cobria os chips. Foi corrigido no CSS, com teste de tela;
+  - SR sem "inconclusivo" (Emenda 3): mudaram o domínio, o schema, a pergunta, o `policies/sr/analise.md` e o golden `sr-analise.txt`, com o aval do usuário.
+- **Biblioteca em Markdown** (`internal/legal/markdown.go`):
+  - lê o cabeçalho YAML, os títulos `#`, `**Art.**`, `**§**`, as rubricas em negrito ou em linha própria (CPM) e os parágrafos com letra (`§ 4º-A`);
+  - o `.md` não tem páginas, e a passagem cita o dispositivo;
+  - o RDPM passou a ser o `.md`, com o texto conferido palavra por palavra com o PDF, que foi apagado;
+  - entraram CP, CPM, CPP, CPPM, CTB, Estatuto da Advocacia, ECA, Maria da Penha, Abuso de Autoridade, Juizados, Desarmamento e Tortura (26 documentos);
+  - `BuscarEm` restringe a busca a alguns documentos;
+  - o catálogo de enquadramento aponta para o `.md`, e `TestCatalogoConfereComABiblioteca` confere os 100 itens do RDPM;
+  - a barreira de privacidade ganhou as palavras "Executivo/Legislativo/Judiciário" na lista de exceções (vinham de um inciso do Estatuto).
+- **Cadeia da SR:** análise → conclusões → **enquadramento** (etapa nova `enquadramento`, com prompt em `policies/sr/enquadramento.md` e golden novo) → síntese (II) e análise por fato (III) pela IA → I e IV compostas pelo aplicativo (`minuta.ComporSR`) → validação (`minuta.ValidarSR`) → revisão → DOCX/PDF.
+  - **Enquadramento** (`internal/pipeline/enquadramento_sr.go`), regra do usuário:
+    - transgressão: inciso dos arts. 15, 16 ou 17 do RDPM ou dos arts. 29 ou 32 do Estatuto (catálogo);
+    - crime militar: CPM, ou outra lei penal c/c o art. 9º, II, do CPM, com a alínea;
+    - crime comum: CP ou outra lei penal, nunca o CPM.
+    A IA propõe, o Go confere cada item na biblioteca (item inválido volta à IA) e o usuário mantém, desmarca ou acrescenta linhas ("art. 303 do CPM", "art. 1º, I, da Lei 9.455 c/c art. 9º, II, c, do CPM").
+  - **Seção I:** vem do cadastro (sindicados com o SEI do termo, ofendidos, testemunhas, declarantes, laudos). Sem cadastro, as alíneas ficam só com o rótulo e uma pendência.
+  - **Solução:** conjunta quando há um fato e o mesmo resultado; senão, por sindicado e por fato. Os dispositivos do mesmo tipo vão numa só frase. Sem providências por padrão.
+- **Testes:**
+  - `TestFluxoSRComIA` vai até a minuta validada e o DOCX;
+  - `TestComporEValidarSR`, `TestSolucaoSRConjunta` e `TestValidarSRApontaDivergencias` (`internal/minuta`);
+  - `TestLerMarkdown` e `TestBuscaPenalPorRubrica` (`internal/legal`).
+- **Não feito:** a galeria não tem a tela da pergunta de enquadramento, que usa os campos comuns (Sim/Não e texto longo).
+
+### 5.9 Identidade JURISPM e "assistente" (12/11/2026; sem commit)
+- **Pedido do usuário:**
+  - nome e textos da tela inicial: JURISPM (LEXIA e a linha divisória retiradas depois, a pedido; selo da balança em dourado suave), "Assistente Inteligente de Análise Jurídico-Disciplinar", "7º Batalhão de Polícia Militar · PMRO";
+  - "IA" vira "assistente" nos fluxos;
+  - ChatGPT e Gemini só aparecem em Configurações de IA;
+  - ícone com a balança dentro de escudo.
+- **A tela "Configurações de IA" passou a se chamar "Configurações do assistente"** (pedido do usuário, 12/11/2026). Mudaram o título, os botões, os links e as mensagens de erro. A V4 e este guia ainda usam o nome antigo: é a mesma tela.
+- **Emenda 4 (V4 §50), aprovada:**
+  - a autorização de envio não nomeia serviço nem modelo, mas o vínculo a eles continua (§48.1);
+  - a pergunta de criança continua, sem nomear o ChatGPT.
+- **Onde mudou:**
+  - nome: `cmd/sys-executor/main.go` (`nomeApp`, título da janela, `Icon`) e `frontend/index.html`;
+  - bloco da marca: `Inicio.vue`, com `data-teste="marca"`;
+  - textos: os de pipeline, analise, minuta e app e as mensagens IA-xxx de `internal/erros/catalogo.go`, cujos códigos foram mantidos; também a galeria.
+- **Nomes de serviço que continuam:**
+  - nas telas de Configurações de IA;
+  - na mensagem IA-016, do login;
+  - no aviso de desconexão do ChatGPT, também nas Configurações;
+  - no `NomeAplicativo` do login do ChatGPT (`internal/chatgpt`), que ficou "sys-executor" para não mexer no cadastro do cliente.
+- **Ícone:** `cmd/sys-executor/icone/` (`icone.svg`, `icone.png` de 256 px embutido como ícone da janela, e `icone.ico` com 9 tamanhos).
+- **Pendente: ícone no arquivo `.exe`** (Explorer e atalho).
+  - O `.exe` precisa de um recurso de ícone nº 3 (`rsrc_windows_amd64.syso` em `cmd/sys-executor/`).
+  - Gerá-lo com `go run github.com/tc-hib/go-winres@v0.3.3 make` foi bloqueado pela permissão automática da sessão (ferramenta baixada e executada).
+  - Com o aval do usuário, rode na pasta `cmd/sys-executor/icone` e confira a licença da ferramenta: `go run github.com/tc-hib/go-winres@v0.3.3 simply --icon icone.ico --out ../rsrc --arch amd64 --product-name JURISPM --file-description "JURISPM — LEXIA" --original-filename JURISPM.exe`.
+  - Atenção: o Wails procura o ícone com ID 3, e o `simply` grava o ID padrão. Se a janela não pegar o ícone do recurso, o PNG embutido continua valendo.
+- **Testes:** `TestConfirmacaoDeEnvio`, `TestAutorizacaoVinculadaAoAlvo` e `TestCriancaBloqueiaChatGPT` conferem que o serviço não é nomeado. O teste de tela "Identidade JURISPM" confere o bloco da marca.
+
+### 5.10 Ajustes do teste pelo SEI (12/11/2026, noite; sem commit)
+- **Formulário de credenciais do SEI** (`PainelSEI.vue`): centralizado.
+- **Sem estimativa de tokens** na autorização de envio, pelo ajuste da Emenda 4 (§50, item a) aprovado pelo usuário. Os avisos de limite e de créditos (IA-005, IA-013, IA-019) dizem que a tarefa foi mantida e orientam a ajustar em Configurações do assistente.
+- **Sindicados só na capa** (`comSindicadosDoCadastro`, em `delimitar.go`): quando a leitura da Portaria não acha um sindicado do cadastro, ele entra na pergunta do objeto como "S-C1"…, marcado, com alerta para conferir. O usuário pode confirmar e seguir.
+- **Possíveis nomes** (`internal/pseudonimo/vocabulario.go`): uma sequência só deixa de ser suspeita se TODAS as palavras forem comuns. Contam como comuns:
+  - as palavras do vocabulário gerado do acervo por `go run ./cmd/vocabgen`, com cerca de 8 mil palavras escritas em minúsculas nas leis;
+  - as de uma lista curta de marcas e termos;
+  - as que aparecem soltas, em minúsculas, no próprio texto. E-mails, endereços web e identificadores não contam.
+
+  Sobrenomes e nomes que também são palavras nunca contam como comuns (Costa, Rocha, Pinto, Clara, Socorro…).
+- **Testes:**
+  - `TestSuspeitosIgnoramPalavrasComuns` e `TestVocabularioSemSobrenomes` (`internal/pseudonimo`);
+  - `TestObjetoSRComSindicadosSoNoCadastro` (`internal/pipeline`).
+- **Verificação nova no §4.4:** `go run ./cmd/vocabgen -conferir`. Rode `go run ./cmd/vocabgen` depois de mudar o acervo.
+- **Observação:** o teste de tela "cadastro: o cartão abre a peça num modal" falhou uma vez por tempo e passou nas duas execuções seguintes.
+
+### 5.11 Cadastro, Portaria, SEI e possíveis nomes (12/11/2026, noite; sem commit)
+- **SEI:** a abertura do Edge até a tela de login é tentada até 2 vezes (perfil novo, pausa de 2 s), porque a primeira abertura depois de ligar o PC falhou uma vez. Sem internet, o erro aparece direto (`internal/sei/cliente.go`, `abrir`).
+- **Pessoa militar ou civil:**
+  - `PessoaCadastro.Civil` é novo; o civil não tem posto, e o sindicado e o acusado são sempre militares, o que o Go confere;
+  - ofendido: Pessoa (militar), Pessoa (civil) ou Instituição;
+  - testemunha e declarante: militar ou civil.
+- **Posto/graduação em lista** (`CampoPosto.vue`, `frontend/src/postos.ts`; espelho em `workflow.PostosGraduacoes`): CEL PM, TC PM, MAJ PM, CAP PM, 1º TEN PM, 2º TEN PM, CAD PM, ST PM, 1º SGT PM, 2º SGT PM, 3º SGT PM, CB PM e SD PM. Um valor antigo fora da lista continua como opção. O rótulo agora é sempre "Posto/graduação".
+- **Modal de depoimentos:** um cartão por oitiva, com os campos em grade responsiva (`.dep-campos`). Os `data-teste` foram mantidos, e o `depoente-tipo-i` é novo.
+- **Portaria no objeto da SR:** número, autoridade e data em campos separados (`portaria_numero`, `portaria_autoridade`, `portaria_data`). O objeto guarda "Portaria nº …, de …, expedida por …".
+- **Possíveis nomes:** além do vocabulário (§5.10), contam como comuns:
+  - as terminações típicas de substantivo (-ção, -dade, -mento, -ência, -agem, -ável…), em palavras de 6 letras ou mais;
+  - as palavras de até 2 letras;
+  - uma lista maior de marcas, modelos de carro, armas, celulares e documentos.
+
+  Nomes e sobrenomes com essas terminações (Conceição, Trindade, Sacramento) continuam protegidos.
+
 ## 6. O que falta
 
 ### 6.0 Próximos passos (em ordem)
 **Antes de tudo, na máquina nova:** prepare-a pelo §4 (inclusive o `typst.exe` e o logotipo em `componentes\`, §4.2), rode a verificação do §4.4 e gere o `.exe`. Tudo deve estar verde **antes** de qualquer alteração; se não estiver, o problema é do ambiente, não do código.
 
-1. ✅ **Ajustes de tela do PADS — concluídos** (11/11/2026): protótipo aprovado, implementado, testado e aprovado pelo usuário no `.exe`, commitado (§5.3). **Não refaça.** Ajuste visual novo: pergunte ao usuário e, se for mudança grande, faça antes um protótipo no canvas de design (o usuário aprovou esse fluxo; o canvas dele é "Telas do julgamento – protótipo").
-   **Pergunte ao usuário (ainda sem resposta):**
-   - o que achou do texto da IA (relatório, fundamentação, art. 36) e do que apareceu em "O que conferir ou completar";
-   - do DOCX no Word (cabeçalho, logotipo, margens, fonte) e do PDF;
-   - se usou "Solicitar ajustes", "Alterar" durante a revisão e "Aprovar e finalizar" e se funcionaram;
-   - se quer o novo visual também em Início, Configurações de IA, `PainelSEI` e `FaixaTipo` (hoje no visual da Fase 1).
-   **Teste ainda não feito no `.exe` com o visual novo:** a **SR** (cadastro com Portaria e envolvidos no modal; processamento até TAR-004) e o caminho **pelo SEI** (documentos do SEI dentro dos modais). Peça ao usuário um teste rápido da SR com `pecas-sr-sintetico\`.
-2. **Decisões do PADS que estão abertas:**
+1. **Pedir o resultado do teste do `.exe` de 12/11/2026, 21:52** (SR pelo SEI, com processo real). O roteiro passado ao usuário:
+   - **SEI:** o formulário de login centralizado e a entrada já na primeira vez. Se falhar de novo, peça o modo diagnóstico: `$env:SYSEXEC_DIAGNOSTICO="1"; $env:SYSEXEC_SEI_VISIVEL="1"; .\JURISPM.exe`;
+   - **cadastro:**
+     - ofendido Pessoa (militar), Pessoa (civil) ou Instituição;
+     - depoentes militar ou civil (civil sem posto/graduação);
+     - posto/graduação em lista;
+     - modal de depoimentos em cartões;
+   - **autorização de envio:** sem tokens e com bem menos itens em "Possíveis nomes não reconhecidos". Peça a lista do que ainda sobrar, sem dados reais no chat, só o tipo do falso positivo. A barreira se ajusta em `internal/pseudonimo/vocabulario.go`;
+   - **objeto da SR:** Portaria em três campos (número, autoridade, data) e os sindicados que estão só na capa, já marcados com alerta e confirmáveis;
+   - **SR até a minuta:** enquadramento, minuta, "Solicitar ajustes", "Alterar", DOCX/PDF e "Aprovar e finalizar".
+2. **Ícone dentro do `JURISPM.exe`** (Explorer e atalho), §5.9:
+   - hoje só a janela e a barra de tarefas mostram o ícone, pelo PNG embutido;
+   - falta o recurso `cmd/sys-executor/rsrc_windows_amd64.syso`. A ferramenta `go-winres` foi bloqueada pela permissão automática da sessão;
+   - peça ao usuário para autorizá-la ou rodar o comando do §5.9 e depois gere o `.exe` de novo.
+3. **Pergunte ao usuário:**
+   - **identificação da Portaria no cadastro:** hoje é um campo único ("Identificação (número, autoridade e data)"); no objeto da SR já são três campos. Ele quer três campos no cadastro também? Isso pede o modelo `Cadastro` com três campos e bindings novos;
+   - **minuta do PADS** (sem resposta desde 11/11):
+     - o texto do assistente e o "O que conferir ou completar";
+     - o DOCX no Word e o PDF;
+     - se "Solicitar ajustes", "Alterar" e "Aprovar e finalizar" funcionaram;
+   - **visual novo** também em Configurações do assistente e `FaixaTipo`, se ele quiser.
+4. **Decisões do PADS que estão abertas:**
    - gênero do acusado nos textos fixos (hoje "o(a) acusado(a)"; perguntar no cadastro?);
-   - logotipo: embutir no `.exe` (o arquivo entra no repositório) ou manter em `componentes\cabecalho\`; e qual imagem (a V4 §32.1 cita o brasão da PMRO, `logo-pmro.png`; o arquivo fornecido é o do Governo do Estado);
+   - logotipo do cabeçalho do DOCX/PDF: embutir no `.exe` ou manter em `componentes\cabecalho\`; e qual imagem (a V4 §32.1 cita o brasão da PMRO; o arquivo fornecido é o do Governo do Estado);
    - prévia do PDF dentro do aplicativo (hoje a prévia é a folha em HTML);
-   - Lei nº 2.484/2011 na cláusula de residência: está citada, pela redação da V4 §10, e aguarda a confirmação dele;
-   - autoridade, nº do PADS, local e assinatura saem `[A PREENCHER]`, sem pergunta (decisão dele; reabrir só se ele pedir).
-3. **SR nas F6 e F7** (exige autorização; é o maior bloco que falta). A SR hoje para em "Elaborando a minuta" (TAR-004). Para chegar ao Relatório de Sindicância Regular:
-   - ler os modelos de `docs/draft_templates/SR` (o usuário vai recriar a pasta; **confirme com ele se pode ler** e trate como dados reais, §5.6);
-   - `internal/minuta/sr.go`: `ComporSR`, com a estrutura da V4 (§§21 a 25) e os textos fixos;
-   - trechos da IA para a SR em `internal/analise/redacao.go` (por fato e por sindicado), com as mesmas conferências;
-   - `internal/pipeline/redigir.go`: hoje `redigir`, `validar` e `ajustar` devolvem TAR-004 quando o tipo não é PADS, e o `redator` é só do PADS. Generalize sem mudar o caminho do PADS;
-   - `internal/minuta/validar.go`: `ValidarSR`;
-   - `internal/documento`: já aceita a SR (título e nome de arquivo); falta o estilo das alíneas, se houver;
-   - a SR não tem cálculo (V4 §21): vai de "Consultando fontes" direto a "Elaborando a minuta".
-4. **Visual das telas restantes** (Início, Configurações de IA, `PainelSEI`, `FaixaTipo`): só se o usuário pedir (passo 1).
+   - Lei nº 2.484/2011 na cláusula de residência: aguarda a confirmação dele;
+   - autoridade, nº do PADS, local e assinatura saem `[A PREENCHER]`, por decisão dele.
 5. **Restante da F5** (§5.5): tela de gestão do acervo, duplicidade RDPM × Coletânea, pesquisa web.
-6. **Teste C, Gemini de ponta a ponta** (§6.1-C), agora até o DOCX/PDF.
+6. **Teste C, Gemini de ponta a ponta** (§6.1-C), agora até o DOCX/PDF, no PADS e na SR.
 7. **Fechar o D-11:** decisões do §6.3 e registro da conclusão (§6.5).
 8. **F8, entrega:** instalador (WiX/NSIS, certificado), componentes empacotados (Tesseract, Typst, Liberation Serif, logotipo), manual do usuário, testes de segurança e de desempenho, relatório de riscos e aceite (plano §16).
 9. **Merge com a `main`:** decisão e ação do usuário.
 
 #### O que NÃO refazer e o que não pode regredir
+- **Identidade e textos (V4 §50, Emenda 4):**
+  - nos fluxos, nunca escreva "IA", ChatGPT, Gemini, modelo ou tokens; diga "assistente". Os nomes de serviço só aparecem nas telas de Configurações do assistente (e na mensagem IA-016, de login);
+  - os códigos `IA-xxx` continuam;
+  - o nome do app é `nomeApp` em `cmd/sys-executor/main.go` e o `<title>` do `frontend/index.html`;
+  - **a pasta de dados continua `sys-executor`** (`internal/pastas`): mudá-la faria o usuário perder login e chave. O `NomeAplicativo` do login do ChatGPT também continua "sys-executor".
+- **Barreira de privacidade:** o vocabulário (`internal/pseudonimo/vocabulario.go`) só tira uma sequência da lista de suspeitos se TODAS as palavras forem comuns. Ao ajustá-lo:
+  - **nunca** ponha nomes ou sobrenomes nas listas de palavras comuns; eles vão para `sobrenomesComuns`;
+  - não aceite palavras de e-mail, URL ou identificador como "minúsculas do texto";
+  - mantenha os testes `TestSuspeitosIgnoramPalavrasComuns` e `TestVocabularioSemSobrenomes`;
+  - depois de mudar o acervo, rode `go run ./cmd/vocabgen`.
+- **Biblioteca:** os originais de `docs/law_library` são PDF ou `.md`. Depois de mudar um original ou o manifesto, rode `go run ./cmd/bibgen`. O RDPM é o `.md`. O catálogo de enquadramento é conferido com a biblioteca por `TestCatalogoConfereComABiblioteca`.
+- **Cadastro:** a lista de posto/graduação existe em dois lugares, que precisam ficar iguais: `frontend/src/postos.ts` e `workflow.PostosGraduacoes`. Sindicado e acusado são sempre militares, o que o Go confere. Se mudar uma estrutura de `internal/workflow` ou de `internal/app`, regenere os bindings (§4.3).
+- **SR:** a pergunta do objeto usa `portaria_numero`, `portaria_autoridade` e `portaria_data`. Os sindicados vindos só do cadastro têm ID `S-C<n>`. O enquadramento é a etapa `enquadramento`, e o golden dela não muda sem o aval do usuário.
 - **Não reescreva o que está pronto:** biblioteca (`internal/legal`), cálculo (`internal/pipeline/calculo.go`), redação, validação, ajustes e arquivos do PADS (§5.4 e §5.7). Mexa só no que o usuário pedir.
-- **Motor determinístico** (`internal/rules/engine`) e **golden** (`internal/policy/testdata/golden`): não mudam. Os prompts de `policies/` também não mudaram nas F5 a F7: a tarefa de cada chamada vai no pedido (`Chamada.Tarefa`), não no arquivo de política.
+- **Motor determinístico** (`internal/rules/engine`) e **golden** (`internal/policy/testdata/golden`): não mudam sem o aval do usuário. Nas F5 a F7 do PADS, os prompts de `policies/` não mudaram: a tarefa de cada chamada vai no pedido (`Chamada.Tarefa`). Em 12/11/2026, com o aval do usuário, mudaram o `sr/analise.md` e o golden `sr-analise.txt` (Emenda 3), e entrou a etapa `enquadramento` (`policies/{sr,pads}/enquadramento.md`, com os golden novos).
 - **A IA nunca escreve** a decisão, a punição, os dias, os pontos, a cláusula de residência, as providências nem o fecho: isso é de `internal/minuta` (plano §5.5).
 - **Toda chamada de IA** passa por `p.comRevisao(...)` e por `prepararIA` (autorização de envio e barreira de privacidade). Etapa nova que chame a IA segue o mesmo molde de `redigir`, `validar` e `ajustar`.
-- **Cuidado com maiúsculas nas instruções à IA:** duas palavras seguidas com inicial maiúscula ou em caixa alta (ex.: "Fora de REDACAO") são tomadas pela barreira por possível nome de pessoa e param a tarefa com a pergunta de revisão. O teste do fluxo do PADS apanha isso.
+- **Cuidado com maiúsculas nas instruções à IA:** duas palavras seguidas com inicial maiúscula ou em caixa alta (ex.: "Fora de REDACAO", "INDÍCIOS SUFICIENTES", "Com INDICIOS") são tomadas pela barreira por possível nome de pessoa e param a tarefa com a pergunta de revisão. O mesmo vale para os dados enviados: por isso, nas leis penais, a SR manda à IA "Lei nº 11.340/2006 (violência doméstica…)", e não "Lei Maria da Penha". Os testes dos fluxos do PADS e da SR apanham isso.
 - **A minuta só aparece depois da validação** (V4 §42.1) e some quando uma resposta é alterada; não publique a minuta em outra etapa.
 - **Nada da tarefa é gravado fora da sessão**, salvo o arquivo que o usuário manda salvar. Sem logs, sem histórico de pedidos de ajuste.
 - **Anotações `// Regra:`** nos testes precisam de IDs que existem em `internal/rules/catalog` (o `rulescov -estrito` acusa).
@@ -351,6 +485,7 @@ Os cenários estão em `src/galeria/cenarios.ts`, com a altura de cada um. O nú
   - "processo" no PADS e "procedimento" na SR;
   - sem pacote npm novo; ícones e figuras em SVG próprio (IconScout descartado: licença e dependência);
   - o bloco de testes "Telas do protótipo aprovado" e os cenários da galeria.
+- A SR inteira é provada por `TestFluxoSRComIA` e pelos testes `*SR*` de `internal/minuta/minuta_test.go`. A biblioteca em Markdown, por `TestLerMarkdown`, `TestBuscaPenalPorRubrica` e `TestCatalogoConfereComABiblioteca`.
 - Os testes de fluxo que provam o PADS inteiro: `TestFluxoPADSComIA` e `TestRevisaoNoMeioDaEtapaENenhumMarcadorNoEstado` (`internal/pipeline/ia_test.go`), `internal/minuta/minuta_test.go`, `internal/documento/documento_test.go` e o bloco "F6 — minuta" de `frontend/src/telas.test.ts`. Se algum quebrar, é regressão.
 
 ### 6.1 Testes manuais do usuário no Windows (bloqueiam a conclusão)
