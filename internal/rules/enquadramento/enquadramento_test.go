@@ -1,9 +1,12 @@
 package enquadramento
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/DiogoBrazil/sys-executor/internal/legal"
 
 	"github.com/DiogoBrazil/sys-executor/internal/rules/engine"
 )
@@ -19,7 +22,8 @@ func TestCatalogoIntegro(t *testing.T) {
 	cont := map[string]int{}
 	for _, d := range ds {
 		cont[d.Diploma+"-"+strconv.Itoa(d.Artigo)]++
-		if d.Fonte.Arquivo == "" || d.Fonte.Pagina == 0 {
+		// Original em Markdown (o RDPM, desde 12/11/2026) não tem páginas.
+		if d.Fonte.Arquivo == "" || (d.Fonte.Pagina == 0 && !strings.HasSuffix(d.Fonte.Arquivo, ".md")) {
 			t.Errorf("%s sem fonte", d.ID)
 		}
 		if strings.Contains(d.Texto, "Redação dada") || strings.Contains(d.Texto, "Seção") || strings.Contains(d.Texto, "- ") {
@@ -88,5 +92,41 @@ func TestBuscarEDoCitado(t *testing.T) {
 	}
 	if _, ok := DoCitado("Código Penal Militar", 209, "", ""); ok {
 		t.Fatal("diploma fora do catálogo")
+	}
+}
+
+// O texto de cada item do catálogo é o da redação em vigor na biblioteca
+// (protege a troca do original, como a do RDPM em PDF pelo Markdown).
+// Regra: PADS-ENQ-001
+func TestCatalogoConfereComABiblioteca(t *testing.T) {
+	b, err := legal.Padrao()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ds, err := Todos()
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc := map[string]string{RDPM: "rdpm", Estatuto: "estatuto"}
+	// O catálogo guarda o texto sem a nota de alteração ("(Redação dada…)")
+	// nem o "; e" que liga ao inciso seguinte.
+	nota := regexp.MustCompile(`\((?:Reda[çc][ãa]o dada|Inciso acrescido|Dispositivo acrescido|Al[íi]nea acrescida)[^)]*\)`)
+	norm := func(s string) string {
+		s = strings.Join(strings.Fields(nota.ReplaceAllString(s, "")), " ")
+		s = strings.TrimSuffix(strings.TrimRight(s, " ;.:"), "; e")
+		return strings.ToLower(strings.TrimRight(s, " ;.:"))
+	}
+	for _, d := range ds {
+		if d.Diploma != RDPM {
+			continue // o Estatuto continua em PDF, com a extração já conferida
+		}
+		p, ok := b.Dispositivo(legal.Referencia{Documento: doc[d.Diploma], Artigo: strconv.Itoa(d.Artigo), Inciso: d.Inciso, Alinea: d.Alinea})
+		if !ok {
+			t.Errorf("%s: não encontrado na biblioteca", d.ID)
+			continue
+		}
+		if norm(p.Texto) != norm(d.Texto) {
+			t.Errorf("%s: texto difere\n catálogo:   %q\n biblioteca: %q", d.ID, d.Texto, p.Texto)
+		}
 	}
 }

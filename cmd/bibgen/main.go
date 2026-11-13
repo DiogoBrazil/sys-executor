@@ -1,6 +1,6 @@
 // bibgen gera o acervo inicial da biblioteca jurídica (V4 §40.2; plano §10):
-// lê os PDFs de docs/law_library identificados no manifesto, extrai o texto,
-// separa os dispositivos e grava internal/legal/dados/acervo.json.gz, que é
+// lê os originais de docs/law_library identificados no manifesto (PDF ou
+// Markdown estruturado), extrai o texto, separa os dispositivos e grava internal/legal/dados/acervo.json.gz, que é
 // embutido no executável.
 //
 // Uso (na raiz do repositório):
@@ -74,13 +74,12 @@ func executar() error {
 	if err != nil {
 		return err
 	}
-	// Todo PDF da pasta tem de estar no manifesto: nada entra sem identificação.
+	// Todo original da pasta tem de estar no manifesto: nada entra sem identificação.
 	noManifesto := map[string]bool{}
 	for _, d := range m.Documentos {
 		noManifesto[d.Arquivo] = true
 	}
-	arqs, _ := filepath.Glob(filepath.Join(*lib, "*.pdf"))
-	for _, a := range arqs {
+	for _, a := range legal.Originais(*lib) {
 		if !noManifesto[filepath.Base(a)] {
 			return fmt.Errorf("%q está em %s e não está no manifesto (internal/legal/dados/manifesto.yaml)", filepath.Base(a), *lib)
 		}
@@ -97,7 +96,13 @@ func executar() error {
 		d.SHA256 = hex.EncodeToString(h[:])
 		// Original inalterado e já lido por OCR: aproveita o texto do acervo
 		// anterior (o OCR não precisa estar disponível em toda máquina).
-		if ant := doAcervo(anterior, d.ID); ant != nil && ant.SHA256 == d.SHA256 && ant.PaginasOCR > 0 && motor == nil {
+		if strings.EqualFold(filepath.Ext(d.Arquivo), ".md") {
+			origem, partes, err := legal.LerMarkdown(b)
+			if err != nil {
+				return fmt.Errorf("%s: %w", d.ID, err)
+			}
+			d.Origem, d.Partes = &origem, partes
+		} else if ant := doAcervo(anterior, d.ID); ant != nil && ant.SHA256 == d.SHA256 && ant.PaginasOCR > 0 && motor == nil {
 			d.Paginas, d.PaginasOCR, d.OCR, d.Partes = ant.Paginas, ant.PaginasOCR, ant.OCR, ant.Partes
 		} else {
 			pags, nOCR, err := ler(ctx, ex, motor, b)
@@ -129,6 +134,8 @@ func executar() error {
 			obs = "texto por OCR"
 		case d.PaginasOCR > 0:
 			obs = fmt.Sprintf("%d página(s) por OCR", d.PaginasOCR)
+		case d.Origem != nil:
+			obs = "Markdown"
 		}
 		fmt.Printf("%-22s %5d %6d %8d %10d  %s\n", d.ID, d.Paginas, len(d.Partes), arts, unid, obs)
 		ac.Documentos = append(ac.Documentos, d)

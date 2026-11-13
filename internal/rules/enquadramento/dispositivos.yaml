@@ -1,5 +1,5 @@
 # Catálogo curado de dispositivos para o enquadramento manual do PADS
-# (V4 §48.5, PADS-ENQ-001). Gerado a partir dos PDFs de docs/law_library,
+# (V4 §48.5, PADS-ENQ-001). Gerado a partir dos originais de docs/law_library,
 # com a REDAÇÃO VIGENTE de cada dispositivo (o texto substituído por norma
 # posterior foi descartado; a norma que deu a redação fica em "redacao").
 #
@@ -9,7 +9,9 @@
 # usuário em cada caso (por semelhança de intensidade com o RDPM).
 #
 # Fontes:
-#   RDPM: docs/law_library/RDPM-RO.pdf (arts. 15, 16 e 17)
+#   RDPM: docs/law_library/RDPM RO - Decreto_13255_2007.md (arts. 15, 16 e 17;
+#         Markdown, sem páginas; substituiu o RDPM-RO.pdf em 12/11/2026, com
+#         o mesmo texto: conferido pelo TestCatalogoConfereComABiblioteca)
 #   Estatuto: docs/law_library/DECRETO-LEI, Nº 09-A, DE 09 DE MARÇO DE 1982.pdf (arts. 29 e 32)
 versao: 1
 dispositivos:
@@ -19,175 +21,175 @@ dispositivos:
     inciso: I
     texto: "portar-se inconvenientemente, desrespeitando as normas de boa educação, os costumes ou as convenções sociais"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 4}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-II
     diploma: RDPM
     artigo: 15
     inciso: II
     texto: "não portar seu documento de identidade, quando uniformizado, ou não exibi-lo quando solicitado"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-III
     diploma: RDPM
     artigo: 15
     inciso: III
     texto: "deixar de participar em tempo hábil, à autoridade competente, a impossibilidade de comparecer à OPM ou a qualquer ato de serviço de que deva participar ou a que deva assistir"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-IV
     diploma: RDPM
     artigo: 15
     inciso: IV
     texto: "permutar serviço sem autorização da autoridade competente"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-V
     diploma: RDPM
     artigo: 15
     inciso: V
     texto: "deixar de comunicar a alteração de dados de qualificação pessoal ou mudança de endereço residencial"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-VI
     diploma: RDPM
     artigo: 15
     inciso: VI
     texto: "tomar parte em jogos proibidos ou jogar a dinheiro os permitidos, em local sob a administração policial militar ou em qualquer outro quando uniformizado"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-VII
     diploma: RDPM
     artigo: 15
     inciso: VII
     texto: "não comunicar ao superior a execução de ordem recebida, tão logo seja possível"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-VIII
     diploma: RDPM
     artigo: 15
     inciso: VIII
     texto: "não transmitir ao seu sucessor as ordens em vigor, quando da passagem do serviço"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-IX
     diploma: RDPM
     artigo: 15
     inciso: IX
     texto: "usar, quando uniformizado, barba, cabelo, bigode, costeleta ou adereço em desacordo com as disposições a respeito"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-X
     diploma: RDPM
     artigo: 15
     inciso: X
     texto: "usar a policial militar, quando uniformizada, penteado, maquilagem, unhas ou adereços em desacordo com as disposições a respeito"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-XI
     diploma: RDPM
     artigo: 15
     inciso: XI
     texto: "representar a Corporação ou a OPM sem estar devidamente autorizado"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-XII
     diploma: RDPM
     artigo: 15
     inciso: XII
     texto: "assumir compromisso pela Corporação sem estar devidamente autorizado"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-XIII
     diploma: RDPM
     artigo: 15
     inciso: XIII
     texto: "realizar transações comerciais ou pecuniárias dentro de unidade da Polícia Militar, exceto quando devidamente autorizado"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-XIV
     diploma: RDPM
     artigo: 15
     inciso: XIV
     texto: "entrar, permanecer ou sair de OPM em desacordo com as normas vigentes"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-XV
     diploma: RDPM
     artigo: 15
     inciso: XV
     texto: "ausentar-se do local de trabalho, sem autorização da autoridade competente, para tratar de assuntos estranhos ao serviço"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-XVI
     diploma: RDPM
     artigo: 15
     inciso: XVI
     texto: "utilizar os animais da Corporação em desacordo com as normas ou castigá-los inutilmente"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-15-XVII
     diploma: RDPM
     artigo: 15
     inciso: XVII
     texto: "transportar em viatura, aeronave ou embarcação que esteja sob seu comando ou responsabilidade pessoas e/ou materiais sem autorização da autoridade competente"
     natureza: LEVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-I
     diploma: RDPM
     artigo: 16
     inciso: I
     texto: "concorrer para a discórdia, desarmonia ou cultivar inimizade entre os policiais militares ou entre estes e os de outra Corporação"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-II
     diploma: RDPM
     artigo: 16
     inciso: II
     texto: "interferir na administração do serviço ou na execução de ordem ou missão sem ter a devida competência para tal, exceto para salvaguardar o interesse da Corporação"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-III
     diploma: RDPM
     artigo: 16
     inciso: III
     texto: "deixar de cumprir ou de fazer cumprir as normas, regulamentos ou instruções na esfera de suas atribuições"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 5}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-IV
     diploma: RDPM
     artigo: 16
     inciso: IV
     texto: "omitir em boletim de ocorrência, relatório ou qualquer documento dados indispensáveis ao esclarecimento dos fatos"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-V
     diploma: RDPM
     artigo: 16
     inciso: V
     texto: "não comunicar ao superior imediato, ou na ausência deste a qualquer autoridade superior, toda informação que tiver sobre iminente perturbação da ordem pública ou grave alteração no serviço, logo que tenha conhecimento"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-VI
     diploma: RDPM
     artigo: 16
     inciso: VI
     texto: "negar-se a receber documento ou processo que lhe for encaminhado por autoridade competente, exceto nos casos de impedimento justificável, hipótese em que deverá manifestar-se por escrito"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-VII
     diploma: RDPM
     artigo: 16
     inciso: VII
     texto: "não encaminhar à autoridade competente, na linha de subordinação e no prazo legal, recurso ou documento que receber, desde que elaborado de acordo com os preceitos regulamentares, se não for de sua alçada a solução"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-VIII
     diploma: RDPM
     artigo: 16
     inciso: VIII
     texto: "apresentar parte, recurso disciplinar ou qualquer outro documento sem ter seguido as normas e preceitos regulamentares"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
     redacao: "Redação dada pelo Decreto n° 14.852, de 13/01/2010"
   - id: RDPM-16-IX
     diploma: RDPM
@@ -195,245 +197,245 @@ dispositivos:
     inciso: IX
     texto: "dificultar ao subordinado a apresentação de recurso"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-X
     diploma: RDPM
     artigo: 16
     inciso: X
     texto: "retardar a execução de qualquer ordem recebida"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XI
     diploma: RDPM
     artigo: 16
     inciso: XI
     texto: "faltar a qualquer ato de serviço em que deva tomar parte ou assistir, quando prévia e nominalmente escalado"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XII
     diploma: RDPM
     artigo: 16
     inciso: XII
     texto: "trabalhar mal em serviço, instrução ou missão"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XIII
     diploma: RDPM
     artigo: 16
     inciso: XIII
     texto: "simular doença para esquivar-se ao cumprimento do dever"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XIV
     diploma: RDPM
     artigo: 16
     inciso: XIV
     texto: "afastar-se de qualquer lugar em que deva permanecer por força de disposição ou ordem legal"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XV
     diploma: RDPM
     artigo: 16
     inciso: XV
     texto: "utilizar inadequadamente, em desacordo com as normas técnicas, regulamentos ou instruções veículo automotor, aeronave, embarcação, animais, armamento ou equipamentos de qualquer natureza, pertencentes ao acervo da Polícia Militar"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XVI
     diploma: RDPM
     artigo: 16
     inciso: XVI
     texto: "ausentar-se do posto sem fazer a passagem do serviço ao seu sucessor, ou antes do término do seu turno, sem autorização da autoridade competente"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XVII
     diploma: RDPM
     artigo: 16
     inciso: XVII
     texto: "disparar arma por imprudência, negligência, imperícia, ou sem necessidade"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XVIII
     diploma: RDPM
     artigo: 16
     inciso: XVIII
     texto: "violar ou deixar de preservar local de crime"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XIX
     diploma: RDPM
     artigo: 16
     inciso: XIX
     texto: "não apresentar-se ao fim de afastamento temporário do serviço ou, ainda, logo que souber que o mesmo foi interrompido"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XX
     diploma: RDPM
     artigo: 16
     inciso: XX
     texto: "permanecer em dependência de outra OPM ou local de serviço sem consentimento ou ordem da autoridade competente"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 6}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXI
     diploma: RDPM
     artigo: 16
     inciso: XXI
     texto: "entrar ou sair com tropa da OPM, sem o prévio conhecimento da autoridade competente ou sem sua ordem"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXII
     diploma: RDPM
     artigo: 16
     inciso: XXII
     texto: "abrir qualquer dependência de OPM sem permissão da autoridade competente, salvo nos casos de emergência"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXIII
     diploma: RDPM
     artigo: 16
     inciso: XXIII
     texto: "ter em seu poder ou introduzir em área sob administração policial militar material que atente contra a disciplina ou a moral"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXIV
     diploma: RDPM
     artigo: 16
     inciso: XXIV
     texto: "utilizar subordinados para serviços não regulamentares"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXV
     diploma: RDPM
     artigo: 16
     inciso: XXV
     texto: "prestar, deliberadamente, informação falsa, errônea ou incompleta a superior, induzindo-o a erro"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXVI
     diploma: RDPM
     artigo: 16
     inciso: XXVI
     texto: "dirigir-se à autoridade superior sem respeitar a cadeia de comando, para tratar de assuntos administrativos ou operacionais"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXVII
     diploma: RDPM
     artigo: 16
     inciso: XXVII
     texto: "utilizar veículos oficiais para fins particulares ou não previstos em normas, regulamentos ou instruções"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXVIII
     diploma: RDPM
     artigo: 16
     inciso: XXVIII
     texto: "deixar de comunicar o extravio de documento de identidade policial militar"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXIX
     diploma: RDPM
     artigo: 16
     inciso: XXIX
     texto: "deixar de apresentar a declaração de bens quando a norma assim o exigir"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXX
     diploma: RDPM
     artigo: 16
     inciso: XXX
     texto: "reter o preso, a vítima, as testemunhas ou demais partes envolvidas por mais tempo que o necessário para a solução de procedimento policial, administrativo ou penal"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXXI
     diploma: RDPM
     artigo: 16
     inciso: XXXI
     texto: "permitir que pessoa não autorizada adentre a local interditado"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXXII
     diploma: RDPM
     artigo: 16
     inciso: XXXII
     texto: "dormir durante o turno de serviço, quando isto não for permitido"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXXIII
     diploma: RDPM
     artigo: 16
     inciso: XXXIII
     texto: "desrespeitar regras de circulação de trânsito, de tráfego aéreo ou de navegação marítima, lacustre ou fluvial"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXXIV
     diploma: RDPM
     artigo: 16
     inciso: XXXIV
     texto: "autorizar, promover ou executar manobras perigosas com viaturas, aeronaves, embarcações ou animais"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXXV
     diploma: RDPM
     artigo: 16
     inciso: XXXV
     texto: "recorrer a órgãos, pessoas ou instituições, exceto os previstos em lei, para resolver assuntos de interesse pessoal relacionados com a Polícia Militar"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXXVI
     diploma: RDPM
     artigo: 16
     inciso: XXXVI
     texto: "atrasar a entrega de processo administrativo, inquérito, sindicância ou outro procedimento apuratório"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXXVII
     diploma: RDPM
     artigo: 16
     inciso: XXXVII
     texto: "retirar de local sob administração policial militar material, viatura, aeronave, embarcação ou animal, ou deles servir-se sem ordem do responsável ou proprietário"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXXVIII
     diploma: RDPM
     artigo: 16
     inciso: XXXVIII
     texto: "ingerir bebida alcoólica, quando uniformizado, em cafés, bares, restaurantes ou similares, exceto quando estiver representando a Corporação em evento social e, neste caso, sempre com moderação"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XXXIX
     diploma: RDPM
     artigo: 16
     inciso: XXXIX
     texto: "exercer qualquer atividade incompatível com os motivos do afastamento, estando o policial militar dispensado ou licenciado para tratamento de saúde própria ou de dependente"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 7}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XL
     diploma: RDPM
     artigo: 16
     inciso: XL
     texto: "demonstrar promiscuidade com outro militar, por meio de atos, gestos ou palavras"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XLI
     diploma: RDPM
     artigo: 16
     inciso: XLI
     texto: "ser indiscreto em relação a assuntos de caráter oficial, cuja divulgação seja prejudicial à disciplina ou ao serviço"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XLII
     diploma: RDPM
     artigo: 16
     inciso: XLII
     texto: "utilizar equipamento de informática da Corporação em desacordo com as normas vigentes"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-16-XLIII
     diploma: RDPM
     artigo: 16
     inciso: XLIII
     texto: "chegar atrasado à atividade para a qual esteja escalado"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
     redacao: "Inciso acrescido pelo Decreto n° 14.852, de 13/01/2010"
   - id: RDPM-16-XLIV
     diploma: RDPM
@@ -441,7 +443,7 @@ dispositivos:
     inciso: XLIV
     texto: "causar dano ao patrimônio público"
     natureza: MEDIA
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
     redacao: "Inciso acrescido pelo Decreto n° 14.852, de 13/01/2010"
   - id: RDPM-17-I
     diploma: RDPM
@@ -449,217 +451,217 @@ dispositivos:
     inciso: I
     texto: "faltar à verdade, espalhar boatos ou utilizar-se do anonimato"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-II
     diploma: RDPM
     artigo: 17
     inciso: II
     texto: "filiar-se, quando na ativa, a partidos políticos, sindicatos, associações profissionais com caráter de sindicato ou associações cujos estatutos não estejam de conformidade com a lei"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-III
     diploma: RDPM
     artigo: 17
     inciso: III
     texto: "tomar parte, uniformizado, em manifestação de caráter político ou reivindicatório"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-IV
     diploma: RDPM
     artigo: 17
     inciso: IV
     texto: "discutir ou promover discussão, por meio de qualquer veículo de comunicação, sobre assuntos estratégicos afetos à área da segurança pública"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-V
     diploma: RDPM
     artigo: 17
     inciso: V
     texto: "tomar parte em qualquer manifestação coletiva, seja ela de caráter reivindicatório, de crítica ou de apoio a atos de superior"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-VI
     diploma: RDPM
     artigo: 17
     inciso: VI
     texto: "não providenciar a tempo, na esfera de suas atribuições, medidas contra irregularidade que tomar conhecimento"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-VII
     diploma: RDPM
     artigo: 17
     inciso: VII
     texto: "divulgar informações reservadas ou fazer publicamente comentários que coloquem em descrédito o Governo ou a Corporação"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-VIII
     diploma: RDPM
     artigo: 17
     inciso: VIII
     texto: "desrespeitar os órgãos dos poderes constituídos ou qualquer um de seus membros, bem como criticar de maneira ofensiva, em público ou por meio dos canais de comunicação, seus atos ou decisões"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-IX
     diploma: RDPM
     artigo: 17
     inciso: IX
     texto: "deixar de cumprir ordem recebida, embaraçar ou retardar a sua execução"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-X
     diploma: RDPM
     artigo: 17
     inciso: X
     texto: "deixar de assumir a responsabilidade por seus atos ou pelos atos praticados por subordinados quando decorrerem do cumprimento de sua ordem"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XI
     diploma: RDPM
     artigo: 17
     inciso: XI
     texto: "empregar força ou medida desnecessária em ato de serviço, ainda que não resulte dano"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XII
     diploma: RDPM
     artigo: 17
     inciso: XII
     texto: "ofender, provocar ou desafiar outro militar com atos, gestos ou palavras"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XIII
     diploma: RDPM
     artigo: 17
     inciso: XIII
     texto: "deixar de assumir, orientar ou auxiliar no atendimento de ocorrência, quando esta, por sua natureza ou amplitude, assim o exigir"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XIV
     diploma: RDPM
     artigo: 17
     inciso: XIV
     texto: "utilizar-se da condição de policial militar para obter facilidades pessoais de qualquer natureza ou para encaminhar negócios particulares ou de terceiros"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 8}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XV
     diploma: RDPM
     artigo: 17
     inciso: XV
     texto: "liberar preso ou dispensar pessoa envolvida em ocorrência sem competência legal para isso"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XVI
     diploma: RDPM
     artigo: 17
     inciso: XVI
     texto: "na condição de testemunha, prestar declaração falsa ou calar-se em procedimento administrativo no âmbito da Corporação"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XVII
     diploma: RDPM
     artigo: 17
     inciso: XVII
     texto: "fazer uso, estar de posse, sob ação ou induzir outrem ao uso de substância proibida por lei, ou introduzi-la em local sujeito a administração policial militar"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XVIII
     diploma: RDPM
     artigo: 17
     inciso: XVIII
     texto: "subtrair, extraviar, danificar ou inutilizar documentos de interesse da administração pública ou de terceiros"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XIX
     diploma: RDPM
     artigo: 17
     inciso: XIX
     texto: "receber ou permitir que subordinado receba, a título de recompensa, em razão da função pública, qualquer objeto ou valor, mesmo quando oferecido pelo proprietário"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XX
     diploma: RDPM
     artigo: 17
     inciso: XX
     texto: "desrespeitar, desconsiderar ou ofender pessoa por meio de palavras, atos ou gestos, no atendimento de ocorrência policial ou em outras situações decorrentes do serviço"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXI
     diploma: RDPM
     artigo: 17
     inciso: XXI
     texto: "promover ou participar de luta corporal com outro militar"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXII
     diploma: RDPM
     artigo: 17
     inciso: XXII
     texto: "ausentar-se, sem prévia licença, por mais de 24 (vinte e quatro) horas, da unidade em que serve ou do local em que deveria permanecer ou apresentar-se por força de disposição ou ordem"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXIII
     diploma: RDPM
     artigo: 17
     inciso: XXIII
     texto: "deixar de observar rigorosamente as normas pertinentes ao serviço, colocando em risco a segurança de pessoas ou instalações"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXIV
     diploma: RDPM
     artigo: 17
     inciso: XXIV
     texto: "dar, por escrito ou verbalmente, ordem manifestamente ilegal, ainda que não chegue a ser cumprida"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXV
     diploma: RDPM
     artigo: 17
     inciso: XXV
     texto: "portar arma pertencente à Corporação fora dos casos previstos em norma"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXVI
     diploma: RDPM
     artigo: 17
     inciso: XXVI
     texto: "esquivar-se de saldar dívidas ou de cumprir compromissos assumidos, mediante artifício, ardil ou qualquer outro meio fraudulento"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXVII
     diploma: RDPM
     artigo: 17
     inciso: XXVII
     texto: "maltratar ou permitir que se maltrate preso sob sua guarda"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXVIII
     diploma: RDPM
     artigo: 17
     inciso: XXVIII
     texto: "desrespeitar, intencionalmente, as garantias constitucionais da pessoa no ato de sua prisão"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXIX
     diploma: RDPM
     artigo: 17
     inciso: XXIX
     texto: "empregar violência física ou psicológica para obter informações durante o atendimento de ocorrência policial ou, ainda, no curso de investigação, ainda que esta não seja de caráter oficial"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXX
     diploma: RDPM
     artigo: 17
     inciso: XXX
     texto: "empregar arma ou equipamento em desacordo com a lei e os regulamentos, desde que o faça intencionalmente, para deter ou neutralizar a ação de infrator, causando-lhe, em razão do excesso, danos de qualquer natureza"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXXI
     diploma: RDPM
     artigo: 17
     inciso: XXXI
     texto: "envolver-se com pessoas ligadas à prática de crimes, ainda que não tenha sido acusado ou não seja suspeito de praticá-los"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 9}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
     redacao: "Redação dada pelo Decreto n° 14.852, de 13/01/2010"
   - id: RDPM-17-XXXII
     diploma: RDPM
@@ -667,7 +669,7 @@ dispositivos:
     inciso: XXXII
     texto: "fazer ameaça a outro policial militar"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 10}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
     redacao: "Redação dada pelo Decreto n° 14.852, de 13/01/2010"
   - id: RDPM-17-XXXIII
     diploma: RDPM
@@ -675,49 +677,49 @@ dispositivos:
     inciso: XXXIII
     texto: "disparar arma de fogo contra militar, ainda que não venha a produzir-lhe lesões ou causar-lhe a morte"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 10}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXXIV
     diploma: RDPM
     artigo: 17
     inciso: XXXIV
     texto: "causar danos ao patrimônio de outro militar"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 10}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXXV
     diploma: RDPM
     artigo: 17
     inciso: XXXV
     texto: "fazer publicamente declaração que ofenda, perante a sociedade ou parte dela, o Estado, suas instituições ou os chefes dos poderes Executivo, Legislativo e Judiciário ou quem os represente"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 10}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXXVI
     diploma: RDPM
     artigo: 17
     inciso: XXXVI
     texto: "ingerir bebida alcoólica quando em serviço ou apresentar-se alcoolizado para prestá-lo"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 10}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXXVII
     diploma: RDPM
     artigo: 17
     inciso: XXXVII
     texto: "recusar-se a receber ou devolver insígnia, medalha ou diploma que lhe tenha sido outorgado ou cassado"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 10}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXXVIII
     diploma: RDPM
     artigo: 17
     inciso: XXXVIII
     texto: "exercer, o policial militar da ativa, atividade remunerada, exceto as previstas em lei"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 10}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
   - id: RDPM-17-XXXIX
     diploma: RDPM
     artigo: 17
     inciso: XXXIX
     texto: "dirigir-se de maneira desrespeitosa ou desatenciosa a subordinado, par ou superior hierárquico"
     natureza: GRAVE
-    fonte: {arquivo: "RDPM-RO.pdf", pagina: 10}
+    fonte: {arquivo: "RDPM RO - Decreto_13255_2007.md"}
     redacao: "Inciso acrescido pelo Decreto n° 14.852, de 13/01/2010"
   - id: EST-29-I
     diploma: ESTATUTO

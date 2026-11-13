@@ -5,11 +5,14 @@
 # A categoria segue a V4 §40.5: LEGISLACAO, REGULAMENTO_DISCIPLINAR,
 # NORMA_INSTITUCIONAL, JURISPRUDENCIA ou OUTROS.
 #
-# Depois de mudar este arquivo ou os PDFs: go run ./cmd/bibgen
+# Os originais são PDF ou Markdown estruturado (.md, com cabeçalho YAML e
+# "**Art. N.**"); o Markdown não tem páginas.
+#
+# Depois de mudar este arquivo ou os originais: go run ./cmd/bibgen
 versao: 1
 documentos:
   - id: rdpm
-    arquivo: "RDPM-RO.pdf"
+    arquivo: "RDPM RO - Decreto_13255_2007.md" # substituiu o RDPM-RO.pdf em 12/11/2026 (mesmo texto)
     titulo: "Regulamento Disciplinar da Polícia Militar do Estado de Rondônia — RDPM/RO (Decreto nº 13.255/2007)"
     siglas: ["RDPM", "RDPM/RO", "RDPM-RO", "Regulamento Disciplinar", "Decreto 13255", "Decreto 13.255"]
     categoria: REGULAMENTO_DISCIPLINAR
@@ -79,3 +82,65 @@ documentos:
     titulo: "Resolução nº 203/2015 — carga pessoal de arma de fogo, munições, coletes e algemas"
     siglas: ["Resolução 203"]
     categoria: NORMA_INSTITUCIONAL
+  # Legislação federal em Markdown (texto compilado vigente do normas.leg.br,
+  # incluída pelo usuário em 12/11/2026).
+  - id: cp
+    arquivo: "Codigo Penal - del-2848-1940-12-07.md"
+    titulo: "Código Penal (Decreto-Lei nº 2.848/1940)"
+    siglas: ["CP", "Código Penal", "Decreto-Lei 2.848", "Decreto-Lei 2848", "DL 2.848"]
+    categoria: LEGISLACAO
+  - id: cpm
+    arquivo: "Codigo Penal Militar - del-1001-1969-10-21.md"
+    titulo: "Código Penal Militar (Decreto-Lei nº 1.001/1969)"
+    siglas: ["CPM", "Código Penal Militar", "Decreto-Lei 1.001", "Decreto-Lei 1001", "DL 1.001"]
+    categoria: LEGISLACAO
+  - id: cpp
+    arquivo: "Codigo de Processo Penal - del-3689-1941-10-03.md"
+    titulo: "Código de Processo Penal (Decreto-Lei nº 3.689/1941)"
+    siglas: ["CPP", "Código de Processo Penal", "Decreto-Lei 3.689", "Decreto-Lei 3689", "DL 3.689"]
+    categoria: LEGISLACAO
+  - id: cppm
+    arquivo: "Codigo de Processo Penal Militar - del-1002-1969-10-21.md"
+    titulo: "Código de Processo Penal Militar (Decreto-Lei nº 1.002/1969)"
+    siglas: ["CPPM", "Código de Processo Penal Militar", "Decreto-Lei 1.002", "Decreto-Lei 1002", "DL 1.002"]
+    categoria: LEGISLACAO
+  - id: ctb
+    arquivo: "Código de Trânsito Brasileiro - lei-9503-1997-09-23.md"
+    titulo: "Código de Trânsito Brasileiro (Lei nº 9.503/1997)"
+    siglas: ["CTB", "Código de Trânsito Brasileiro", "Lei 9.503", "Lei 9503"]
+    categoria: LEGISLACAO
+  - id: eaoab
+    arquivo: "Estatuto da Advocacia e a Ordem dos Advogados do Brasil - lei-8906-1994-07-04.md"
+    titulo: "Estatuto da Advocacia e da OAB (Lei nº 8.906/1994)"
+    siglas: ["Estatuto da Advocacia", "Estatuto da OAB", "EAOAB", "Lei 8.906", "Lei 8906"]
+    categoria: LEGISLACAO
+  - id: eca
+    arquivo: "Estatuto da Criança e do Adolescente - lei-8069-1990-07-13.md"
+    titulo: "Estatuto da Criança e do Adolescente (Lei nº 8.069/1990)"
+    siglas: ["ECA", "Estatuto da Criança e do Adolescente", "Lei 8.069", "Lei 8069"]
+    categoria: LEGISLACAO
+  - id: maria-da-penha
+    arquivo: "Lei Maria da Penha - lei-11340-2006-08-07.md"
+    titulo: "Lei Maria da Penha (Lei nº 11.340/2006)"
+    siglas: ["Lei Maria da Penha", "Lei 11.340", "Lei 11340"]
+    categoria: LEGISLACAO
+  - id: abuso-de-autoridade
+    arquivo: "Lei de abuso de autoridade - lei-13869-2019-09-05.md"
+    titulo: "Lei de Abuso de Autoridade (Lei nº 13.869/2019)"
+    siglas: ["Lei de Abuso de Autoridade", "Lei 13.869", "Lei 13869"]
+    categoria: LEGISLACAO
+  - id: juizados-especiais
+    arquivo: "Lei sobre os Juizados Especiais Cíveis e Criminais - lei-9099-1995-09-26.md"
+    titulo: "Lei dos Juizados Especiais Cíveis e Criminais (Lei nº 9.099/1995)"
+    siglas: ["Lei dos Juizados Especiais", "Lei 9.099", "Lei 9099"]
+    categoria: LEGISLACAO
+  - id: estatuto-do-desarmamento
+    arquivo: "Lei sobre posse e comercialização de armas de fogo e munição - lei-10826-2003-12-22.md"
+    titulo: "Estatuto do Desarmamento (Lei nº 10.826/2003)"
+    siglas: ["Estatuto do Desarmamento", "Lei 10.826", "Lei 10826"]
+    categoria: LEGISLACAO
+  - id: tortura
+    arquivo: "Lei sobre tortura - lei-9455-1997-04-07.md"
+    titulo: "Lei de Tortura (Lei nº 9.455/1997)"
+    siglas: ["Lei de Tortura", "Lei 9.455", "Lei 9455"]
+    categoria: LEGISLACAO

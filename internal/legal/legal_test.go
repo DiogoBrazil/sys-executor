@@ -146,12 +146,12 @@ func TestAcervoInicialCobreABibliotecaDoProjeto(t *testing.T) {
 		t.Fatalf("acervo com %d documentos; manifesto com %d (rode go run ./cmd/bibgen)", len(a.Documentos), len(m.Documentos))
 	}
 	lib := filepath.Join("..", "..", "docs", "law_library")
-	arqs, _ := filepath.Glob(filepath.Join(lib, "*.pdf"))
+	arqs := Originais(lib)
 	if len(arqs) == 0 {
 		t.Skip("docs/law_library ausente")
 	}
 	if len(arqs) != len(a.Documentos) {
-		t.Errorf("docs/law_library tem %d PDFs; o acervo tem %d (rode go run ./cmd/bibgen)", len(arqs), len(a.Documentos))
+		t.Errorf("docs/law_library tem %d originais; o acervo tem %d (rode go run ./cmd/bibgen)", len(arqs), len(a.Documentos))
 	}
 	for _, d := range a.Documentos {
 		b, err := os.ReadFile(filepath.Join(lib, d.Arquivo))
@@ -184,12 +184,15 @@ func TestBuscaExataEPorPalavras(t *testing.T) {
 	if !p.Exata || p.DocumentoID != "rdpm" || p.Artigo != "39" || p.Paragrafo != "unico" || !strings.Contains(p.Texto, "Para efeito de reincidência") {
 		t.Errorf("exata = %+v", p)
 	}
-	if p.Referencia != "art. 39, parágrafo único, RDPM" || p.Versao == "" || p.Pagina == 0 {
+	// O RDPM é Markdown desde 12/11/2026: sem página; a localização é o dispositivo.
+	if p.Referencia != "art. 39, parágrafo único, RDPM" || p.Versao == "" || p.Pagina != 0 {
 		t.Errorf("referência %q, versão %q, página %d", p.Referencia, p.Versao, p.Pagina)
 	}
-	// Por palavras: o tema leva ao art. 39 do RDPM; a ordem é estável.
+	// Por palavras, nas normas disciplinares: o tema leva ao art. 39 do RDPM;
+	// a ordem é estável. (No acervo inteiro, o CP e o CPP também tratam de
+	// reincidência e prazo.)
 	for range 2 {
-		ps, err = b.Buscar("reincidência prazo", 5)
+		ps, err = b.BuscarEm("reincidência prazo", 5, "rdpm", "estatuto", "coletanea")
 		if err != nil || len(ps) == 0 {
 			t.Fatalf("busca por palavras: %v, %d resultados", err, len(ps))
 		}
@@ -290,5 +293,124 @@ func TestNotaDeVigenciaFiltraOArt41Par3(t *testing.T) {
 		if strings.Contains(p.Texto, "Ficam extintas as execuções de medidas privativas") {
 			t.Errorf("trecho filtrado apareceu em %s", p.Referencia)
 		}
+	}
+}
+
+// Norma fictícia em Markdown, no formato dos arquivos de docs/law_library.
+const normaMarkdown = `---
+titulo: "Lei nº 1 de 01/01/2000"
+versao_texto: "compilada (texto vigente)"
+fonte: "https://exemplo.invalido/lei-1"
+baixado_em: 2026-10-13
+---
+
+> **Nota editorial:** texto de teste.
+
+# Lei nº 1 de 01/01/2000
+
+LEI Nº 1, DE 1º DE JANEIRO DE 2000
+
+O PRESIDENTE DA REPÚBLICA Faço saber que:
+
+## TÍTULO I
+
+**DAS DISPOSIÇÕES GERAIS**
+
+**Art. 1º** Esta lei é fictícia.
+
+## PARTE ESPECIAL
+
+### TÍTULO II — DOS CRIMES DE TESTE
+
+**Furto de teste**
+
+**Art. 2º** Subtrair coisa fictícia:
+
+Pena \- detenção, de um a dois anos.
+
+**§ 1º** A pena aumenta-se de metade. *(Parágrafo com redação dada pela Lei nº 2, de 1/1/2001)*
+
+Forma qualificada
+
+**§ 1º-A** A pena é dobrada se:
+
+I - o agente é fictício;
+
+a) por motivo fútil; *(Alínea acrescida pela Lei nº 3, de 1/1/2002)*
+
+**§ 2º** *(Revogado pela Lei nº 4, de 1/1/2003)*
+
+**Parágrafo único.** Texto avulso.
+`
+
+// Cobre: LIB-MD-01 (biblioteca em Markdown, decisão do usuário de 12/11/2026)
+func TestLerMarkdown(t *testing.T) {
+	o, partes, err := LerMarkdown([]byte(normaMarkdown))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o.VersaoTexto != "compilada (texto vigente)" || o.Fonte == "" || o.BaixadoEm != "2026-10-13" {
+		t.Errorf("origem = %+v", o)
+	}
+	if len(partes) != 1 || partes[0].Titulo != "LEI Nº 1, DE 1º DE JANEIRO DE 2000" {
+		t.Fatalf("partes = %+v", partes)
+	}
+	us := partes[0].Unidades
+	if u := achar(t, us, "1", "", "", "", true); u.Texto != "Esta lei é fictícia." || u.Contexto != "TÍTULO I — DAS DISPOSIÇÕES GERAIS" || u.Pagina != 0 || u.Rubrica != "" {
+		t.Errorf("art. 1º = %+v", u)
+	}
+	// Rubrica em negrito; o título fora da hierarquia ("PARTE ESPECIAL") não
+	// entra no texto; "\-" vira "-"; a pena continua o caput.
+	art2 := achar(t, us, "2", "", "", "", true)
+	if art2.Rubrica != "Furto de teste" || art2.Texto != "Subtrair coisa fictícia: Pena - detenção, de um a dois anos." || art2.Contexto != "TÍTULO II — DOS CRIMES DE TESTE" {
+		t.Errorf("art. 2º = %+v", art2)
+	}
+	if u := achar(t, us, "1", "", "", "", true); strings.Contains(u.Texto, "PARTE") {
+		t.Errorf("título no texto: %q", u.Texto)
+	}
+	// Itálico sai; a nota é guardada.
+	if u := achar(t, us, "2", "1", "", "", true); u.Texto != "A pena aumenta-se de metade. (Parágrafo com redação dada pela Lei nº 2, de 1/1/2001)" {
+		t.Errorf("§ 1º = %+v", u)
+	}
+	// Rubrica sem negrito e parágrafo com letra (§ 1º-A não é o § 1º de novo).
+	if u := achar(t, us, "2", "1-A", "", "", true); u.Rubrica != "Forma qualificada" || u.Texto != "A pena é dobrada se:" {
+		t.Errorf("§ 1º-A = %+v", u)
+	}
+	achar(t, us, "2", "1-A", "I", "a", true)
+	if u := achar(t, us, "2", "2", "", "", true); !u.Revogada {
+		t.Errorf("§ 2º devia estar revogado: %+v", u)
+	}
+	if got := (Referencia{Artigo: "2", Paragrafo: "1-A"}).Texto(); got != "art. 2º, § 1º-A" {
+		t.Errorf("referência = %q", got)
+	}
+}
+
+// Cobre: LIB-MD-02 — o CP e o CPM do acervo trazem as rubricas, e a busca
+// restrita à legislação penal acha o tipo pelo nome.
+func TestBuscaPenalPorRubrica(t *testing.T) {
+	b := abrir(t)
+	p, ok := b.Dispositivo(Referencia{Documento: "cpm", Artigo: "303"})
+	if !ok || p.Rubrica != "Peculato" || p.Pagina != 0 || !strings.Contains(p.Texto, "Apropriar-se de dinheiro") {
+		t.Fatalf("art. 303 do CPM = %+v", p)
+	}
+	r, ok := b.InterpretarReferencia("art. 155, § 4º, do CP")
+	if !ok || r.Documento != "cp" || r.Artigo != "155" || r.Paragrafo != "4" {
+		t.Fatalf("referência ao CP = %+v", r)
+	}
+	ps, err := b.BuscarEm("peculato", 5, "cp", "cpm")
+	if err != nil || len(ps) == 0 {
+		t.Fatalf("busca: %v %d", err, len(ps))
+	}
+	for _, p := range ps {
+		if p.DocumentoID != "cp" && p.DocumentoID != "cpm" {
+			t.Errorf("fora do filtro: %s", p.Referencia)
+		}
+	}
+	achou := false
+	for _, p := range ps {
+		achou = achou || (p.DocumentoID == "cpm" && p.Artigo == "303") || (p.DocumentoID == "cp" && p.Artigo == "312")
+	}
+	if !achou {
+		t.Errorf("peculato não achado: %v", refs(ps))
 	}
 }

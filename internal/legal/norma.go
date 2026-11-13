@@ -38,6 +38,9 @@ type Unidade struct {
 	Revogada bool `json:"r,omitempty"`
 	// Nota de alteração no fim do texto: "(Redação dada pelo Decreto…)".
 	Nota string `json:"n,omitempty"`
+	// Rubrica: o nome do dispositivo dado pela própria norma, acima dele
+	// ("Peculato", "Furto qualificado"). Vem das normas em Markdown.
+	Rubrica string `json:"u,omitempty"`
 }
 
 // Parte é um diploma dentro do arquivo (a numeração dos artigos recomeça):
@@ -65,8 +68,9 @@ var (
 	// Referência no começo de uma linha ("Art. 65, inciso V, da…") não casa:
 	// depois do número vem vírgula ou palavra em minúscula.
 	reArtigo = regexp.MustCompile(`^Art(?:igo)?\s*\.?\s*(\d{1,3})\s*[º°ªo]?\s*(?:-\s*([A-Z]))?\s*[.:]?\s*[-–—]?\s*(.*)$`)
-	// "§ 1º Texto", "§ lº Texto" (l no lugar de 1 em alguns PDFs), "§ 10. Texto".
-	reParagrafo = regexp.MustCompile(`^§\s*([0-9l]{1,2})\s*[º°ªo]?\s*\.?\s*[-–—]?\s*(.*)$`)
+	// "§ 1º Texto", "§ lº Texto" (l no lugar de 1 em alguns PDFs), "§ 10. Texto",
+	// "§ 4º-A Texto" (a letra vem colada ao hífen; "§ 2º - A pena" é texto).
+	reParagrafo = regexp.MustCompile(`^§\s*([0-9l]{1,2})\s*[º°ªo]?(?:-([A-Z])\b)?\s*\.?\s*[-–—]?\s*(.*)$`)
 	reParUnico  = regexp.MustCompile(`^Par[áa]grafo\s+[úu]nico\s*\.?\s*[-–—]?\s*(.*)$`)
 	reInciso    = regexp.MustCompile(`^([IVXLCDM]{1,8})\s*[-–—]\s*(.*)$`)
 	reAlinea    = regexp.MustCompile(`^([a-z])\)\s*(.*)$`)
@@ -80,9 +84,21 @@ var (
 
 var nivelTitulo = map[string]int{"livro": 0, "parte": 0, "titulo": 1, "capitulo": 2, "secao": 3, "subsecao": 4}
 
+// Tipos de linha. As normas em Markdown marcam títulos e rubricas; no PDF,
+// toda linha é comum e a estrutura é deduzida do texto.
+const (
+	linhaComum = iota
+	// linhaTitulo: título do Markdown ("#") ou o nome que vem logo abaixo
+	// dele; nunca continua o texto de um dispositivo.
+	linhaTitulo
+	// linhaRubrica: nome do dispositivo seguinte ("**Peculato**").
+	linhaRubrica
+)
+
 type linha struct {
 	texto  string
 	pagina int
+	tipo   int
 }
 
 // comecaTexto: o que vem depois do número é o começo do dispositivo (e não
@@ -133,7 +149,7 @@ func linhasUteis(paginas []PaginaTexto) []linha {
 			if l == "" || reSoNumero.MatchString(l) || (len(paginas) >= 6 && freq[l] >= corte) {
 				continue
 			}
-			out = append(out, linha{l, p.Numero})
+			out = append(out, linha{texto: l, pagina: p.Numero})
 		}
 	}
 	return out
@@ -177,11 +193,17 @@ func Analisar(paginas []PaginaTexto) []Parte {
 	if len(aceito) == 0 {
 		return trechos(paginas)
 	}
+	return analisarLinhas(ls, aceito, reinicio)
+}
+
+// analisarLinhas monta as partes a partir das linhas e dos artigos aceitos.
+func analisarLinhas(ls []linha, aceito, reinicio map[int]bool) []Parte {
 	var partes []Parte
 	parte := Parte{Pagina: 1}
 	var contexto [5]string
 	var atual *Unidade
 	art, par, inc := "", "", ""
+	rubrica := "" // rubrica à espera do próximo dispositivo
 	fechar := func() {
 		if atual != nil {
 			finalizar(atual)
@@ -193,6 +215,7 @@ func Analisar(paginas []PaginaTexto) []Parte {
 		fechar()
 		u.Pagina = l.pagina
 		u.Contexto = juntarContexto(contexto)
+		u.Rubrica, rubrica = rubrica, ""
 		atual = &u
 	}
 	for i := 0; i < len(ls); i++ {
@@ -207,6 +230,7 @@ func Analisar(paginas []PaginaTexto) []Parte {
 				titulo, pag := tituloDaParte(ls, i)
 				parte = Parte{Titulo: titulo, Pagina: pag}
 				contexto = [5]string{}
+				rubrica = ""
 			}
 			art, par, inc = m[1], "", ""
 			if m[2] != "" {
@@ -215,11 +239,17 @@ func Analisar(paginas []PaginaTexto) []Parte {
 			abrir(Unidade{Artigo: art, Texto: m[3]}, l)
 			continue
 		}
+		if l.tipo == linhaRubrica {
+			fechar()
+			rubrica = l.texto
+			continue
+		}
 		if m := reTitulo.FindStringSubmatch(l.texto); m != nil && tituloPlausivel(l.texto) {
 			fechar()
+			rubrica = ""
 			nome := strings.TrimSpace(m[3])
 			// O nome costuma vir na linha seguinte ("CAPÍTULO IV" / "DO JULGAMENTO").
-			if nome == "" && i+1 < len(ls) && !aceito[i+1] && linhaDeNome(ls[i+1].texto) {
+			if nome == "" && i+1 < len(ls) && !aceito[i+1] && ls[i+1].tipo != linhaRubrica && linhaDeNome(ls[i+1].texto) {
 				nome = ls[i+1].texto
 				i++
 			}
@@ -234,10 +264,18 @@ func Analisar(paginas []PaginaTexto) []Parte {
 			}
 			continue
 		}
+		if l.tipo == linhaTitulo {
+			fechar() // título fora da hierarquia ("PARTE GERAL"): só encerra o dispositivo
+			rubrica = ""
+			continue
+		}
 		if art != "" {
-			if m := reParagrafo.FindStringSubmatch(l.texto); m != nil && comecaTexto(m[2]) {
+			if m := reParagrafo.FindStringSubmatch(l.texto); m != nil && comecaTexto(m[3]) {
 				par, inc = strings.ReplaceAll(m[1], "l", "1"), ""
-				abrir(Unidade{Artigo: art, Paragrafo: par, Texto: m[2]}, l)
+				if m[2] != "" {
+					par += "-" + m[2]
+				}
+				abrir(Unidade{Artigo: art, Paragrafo: par, Texto: m[3]}, l)
 				continue
 			}
 			if m := reParUnico.FindStringSubmatch(l.texto); m != nil && comecaTexto(m[1]) {
@@ -255,6 +293,7 @@ func Analisar(paginas []PaginaTexto) []Parte {
 				continue
 			}
 		}
+		rubrica = "" // a rubrica só vale para o dispositivo logo abaixo dela
 		if atual != nil {
 			atual.Texto += " " + l.texto
 		}

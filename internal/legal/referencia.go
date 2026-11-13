@@ -19,7 +19,7 @@ type Referencia struct {
 var (
 	reRefArtigo  = regexp.MustCompile(`\bart(?:igo)?s?\s*\.?\s*(\d{1,3})\s*[º°ªo]?(?:\s*-\s*([a-z])\b)?`)
 	reRefParUn   = regexp.MustCompile(`\bparagrafo\s+unico\b`)
-	reRefPar     = regexp.MustCompile(`(?:§|\bparagrafo)\s*(\d{1,2})`)
+	reRefPar     = regexp.MustCompile(`(?:§|\bparagrafo)\s*(\d{1,2})(?:\s*[º°o])?(?:-([a-z])\b)?`)
 	reRefInciso  = regexp.MustCompile(`\binciso\s+([ivxlcdm]{1,8})\b`)
 	reRefAlinea  = regexp.MustCompile(`\balinea\s+["“”']?([a-z])\b`)
 	reRefRomano  = regexp.MustCompile(`^[ivxlcdm]{1,8}$`)
@@ -46,6 +46,9 @@ func (b *Biblioteca) InterpretarReferencia(s string) (Referencia, bool) {
 		r.Paragrafo = "unico"
 	} else if p := reRefPar.FindStringSubmatch(n); p != nil {
 		r.Paragrafo = strings.TrimLeft(p[1], "0")
+		if p[2] != "" {
+			r.Paragrafo += "-" + strings.ToUpper(p[2])
+		}
 	}
 	if i := reRefInciso.FindStringSubmatch(n); i != nil {
 		r.Inciso = strings.ToUpper(i[1])
@@ -108,7 +111,7 @@ func (r Referencia) Texto() string {
 	case r.Paragrafo == "unico":
 		s += ", parágrafo único"
 	case r.Paragrafo != "":
-		s += ", § " + r.Paragrafo + "º"
+		s += ", " + rotuloParagrafo(r.Paragrafo)
 	}
 	if r.Inciso != "" {
 		s += ", inciso " + r.Inciso
@@ -128,4 +131,17 @@ func numeroArtigo(a string) int {
 		n = n*10 + int(c-'0')
 	}
 	return n
+}
+
+// rotuloParagrafo: "§ 1º", "§ 10", "§ 4º-A".
+func rotuloParagrafo(p string) string {
+	n, letra, _ := strings.Cut(p, "-")
+	s := "§ " + n
+	if v := numeroArtigo(n); v > 0 && v < 10 {
+		s += "º"
+	}
+	if letra != "" {
+		s += "-" + letra
+	}
+	return s
 }

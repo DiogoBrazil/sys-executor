@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"path/filepath"
+	"sort"
 
 	"go.yaml.in/yaml/v3"
 )
@@ -48,8 +50,11 @@ type Documento struct {
 	// (conferir no original antes de citar).
 	OCR bool `json:"ocr,omitempty" yaml:"-"`
 	// SemTexto: original escaneado ainda não lido (fora da busca).
-	SemTexto bool    `json:"sem_texto,omitempty" yaml:"-"`
-	Partes   []Parte `json:"partes" yaml:"-"`
+	SemTexto bool `json:"sem_texto,omitempty" yaml:"-"`
+	// Origem: fonte e versão do texto declaradas no cabeçalho do original em
+	// Markdown (que não tem páginas: Paginas fica 0).
+	Origem *OrigemTexto `json:"origem,omitempty" yaml:"-"`
+	Partes []Parte      `json:"partes" yaml:"-"`
 }
 
 // Versao identifica a versão indexada do original (começo do SHA-256).
@@ -107,6 +112,18 @@ func LerManifesto() (Manifesto, error) {
 		vistos[d.ID] = true
 	}
 	return m, nil
+}
+
+// Originais lista os arquivos de uma pasta que a biblioteca lê: PDF e
+// Markdown (.md).
+func Originais(pasta string) []string {
+	var out []string
+	for _, ext := range []string{"*.pdf", "*.md"} {
+		arqs, _ := filepath.Glob(filepath.Join(pasta, ext))
+		out = append(out, arqs...)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // AcervoInicial devolve o acervo embutido no executável (gerado por

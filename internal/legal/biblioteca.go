@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	_ "embed"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -37,7 +38,10 @@ type Passagem struct {
 	// Caput do artigo (ou do parágrafo) a que o inciso ou a alínea pertence.
 	Caput    string `json:"caput,omitempty"`
 	Contexto string `json:"contexto,omitempty"`
-	Pagina   int    `json:"pagina"`
+	// Pagina no original; 0 quando o original é Markdown (sem páginas).
+	Pagina int `json:"pagina"`
+	// Rubrica da norma acima do dispositivo ("Peculato"), se houver.
+	Rubrica string `json:"rubrica,omitempty"`
 	// OCR: texto reconhecido de imagem; conferir no original antes de citar.
 	OCR bool `json:"ocr,omitempty"`
 	// Exata: veio de referência exata (e não da busca por palavras).
@@ -121,7 +125,7 @@ func Abrir(a *Acervo) (*Biblioteca, error) {
 	}
 	db.SetMaxOpenConns(1) // ":memory:" é por conexão
 	b.db = db
-	if _, err := db.Exec(`CREATE VIRTUAL TABLE blocos USING fts5(titulo, texto, tokenize = 'unicode61 remove_diacritics 2')`); err != nil {
+	if _, err := db.Exec(`CREATE VIRTUAL TABLE blocos USING fts5(titulo, texto, doc UNINDEXED, tokenize = 'unicode61 remove_diacritics 2')`); err != nil {
 		db.Close()
 		return nil, err
 	}
@@ -130,7 +134,7 @@ func Abrir(a *Acervo) (*Biblioteca, error) {
 		db.Close()
 		return nil, err
 	}
-	st, err := tx.Prepare(`INSERT INTO blocos(rowid, titulo, texto) VALUES (?, ?, ?)`)
+	st, err := tx.Prepare(`INSERT INTO blocos(rowid, titulo, texto, doc) VALUES (?, ?, ?, ?)`)
 	if err != nil {
 		tx.Rollback()
 		db.Close()
@@ -142,7 +146,12 @@ func Abrir(a *Acervo) (*Biblioteca, error) {
 			for _, bl := range b.blocosDaParte(d, pi, p) {
 				b.blocos = append(b.blocos, bl)
 				titulo := d.Titulo + " " + p.Titulo + " " + bl.unidades[0].Contexto
-				if _, err := st.Exec(len(b.blocos), titulo, textoDoBloco(bl.unidades)); err != nil {
+				for _, u := range bl.unidades { // rubricas: "Peculato", "Furto qualificado"
+					if u.Rubrica != "" {
+						titulo += " " + u.Rubrica
+					}
+				}
+				if _, err := st.Exec(len(b.blocos), titulo, textoDoBloco(bl.unidades), d.ID); err != nil {
 					tx.Rollback()
 					db.Close()
 					return nil, err
@@ -230,7 +239,7 @@ func rotuloUnidade(u Unidade) string {
 	case u.Paragrafo == "unico":
 		return "Parágrafo único. "
 	case u.Paragrafo != "":
-		return "§ " + u.Paragrafo + "º "
+		return rotuloParagrafo(u.Paragrafo) + " "
 	}
 	return ""
 }
@@ -251,7 +260,7 @@ func (b *Biblioteca) passagem(d *Documento, pi int, r Referencia, us []Unidade, 
 	p := Passagem{
 		DocumentoID: d.ID, Documento: d.Titulo, Versao: d.Versao(), Categoria: d.Categoria, Arquivo: d.Arquivo,
 		Artigo: r.Artigo, Paragrafo: r.Paragrafo, Inciso: r.Inciso, Alinea: r.Alinea,
-		Texto: textoDoBloco(us), Contexto: us[0].Contexto, Pagina: us[0].Pagina, OCR: d.OCR, Exata: exata,
+		Texto: textoDoBloco(us), Contexto: us[0].Contexto, Pagina: us[0].Pagina, Rubrica: us[0].Rubrica, OCR: d.OCR, Exata: exata,
 	}
 	if len(us) == 1 {
 		p.Texto = us[0].Texto
@@ -265,7 +274,7 @@ func (b *Biblioteca) passagem(d *Documento, pi int, r Referencia, us []Unidade, 
 	}
 	if r.Artigo == "" {
 		p.Referencia = fmt.Sprintf("%s, pág. %d", nome, p.Pagina)
-	} else {
+	} else { // original em Markdown: sem página, a localização é o dispositivo
 		p.Referencia = r.Texto() + ", " + nome
 	}
 	return p
@@ -405,12 +414,20 @@ func consultaFTS(gs [][]string, juncao string) string {
 // consulta citar artigo e documento; depois a busca por palavras (BM25),
 // com o tesauro. Os resultados trazem documento e versão.
 func (b *Biblioteca) Buscar(consulta string, limite int) ([]Passagem, error) {
+	return b.BuscarEm(consulta, limite)
+}
+
+// BuscarEm é a Buscar restrita a alguns documentos (ids do manifesto): por
+// exemplo, só a legislação penal, ou só o RDPM e o Estatuto. Sem ids, busca
+// em todo o acervo.
+func (b *Biblioteca) BuscarEm(consulta string, limite int, docs ...string) ([]Passagem, error) {
 	if limite <= 0 {
 		limite = 8
 	}
+	permitido := func(id string) bool { return len(docs) == 0 || slices.Contains(docs, id) }
 	var out []Passagem
 	exato := ""
-	if r, ok := b.InterpretarReferencia(consulta); ok && r.Documento != "" {
+	if r, ok := b.InterpretarReferencia(consulta); ok && r.Documento != "" && permitido(r.Documento) {
 		if p, ok := b.Dispositivo(r); ok {
 			out = append(out, p)
 			exato = r.Documento + "|" + r.Artigo
@@ -420,12 +437,12 @@ func (b *Biblioteca) Buscar(consulta string, limite int) ([]Passagem, error) {
 	if len(gs) == 0 {
 		return out, nil
 	}
-	ids, err := b.consultar(consultaFTS(gs, " AND "), limite)
+	ids, err := b.consultar(consultaFTS(gs, " AND "), limite, docs)
 	if err != nil {
 		return nil, err
 	}
 	if len(ids) < limite && len(gs) > 1 { // completa com resultados parciais
-		mais, err := b.consultar(consultaFTS(gs, " OR "), limite*2)
+		mais, err := b.consultar(consultaFTS(gs, " OR "), limite*2, docs)
 		if err != nil {
 			return nil, err
 		}
@@ -473,14 +490,22 @@ func assinatura(artigo, t string) string {
 	return artigo + "|" + strings.Join(ts, " ")
 }
 
-func (b *Biblioteca) consultar(q string, limite int) ([]int, error) {
+func (b *Biblioteca) consultar(q string, limite int, docs []string) ([]int, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.fechada {
 		return nil, fmt.Errorf("biblioteca fechada")
 	}
 	// O texto pesa mais que o título (documento, parte e capítulo).
-	rows, err := b.db.Query(`SELECT rowid FROM blocos WHERE blocos MATCH ? ORDER BY bm25(blocos, 1.0, 3.0), rowid LIMIT ?`, q, limite)
+	sqlDocs, args := "", []any{q}
+	if len(docs) > 0 {
+		sqlDocs = " AND doc IN (?" + strings.Repeat(", ?", len(docs)-1) + ")"
+		for _, d := range docs {
+			args = append(args, d)
+		}
+	}
+	args = append(args, limite)
+	rows, err := b.db.Query(`SELECT rowid FROM blocos WHERE blocos MATCH ?`+sqlDocs+` ORDER BY bm25(blocos, 1.0, 3.0, 0.0), rowid LIMIT ?`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("busca na biblioteca: %w", err)
 	}
