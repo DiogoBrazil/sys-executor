@@ -112,6 +112,7 @@ func (m *Mapa) Suspeitos(t string) []string {
 func (m *Mapa) suspeitos(t string) []string {
 	var out []string
 	vistos := map[string]bool{}
+	comuns := minusculasDoTexto(t)
 	for _, linha := range strings.Split(t, "\n") {
 		temMinuscula := temMinusculaForaConector(linha)
 		linha = mascararQualificacao(linha)
@@ -124,7 +125,7 @@ func (m *Mapa) suspeitos(t string) []string {
 				if !temMinuscula && !temMinusculaForaConector(seg) {
 					continue
 				}
-				if fraseNaoNome(seg) {
+				if fraseNaoNome(seg) || soPalavrasComuns(seg, comuns) {
 					continue
 				}
 				k := chaveNormal(seg)

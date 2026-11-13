@@ -129,6 +129,7 @@ func init() {
 		quarta quinta sexta sábado sabado domingo dia data hora horas ano anos documento documentos anexo anexos assinatura
 		assinado assinada eletronicamente conforme referente nome completo matrícula matricula cpf rg oab qopm qppm qobm qpbm cel
 		ten cap maj sgt cb sd asp subten st tc coronel tenente capitão capitao major sargento cabo soldado aspirante subtenente
+		executivo legislativo judiciário judiciario
 		ministério ministerio público publico justiça justica tribunal vara comarca fórum forum cartório cartorio segurança seguranca
 		pública trânsito transito detran ciopor sesdec sepog jus gov dr dra sr sra srta exmo exma ilmo ilma
 		defesa prévia previa alegações alegacoes finais inquirição inquiricao interrogatório interrogatorio
