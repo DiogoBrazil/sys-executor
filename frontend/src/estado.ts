@@ -19,7 +19,7 @@ export const estado = reactive({
   erro: null as ErroTela | null, // erro do último comando (não encerra a tarefa)
   ocupado: false,
   ia: null as VisaoIA | null,
-  verConfigIA: false, // tela Configurações de IA aberta por cima da atual
+  verConfigIA: false, // tela Configurações do assistente aberta por cima da atual
 });
 
 // mostrar aplica uma visão do Go, salvo se for mais antiga que a atual: a
@@ -65,7 +65,7 @@ export async function carregar() {
   await atualizarIA();
 }
 
-// ---- configurações de IA (Gemini API e ChatGPT) ----
+// ---- configurações do assistente (Gemini API e ChatGPT) ----
 export async function atualizarIA() {
   try {
     estado.ia = await iaApi.estado();

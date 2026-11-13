@@ -30,7 +30,7 @@ const classeSituacao = (s: string) => (CONFIRMADAS.test(s) ? "ok" : AGUARDANDO.t
         </li>
       </ul>
     </Recolhivel>
-    <p class="nota"><Icone nome="info" :tamanho="15" />As propostas da IA só valem depois da sua confirmação.</p>
+    <p class="nota"><Icone nome="info" :tamanho="15" />As propostas do assistente só valem depois da sua confirmação.</p>
   </section>
 </template>
 

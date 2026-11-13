@@ -175,72 +175,75 @@ func init() {
 		"O cadastro admite até 300 arquivos e 1 GB no total.",
 		"Remova arquivos desnecessários ou junte documentos menores antes de anexar.")
 
-	def(IAChaveAusente, CatModelo, "Chave da Gemini API não cadastrada",
-		"A análise por IA usa a Gemini API, e ainda não há uma chave cadastrada neste computador.",
-		"Cadastre sua chave em Configurações de IA e tente novamente.")
-	def(IAChaveInvalida, CatModelo, "Chave da Gemini API não aceita",
-		"O Google não aceitou a chave cadastrada. Ela pode estar incorreta, revogada ou excluída.",
-		"Cadastre uma chave válida em Configurações de IA e tente novamente.")
-	def(IAPermissaoNegada, CatModelo, "Acesso negado pelo serviço de IA",
-		"O serviço de IA escolhido recusou o acesso ao modelo ou à conta, ou o serviço não está liberado para a sua conta ou região.",
-		"Confira a configuração em Configurações de IA (chave, conta ou modelo) ou escolha outro modelo.")
-	def(IAModeloIndisponivel, CatModelo, "Modelo de IA indisponível",
-		"O modelo de IA escolhido não está disponível para a sua conta, ou nenhum modelo foi escolhido.",
-		"Escolha um modelo em Configurações de IA e tente novamente.")
-	def(IACota, CatModelo, "Limite de uso do serviço de IA atingido",
-		"A cota de uso da sua conta no serviço de IA foi atingida (por minuto ou por dia).",
-		"Aguarde alguns minutos e tente novamente. Se o limite for diário, ele é renovado no dia seguinte; os limites podem ser consultados no painel do serviço.")
-	def(IAIndisponivel, CatModelo, "Serviço de IA indisponível",
-		"O serviço de IA está temporariamente indisponível ou sobrecarregado.",
+	// Textos sem "IA" e sem o nome do serviço: fora de Configurações do assistente,
+	// o aplicativo fala só do "assistente" (V4 §50, Emenda 4). Os códigos
+	// IA-xxx continuam (decisão do usuário, 12/11/2026).
+	def(IAChaveAusente, CatModelo, "Chave do assistente não cadastrada",
+		"O serviço escolhido para o assistente usa uma chave, e ainda não há uma chave cadastrada neste computador.",
+		"Cadastre sua chave em Configurações do assistente e tente novamente.")
+	def(IAChaveInvalida, CatModelo, "Chave do assistente não aceita",
+		"O serviço do assistente não aceitou a chave cadastrada. Ela pode estar incorreta, revogada ou excluída.",
+		"Cadastre uma chave válida em Configurações do assistente e tente novamente.")
+	def(IAPermissaoNegada, CatModelo, "Acesso negado ao assistente",
+		"O serviço do assistente recusou o acesso ao modelo ou à conta, ou não está liberado para a sua conta ou região.",
+		"Confira a configuração em Configurações do assistente (chave, conta ou modelo) ou escolha outro modelo.")
+	def(IAModeloIndisponivel, CatModelo, "Modelo do assistente indisponível",
+		"O modelo escolhido para o assistente não está disponível para a sua conta, ou nenhum modelo foi escolhido.",
+		"Escolha um modelo em Configurações do assistente e tente novamente.")
+	def(IACota, CatModelo, "Limite de uso do assistente atingido",
+		"A cota de uso da sua conta no serviço do assistente foi atingida (por minuto ou por dia).",
+		"O andamento da tarefa foi mantido. Aguarde alguns minutos e use Tentar novamente, ou ajuste o serviço, a conta ou o modelo em Configurações do assistente.")
+	def(IAIndisponivel, CatModelo, "Assistente indisponível",
+		"O serviço do assistente está temporariamente indisponível ou sobrecarregado.",
 		"Tente novamente em alguns minutos. O andamento da tarefa foi mantido.")
-	def(IASemConexao, CatModelo, "Sem conexão com o serviço de IA",
-		"A análise por IA exige internet, e não foi possível se conectar ao serviço escolhido.",
+	def(IASemConexao, CatModelo, "Sem conexão com o assistente",
+		"O assistente exige internet, e não foi possível se conectar ao serviço escolhido.",
 		"Verifique a conexão (e o proxy da rede, se houver) e tente novamente. O andamento da tarefa foi mantido.")
-	def(IATempoEsgotado, CatModelo, "O serviço de IA demorou demais para responder",
-		"A resposta da IA não chegou dentro do tempo limite.",
+	def(IATempoEsgotado, CatModelo, "O assistente demorou demais para responder",
+		"A resposta do assistente não chegou dentro do tempo limite.",
 		"Tente novamente. O andamento da tarefa foi mantido.")
-	def(IARespostaBloqueada, CatModelo, "Resposta recusada pelo provedor",
-		"O provedor de IA recusou processar este conteúdo dos autos pelas regras dele.",
+	def(IARespostaBloqueada, CatModelo, "Resposta recusada pelo assistente",
+		"O serviço do assistente recusou processar este conteúdo dos autos pelas regras dele.",
 		"Tente novamente ou escolha outro modelo. Se persistir, esta etapa precisará ser feita manualmente.")
-	def(IARespostaIncompleta, CatModelo, "Resposta incompleta da IA",
-		"A resposta da IA chegou incompleta ou vazia e foi descartada.",
+	def(IARespostaIncompleta, CatModelo, "Resposta incompleta do assistente",
+		"A resposta do assistente chegou incompleta ou vazia e foi descartada.",
 		"Tente novamente. Nenhum resultado incompleto foi aproveitado.")
-	def(IAEnvioNaoAutorizado, CatModelo, "Envio à IA não autorizado",
-		"Você optou por não enviar o conteúdo dos autos ao serviço de IA; nada foi enviado.",
-		"Para continuar a análise por IA, use Tentar novamente e autorize o envio, ou cancele a tarefa.")
+	def(IAEnvioNaoAutorizado, CatModelo, "Envio ao assistente não autorizado",
+		"Você optou por não enviar o conteúdo dos autos ao assistente; nada foi enviado.",
+		"Para continuar a análise, use Tentar novamente e autorize o envio, ou cancele a tarefa.")
 	def(IACredencial, CatModelo, "Não foi possível guardar ou ler a chave",
-		"O Windows não conseguiu proteger ou abrir a chave da Gemini API desta conta.",
-		"Cadastre a chave novamente em Configurações de IA.")
-	def(IASemCreditos, CatModelo, "Sem créditos na conta da Gemini API",
-		"O projeto do Google ligado à chave está sem créditos pré-pagos ou com o faturamento pendente, e o Google recusou a chamada.",
-		"Adicione créditos ou regularize o faturamento do projeto no Google AI Studio (ai.studio/projects), ou cadastre a chave de outro projeto, e tente novamente.")
+		"O Windows não conseguiu proteger ou abrir a chave do assistente desta conta.",
+		"Cadastre a chave novamente em Configurações do assistente.")
+	def(IASemCreditos, CatModelo, "Sem créditos na conta do assistente",
+		"A conta do serviço do assistente está sem créditos pré-pagos ou com o faturamento pendente, e a chamada foi recusada.",
+		"O andamento da tarefa foi mantido. Adicione créditos no painel do serviço, ou ajuste a chave ou o serviço em Configurações do assistente, e use Tentar novamente.")
 
 	def(IABloqueioPrivacidade, CatModelo, "Envio bloqueado para proteger dados pessoais",
-		"Antes do envio à IA, o aplicativo encontrou um dado pessoal já reconhecido que deveria ter sido ocultado, e bloqueou o envio. Nada foi enviado.",
-		"Tente novamente. Se o bloqueio se repetir, a etapa não pode seguir pela IA com segurança: cancele a tarefa ou faça esta parte manualmente.")
+		"Antes do envio ao assistente, o aplicativo encontrou um dado pessoal já reconhecido que deveria ter sido ocultado, e bloqueou o envio. Nada foi enviado.",
+		"Tente novamente. Se o bloqueio se repetir, a etapa não pode seguir pelo assistente com segurança: cancele a tarefa ou faça esta parte manualmente.")
 
-	def(IAContaDesconectada, CatModelo, "Conta ChatGPT não conectada",
-		"O ChatGPT foi escolhido como serviço de IA, mas nenhuma conta está conectada neste computador.",
-		"Conecte a sua conta em Configurações de IA ou escolha outro serviço, e tente novamente.")
+	def(IAContaDesconectada, CatModelo, "Conta do assistente não conectada",
+		"O serviço escolhido para o assistente usa uma conta, e nenhuma conta está conectada neste computador.",
+		"Conecte a sua conta em Configurações do assistente ou escolha outro serviço, e tente novamente.")
 	def(IALoginNaoConcluido, CatModelo, "Entrada no ChatGPT não concluída",
 		"O acesso à conta ChatGPT não foi concluído: a autorização foi cancelada, expirou ou foi recusada. Se isso se repetir, é provável que a conta não tenha um plano elegível para uso em outros aplicativos.",
 		"Tente entrar de novo uma vez. Para usar o plano em outros aplicativos, a conta precisa ter um plano Plus ou Pro.")
-	def(IAPlanoNaoAutorizado, CatModelo, "Uso do plano ChatGPT não autorizado",
-		"A conta foi conectada, mas a permissão para usar o plano ChatGPT neste aplicativo não foi concedida. Sem ela, nenhum texto é enviado.",
-		"Em Configurações de IA, entre de novo e autorize o uso do plano, ou escolha outro serviço.")
-	def(IASessaoExpirada, CatModelo, "Conexão com o ChatGPT encerrada",
-		"A conexão da conta ChatGPT com o aplicativo expirou ou foi desfeita nas configurações do ChatGPT.",
-		"Conecte a conta de novo em Configurações de IA e tente novamente. O andamento da tarefa foi mantido.")
-	def(IALimitePlano, CatModelo, "Limite de uso do plano ChatGPT atingido",
-		"O limite de uso do seu plano ChatGPT para outros aplicativos foi atingido. No plano Plus, esse limite é compartilhado com os demais aplicativos conectados.",
-		"Aguarde a renovação do limite e tente novamente; o uso pode ser acompanhado em ChatGPT, Configurações, Uso. O andamento da tarefa foi mantido.")
-	def(IAContaNaoElegivel, CatModelo, "Conta ChatGPT sem uso do plano disponível",
-		"O uso do plano ChatGPT em outros aplicativos não está disponível para esta conta, espaço de trabalho ou região.",
-		"Use outra conta com plano elegível ou escolha outro serviço em Configurações de IA.")
+	def(IAPlanoNaoAutorizado, CatModelo, "Uso do plano não autorizado",
+		"A conta foi conectada, mas a permissão para usar o plano neste aplicativo não foi concedida. Sem ela, nenhum texto é enviado.",
+		"Em Configurações do assistente, entre de novo e autorize o uso do plano, ou escolha outro serviço.")
+	def(IASessaoExpirada, CatModelo, "Conexão com o assistente encerrada",
+		"A conexão da conta do assistente com o aplicativo expirou ou foi desfeita nas configurações do serviço.",
+		"Conecte a conta de novo em Configurações do assistente e tente novamente. O andamento da tarefa foi mantido.")
+	def(IALimitePlano, CatModelo, "Limite de uso do plano atingido",
+		"O limite de uso do seu plano para outros aplicativos foi atingido. Em alguns planos, esse limite é compartilhado com os demais aplicativos conectados.",
+		"O andamento da tarefa foi mantido. Aguarde a renovação do limite e use Tentar novamente, ou escolha outro serviço ou modelo em Configurações do assistente.")
+	def(IAContaNaoElegivel, CatModelo, "Conta sem uso do plano disponível",
+		"O uso do plano em outros aplicativos não está disponível para esta conta, espaço de trabalho ou região.",
+		"Use outra conta com plano elegível ou escolha outro serviço em Configurações do assistente.")
 
-	def(IACriancaChatGPT, CatModelo, "ChatGPT bloqueado para esta tarefa",
-		"Você informou que os autos contêm dados pessoais de criança menor de 13 anos. Os termos do uso do plano ChatGPT em outros aplicativos proíbem enviar esses dados, mesmo com os nomes ocultados. Nada foi enviado.",
-		"Para analisar esta tarefa por IA, escolha outro serviço em Configurações de IA e use Tentar novamente, ou cancele a tarefa.")
+	def(IACriancaChatGPT, CatModelo, "Serviço do assistente bloqueado para esta tarefa",
+		"Você informou que os autos contêm dados pessoais de criança menor de 13 anos. Os termos do serviço configurado para o assistente proíbem enviar esses dados, mesmo com os nomes ocultados. Nada foi enviado.",
+		"Escolha outro serviço em Configurações do assistente e use Tentar novamente, ou cancele a tarefa.")
 
 	def(BibliotecaIndisponivel, CatBiblioteca, "Biblioteca jurídica indisponível",
 		"A biblioteca jurídica local não pôde ser aberta.",

@@ -50,7 +50,7 @@ func (f *FonteIA) fonte(provedor string) (FonteProvedor, error) {
 		}
 		return nil, erros.Novo(erros.IAContaDesconectada)
 	case "":
-		return nil, erros.Com(erros.IAModeloIndisponivel, errors.New("nenhum serviço de IA escolhido"))
+		return nil, erros.Com(erros.IAModeloIndisponivel, errors.New("nenhum serviço escolhido em Configurações do assistente"))
 	}
 	return nil, erros.Com(erros.IAModeloIndisponivel, fmt.Errorf("provedor %q indisponível", provedor))
 }

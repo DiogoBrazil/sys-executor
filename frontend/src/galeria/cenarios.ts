@@ -44,20 +44,20 @@ const painel = { secoes: [
   { titulo: "Objeto do procedimento", itens: [{ titulo: "Acusado", situacao: "confirmado", linhas: ["CB QPPM CARLOS INVENTADO DA SILVA"], fontes: [] },
     { titulo: "IMP-1", situacao: "congelada", linhas: ["empregar força ou medida desnecessária em ato de serviço, ainda que não resulte dano.", "art. 17, inciso XI, do RDPM — natureza grave — fato em 06/07/2025"], fontes: [] }] },
   { titulo: "Leitura das peças", itens: [{ titulo: "Termo de inquirição — JOEL FICTÍCIO", situacao: "lida", linhas: ["Relata que viu o acusado conter a pessoa abordada."], fontes: [{ rotulo: "Termo de inquirição", pagina: 9, inicio: 0, fim: 10, trecho: "t" }] }] },
-  { titulo: "Propostas da IA (a confirmar)", itens: [{ titulo: "IMP-1", situacao: "proposta: improcedente", linhas: ["Fundamento: a testemunha relata contenção proporcional."], fontes: [] }] },
+  { titulo: "Propostas do assistente (a confirmar)", itens: [{ titulo: "IMP-1", situacao: "proposta: improcedente", linhas: ["Fundamento: a testemunha relata contenção proporcional."], fontes: [] }] },
 ] };
 const respostas = [
-  { perguntaId: "envio", titulo: "Autorizar o envio à IA", resumo: "envio autorizado: ChatGPT (OpenAI), pelo seu plano, modelo gpt-6-luna", revisavel: false },
+  { perguntaId: "envio", titulo: "Autorizar o envio ao assistente", resumo: "envio ao assistente autorizado", revisavel: false },
   { perguntaId: "delimitacao", titulo: "Confirme as imputações do Memorando Disciplinar", resumo: "1 imputação(ões); acusado: CB QPPM CARLOS INVENTADO DA SILVA", revisavel: true },
   { perguntaId: "midias", titulo: "Mídias citadas e não incluídas no PDF", resumo: "0 de 1 mídia(s) descrita(s)", revisavel: true },
 ];
 
 const f = (rotulo: string, pagina: number) => ({ rotulo, pagina, inicio: 0, fim: 20, trecho: "trecho citado" });
 const perguntaResultado = {
-  id: "resultado:IMP-1", titulo: "Resultado da imputação IMP-1", contexto: "Confira a proposta e as fontes. O resultado é seu: a IA apenas sugere.", revisavel: true,
+  id: "resultado:IMP-1", titulo: "Resultado da imputação IMP-1", contexto: "Confira a proposta e as fontes. O resultado é seu: o assistente apenas sugere.", revisavel: true,
   grupos: [{ id: "IMP-1", titulo: "IMP-1 — art. 17, inciso XI, do RDPM",
     descricao: ["empregar força ou medida desnecessária em ato de serviço, ainda que não resulte dano; desferir tapas na pessoa abordada durante o atendimento de ocorrência.",
-      "Proposta da IA: improcedente.",
+      "Proposta do assistente: improcedente.",
       "Fundamento: A materialidade de ao menos um tapa está amparada pelo depoimento de JOEL FICTÍCIO, que afirmou: “em reação imediata, desferiu um tapa que atingiu o rosto dela.” [EV-0018]",
       "Fundamento: Quanto à dinâmica e à necessidade da força, a testemunha relatou que a abordada “continuava a empurrá-lo e agredi-lo”. Esses relatos favorecem a hipótese de reação a agressões. [EV-0018, EV-0021]",
       "Fundamento: A testemunha declarou: “não observei excesso por parte do militar” e avaliou que a atuação “foi proporcional e necessária para cessar as agressões.” [EV-0019, EV-0020]",
@@ -85,20 +85,20 @@ const perguntaHistorico = {
   opcoes: [{ id: "confirmar", rotulo: "Confirmar", validar: true }],
 };
 const perguntaEnvio = {
-  id: "envio", titulo: "Autorizar o envio à IA",
-  contexto: "Para analisar os autos, o sys-executor enviará ao serviço ChatGPT (OpenAI), pelo seu plano, modelo gpt-6-luna, trechos do texto extraído das 6 peça(s) identificadas (13 página(s)). Estimativa aproximada do envio: 16 mil tokens de entrada no total. O arquivo PDF não é enviado.\n\nAntes do envio, os dados pessoais reconhecidos (6 pessoas, 3 CPFs, 3 RGs) serão trocados por marcadores, e a resposta volta com os dados originais. É um melhor esforço.\n\nSem a sua autorização, nada é enviado.",
+  id: "envio", titulo: "Autorizar o envio ao assistente",
+  contexto: "Para analisar os autos, o JURISPM enviará ao assistente trechos do texto extraído das 6 peça(s) identificadas (13 página(s)). O arquivo PDF não é enviado.\n\nAntes do envio, os dados pessoais reconhecidos (6 pessoas, 3 CPFs, 3 RGs) serão trocados por marcadores, e a resposta volta com os dados originais. É um melhor esforço.\n\nSem a sua autorização, nada é enviado.",
   grupos: [{ id: "revisao", titulo: "Possíveis nomes não reconhecidos", descricao: ["Estes trechos parecem nomes de pessoas, mas não têm posto, papel processual ou rótulo que permitam reconhecê-los com segurança. Decida cada um."], alertas: [], fontes: [] }],
   campos: [
     { id: "suspeito_0", rotulo: "Kauan Ficticio Ramos", tipo: "ESCOLHA", obrigatorio: true, grupo: "revisao", valor: "", fontes: [f("pág. 5", 5)],
       opcoes: [{ id: "ocultar", rotulo: "É nome de pessoa ou dado pessoal: ocultar" }, { id: "manter", rotulo: "Não é dado pessoal: enviar como está" }] },
     { id: "crianca", rotulo: "Os autos contêm dados pessoais de criança menor de 13 anos?", tipo: "SIM_NAO", obrigatorio: true, valor: "",
-      ajuda: "Os termos do uso do plano ChatGPT em outros aplicativos proíbem enviar esses dados, mesmo com os nomes ocultados." },
+      ajuda: "Os termos do serviço configurado para o assistente proíbem enviar esses dados, mesmo com os nomes ocultados. Se houver, esse serviço fica bloqueado nesta tarefa: escolha outro em Configurações do assistente." },
     { id: "ocultar", rotulo: "Outros nomes ou dados a ocultar (opcional)", tipo: "TEXTO_LONGO", obrigatorio: false, valor: "", ajuda: "Um por linha." }],
   opcoes: [{ id: "autorizar", rotulo: "Autorizar o envio", validar: true }, { id: "nao", rotulo: "Não enviar" }],
 };
 const perguntaDelim = {
   id: "confirmar_delimitacao", titulo: "Confirme as imputações do Memorando Disciplinar",
-  contexto: "A IA leu o Memorando Disciplinar e propôs as condutas e datas abaixo. Confira cada uma no trecho original e corrija o que for preciso. O enquadramento é seu.",
+  contexto: "O assistente leu o Memorando Disciplinar e propôs as condutas e datas abaixo. Confira cada uma no trecho original e corrija o que for preciso. O enquadramento é seu.",
   grupos: [{ id: "acusado", titulo: "Acusado", descricao: [], alertas: [], fontes: [] },
     { id: "IMP-1", titulo: "IMP-1", descricao: ["empregar força desproporcional ao desferir tapas durante o atendimento de uma ocorrência policial.", "Dispositivo citado no Memorando (para conferência): art. 17, do RDPM."],
       alertas: ["O Memorando cita só o art. 17; o inciso XI é o informado no seu cadastro. Confira."], fontes: [f("Memorando", 1)] }],
@@ -164,7 +164,7 @@ const minuta = {
 
 const perguntaDosimetria = {
   id: "calculo", titulo: "Confira a dosimetria e o comportamento proposto", revisavel: true,
-  contexto: "O cálculo é feito pelo aplicativo, não pela IA, a partir das suas respostas. Confira a memória de cálculo. A quantidade de dias é uma proposta: ajuste, se for o caso. Para mudar um dado de entrada, use \"Alterar\" em \"Suas respostas\".",
+  contexto: "O cálculo é feito pelo aplicativo, não pelo assistente, a partir das suas respostas. Confira a memória de cálculo. A quantidade de dias é uma proposta: ajuste, se for o caso. Para mudar um dado de entrada, use \"Alterar\" em \"Suas respostas\".",
   grupos: [{ id: "s_IMP-1", titulo: "IMP-1 — prisão", descricao: ["Natureza grave: prisão (RDPM, art. 58, II).", "Atenuantes contadas: art. 38, I.", "Agravantes contadas: art. 39, III.",
       "Regra aplicada: 1 atenuante(s) × 1 agravante(s): quantidades iguais → 2 dias."], alertas: [], fontes: [] },
     ...[["Pontuação e comportamento atuais", "31 pontos, comportamento ótimo (informados/confirmados pelo usuário)."], ["Imputações procedentes consideradas", "IMP-1: natureza grave, fato em 05/04/2026, sanção prisão."],
@@ -198,7 +198,7 @@ export const cenarios: Record<string, { titulo: string; visao: any; ia?: any; co
     documentosSei: [docSEI("D1", "73088120", "PADS Memorando Disciplinar 3", "MEMORANDO"), docSEI("D2", "73240862", "Anexo - Defesa Prévia", "DEFESA_PREVIA"), docSEI("D3", "73100379", "Certidão 94", "OUTRO", 1)] }), altura: 1500 },
   "cadastro-sr": { titulo: "Cadastro SR: Portaria", visao: visao("RECEBENDO_UPLOAD", { tipo: "SR", cadastro: cadSR }), altura: 1300 },
   processando: { titulo: "Processando (progresso)", visao: visao("EXTRAINDO", { etapas: etapas(1), descricao: "Extraindo texto e OCR", atividade: "Lendo a página 7 de 13", progresso: { atual: 7, total: 13, unidade: "páginas" }, autos: resumoAutos }), altura: 1000 },
-  analisando: { titulo: "Analisando (IA, robô)", visao: visao("ANALISANDO", { etapas: etapas(4), descricao: "Analisando as provas.", atividade: "Lendo Depoimento de testemunha — JOEL FICTÍCIO", progresso: { atual: 1, total: 3, unidade: "peças lidas" }, autos: resumoAutos, painel, respostas }), altura: 900 },
+  analisando: { titulo: "Analisando (assistente, robô)", visao: visao("ANALISANDO", { etapas: etapas(4), descricao: "Analisando as provas.", atividade: "Lendo Depoimento de testemunha — JOEL FICTÍCIO", progresso: { atual: 1, total: 3, unidade: "peças lidas" }, autos: resumoAutos, painel, respostas }), altura: 900 },
   "analisando-respostas": { titulo: "Gaveta Suas respostas", visao: visao("ANALISANDO", { etapas: etapas(4), descricao: "Analisando as provas.", autos: resumoAutos, painel, respostas }), altura: 900, clicar: "abrir-respostas" },
   "analisando-analise": { titulo: "Gaveta Análise", visao: visao("ANALISANDO", { etapas: etapas(4), descricao: "Analisando as provas.", autos: resumoAutos, painel, respostas }), altura: 900, clicar: "abrir-analise" },
   "autos-lidos": { titulo: "Modal Autos lidos", visao: visao("ANALISANDO", { etapas: etapas(4), descricao: "Analisando as provas.", autos: resumoAutos, painel, respostas }), altura: 900, clicar: "abrir-autos-lidos" },
@@ -223,7 +223,7 @@ export const cenarios: Record<string, { titulo: string; visao: any; ia?: any; co
   minuta: { titulo: "Minuta em revisão", visao: visao("AGUARDANDO_REVISAO", { etapas: etapas(9), descricao: "A minuta está pronta para sua revisão.", autos: resumoAutos, painel, respostas, minuta }), altura: 1100 },
   "minuta-cheia": { titulo: "Minuta em tela cheia", visao: visao("AGUARDANDO_REVISAO", { etapas: etapas(9), descricao: "A minuta está pronta para sua revisão.", autos: resumoAutos, painel, respostas, minuta }), altura: 900, clicar: "minuta-tela-cheia" },
   finalizada: { titulo: "Tarefa finalizada", visao: visao("FINALIZADA", { terminal: true, etapas: etapas(10) }), altura: 900 },
-  "erro-ia": { titulo: "Erro da IA (retomável)", visao: visao("ANALISANDO", { parada: true, retomavel: true, erro: { codigo: "IA-003", titulo: "A conta do ChatGPT atingiu o limite de uso", mensagem: "O limite de uso do seu plano foi atingido.", acao: "Aguarde a renovação do limite ou escolha outro serviço em Configurações de IA." }, autos: resumoAutos }), altura: 1000 },
-  config: { titulo: "Configurações de IA", visao: null, config: true, altura: 1200 },
+  "erro-ia": { titulo: "Erro do assistente (retomável)", visao: visao("ANALISANDO", { parada: true, retomavel: true, erro: { codigo: "IA-003", titulo: "Limite de uso do plano atingido", mensagem: "O limite de uso do seu plano foi atingido.", acao: "Aguarde a renovação do limite ou escolha outro serviço em Configurações do assistente." }, autos: resumoAutos }), altura: 1000 },
+  config: { titulo: "Configurações do assistente", visao: null, config: true, altura: 1200 },
 };
 export const iaPadrao = ia;

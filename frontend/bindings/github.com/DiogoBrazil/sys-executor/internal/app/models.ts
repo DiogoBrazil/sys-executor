@@ -580,7 +580,7 @@ export class VisaoChatGPT {
 }
 
 /**
- * VisaoIA é o que a tela de configurações de IA recebe. NUNCA contém a
+ * VisaoIA é o que a tela de configurações do assistente recebe. NUNCA contém a
  * chave nem parte dela (TRV-SEG-009).
  */
 export class VisaoIA {

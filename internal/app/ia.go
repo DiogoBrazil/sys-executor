@@ -15,7 +15,7 @@ import (
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
 )
 
-// EventoIA leva a visão das configurações de IA à interface.
+// EventoIA leva a visão das configurações do assistente à interface.
 const EventoIA = "ia:visao"
 
 // URLChavesAIStudio: onde o usuário obtém a chave (V4 §47; aberto pelo Go).
@@ -129,7 +129,7 @@ func (f *FonteGemini) Abrir(ctx context.Context, alvo inference.Alvo, atividade 
 		return nil, nil, err
 	}
 	defer credencial.Zerar(chave)
-	atividade("Conectando à Gemini API")
+	atividade("Conectando ao assistente")
 	m, err := f.novoMotor()(ctx, inference.ConfigGemini{Chave: chave, Modelo: modelo, Pensamento: f.Pensamento, Inspecionar: inspecionar})
 	if err != nil {
 		return nil, nil, err
@@ -177,7 +177,7 @@ type UsoIA struct {
 	Segundos         int    `json:"segundos"`
 }
 
-// VisaoIA é o que a tela de configurações de IA recebe. NUNCA contém a
+// VisaoIA é o que a tela de configurações do assistente recebe. NUNCA contém a
 // chave nem parte dela (TRV-SEG-009).
 type VisaoIA struct {
 	ChaveCadastrada   bool                `json:"chaveCadastrada"`
@@ -195,7 +195,7 @@ type VisaoIA struct {
 	Aviso    string        `json:"aviso"`
 }
 
-// IAService expõe as configurações de IA (substitui a tela Modelos local).
+// IAService expõe as configurações do assistente (substitui a tela Modelos local).
 type IAService struct {
 	Fonte    *FonteGemini
 	ChatGPT  *FonteChatGPT // nil = ChatGPT indisponível nesta montagem

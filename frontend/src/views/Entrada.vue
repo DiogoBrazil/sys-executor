@@ -56,7 +56,7 @@ const noSEI = computed(() => !!estado.visao?.estado.startsWith("SEI_"));
             <span class="ic"><Icone nome="pasta" :tamanho="26" /></span>
             <div>
               <h2>Cadastrar as peças</h2>
-              <span class="req">Sem senha · a análise por IA requer internet</span>
+              <span class="req">Sem senha · o assistente requer internet</span>
             </div>
           </div>
           <p class="desc">

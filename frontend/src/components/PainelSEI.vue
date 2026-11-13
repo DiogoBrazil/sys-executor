@@ -95,6 +95,8 @@ async function enviarSegredo() {
   border: 1px solid var(--linha);
   border-radius: var(--raio);
   max-width: 640px;
+  width: 100%;
+  margin: 0 auto; /* centralizado na tela (pedido do usuário) */
 }
 .sei h2 { font-size: var(--t-lg); }
 .form { display: grid; gap: 0.9rem; }

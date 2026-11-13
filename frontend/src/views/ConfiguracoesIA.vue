@@ -26,7 +26,7 @@ const opcoes = [
 <template>
   <main class="config" data-teste="tela-config-ia">
     <div class="topo">
-      <h1>Configurações de IA</h1>
+      <h1>Configurações do assistente</h1>
       <button class="botao" data-teste="fechar-config-ia" @click="fecharConfigIA">Voltar</button>
     </div>
     <p class="intro">

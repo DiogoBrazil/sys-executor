@@ -50,7 +50,7 @@ import { IaVisao } from "../bindings/events";
 
 export type { VisaoIA };
 
-// Configurações de IA (V4 §§47, 48): Gemini API (chave do usuário) e
+// Configurações do assistente (V4 §§47, 48): Gemini API (chave do usuário) e
 // ChatGPT (plano do usuário). A chave só vai ao Go em salvarChave e nunca
 // volta; nenhum token do ChatGPT chega aqui: VisaoIA não os contém.
 export const ia = {

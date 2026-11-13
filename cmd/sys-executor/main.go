@@ -1,12 +1,15 @@
-// Comando sys-executor: aplicativo desktop Windows (Wails v3 + Vue 3).
+// Comando sys-executor: o aplicativo desktop Windows JURISPM — LEXIA,
+// Assistente Inteligente de Análise Jurídico-Disciplinar (Wails v3 + Vue 3).
+// O nome do projeto e a pasta de dados continuam "sys-executor".
 //
 // Compilação de produção (sem console, V4 §33 / D-09.6):
 //
-//	GOOS=windows go build -ldflags "-H windowsgui -s -w" -o sys-executor.exe ./cmd/sys-executor
+//	GOOS=windows go build -ldflags "-H windowsgui -s -w" -o JURISPM.exe ./cmd/sys-executor
 package main
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"io/fs"
 	"log/slog"
@@ -30,6 +33,14 @@ import (
 	"github.com/DiogoBrazil/sys-executor/internal/session"
 	"github.com/DiogoBrazil/sys-executor/internal/workflow"
 )
+
+// nomeApp é o nome do aplicativo na janela (decisão do usuário, 12/11/2026).
+const nomeApp = "JURISPM"
+
+// icone: escudo com a balança da justiça (icone/icone.svg).
+//
+//go:embed icone/icone.png
+var icone []byte
 
 func init() {
 	application.RegisterEvent[*workflow.Visao](app.EventoVisao)
@@ -184,8 +195,11 @@ func main() {
 	}
 
 	wapp = application.New(application.Options{
-		Name:        "sys-executor",
-		Description: "Minutas de julgamento de PADS e de relatório de Sindicância Regular",
+		Name:        nomeApp,
+		Description: "LEXIA — Assistente Inteligente de Análise Jurídico-Disciplinar",
+		// Ícone da janela e da barra de tarefas (o Wails o usa quando o .exe
+		// não traz o recurso de ícone nº 3).
+		Icon: icone,
 		// Sem logs (V4 §33; SEG-LOG-01): o logger do Wails descarta tudo.
 		Logger:   slog.New(slog.DiscardHandler),
 		LogLevel: slog.LevelError + 100,
@@ -225,7 +239,7 @@ func main() {
 	wappRef = wapp
 
 	janela = wapp.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            "sys-executor",
+		Title:            nomeApp,
 		Width:            1180,
 		Height:           780,
 		MinWidth:         900,

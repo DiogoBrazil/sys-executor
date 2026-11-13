@@ -74,7 +74,7 @@ func (f *FonteChatGPT) Alvo() (inference.Alvo, error) {
 	}
 	m := f.Loja.Obter().ModeloChatGPT
 	if m == "" {
-		return inference.Alvo{}, erros.Com(erros.IAModeloIndisponivel, errors.New("nenhum modelo do ChatGPT escolhido"))
+		return inference.Alvo{}, erros.Com(erros.IAModeloIndisponivel, errors.New("nenhum modelo escolhido em Configurações do assistente"))
 	}
 	return inference.Alvo{Provedor: inference.ProvedorChatGPT, Rotulo: inference.RotuloProvedor(inference.ProvedorChatGPT), Modelo: m}, nil
 }
@@ -84,7 +84,7 @@ func (f *FonteChatGPT) Abrir(ctx context.Context, alvo inference.Alvo, atividade
 	if alvo.Provedor != inference.ProvedorChatGPT || alvo.Modelo == "" {
 		return nil, nil, erros.Com(erros.InternoInesperado, errors.New("alvo de IA não é o ChatGPT"))
 	}
-	atividade("Conectando ao ChatGPT")
+	atividade("Conectando ao assistente")
 	if _, err := f.Conta.Token(ctx); err != nil {
 		return nil, nil, err
 	}

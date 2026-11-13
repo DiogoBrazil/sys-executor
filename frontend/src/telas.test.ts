@@ -143,7 +143,7 @@ vi.mock("./api", () => ({
   },
   cadastro: {
     salvar: (c: any) => {
-      chamadas.push("salvar:" + JSON.stringify({ pessoas: c.pessoas, acusadoId: c.acusadoId, fatos: c.fatos }));
+      chamadas.push("salvar:" + JSON.stringify({ pessoas: c.pessoas, acusadoId: c.acusadoId, fatos: c.fatos, ofendidos: c.ofendidos }));
       return resp({ ...visaoAtual, cadastro: salvarSimulado(c) });
     },
     anexar: (id: string) => {
@@ -270,7 +270,7 @@ describe("Cadastro de peças (V4 §48.4)", () => {
     await w.find('[data-teste="arq-memorando-anexar"]').trigger("click");
     await flushPromises();
     const salvo = JSON.parse(chamadas.find((c) => c.startsWith("salvar:"))!.slice(7));
-    expect(salvo.pessoas).toEqual([{ id: salvo.acusadoId, nome: "Carlos Inventado", postoGrad: "CB PM", crianca: false, grafias: [] }]);
+    expect(salvo.pessoas).toEqual([{ id: salvo.acusadoId, nome: "Carlos Inventado", postoGrad: "CB PM", crianca: false, grafias: [], instituicao: false, civil: false }]);
     // Sem a natureza, o dispositivo do Estatuto não vai ao Go (fica na tela).
     expect(salvo.fatos[0].enquadramentos).toEqual([{ dispositivoId: "RDPM-17-V", natureza: "" }]);
     expect(chamadas.at(-1)).toBe("anexar:PEC-01");
@@ -287,7 +287,8 @@ describe("Cadastro de peças (V4 §48.4)", () => {
     await flushPromises();
     await w.find('[data-teste="novo-depoimento"]').trigger("click");
     await w.find('[data-teste="depoente-nome-0"]').setValue("Diego Suposto");
-    await w.find('[data-teste="papel-0-DECLARANTE"]').setValue(true);
+    expect(w.find('[data-teste="papel-0"]').element.tagName).toBe("SELECT"); // lista, não botões (teste da SR, 12/11/2026)
+    await w.find('[data-teste="papel-0"]').setValue("DECLARANTE");
     await w.find('[data-teste="arq-dep-0-anexar"]').trigger("click");
     await flushPromises();
     // A peça nova ganha ID no Go antes de receber o arquivo.
@@ -309,11 +310,11 @@ describe("Cadastro de peças (V4 §48.4)", () => {
     await flushPromises();
     await w.find('[data-teste="novo-depoimento"]').trigger("click");
     expect(w.find('[data-teste="depoente-0"]').exists()).toBe(false); // ninguém para reaproveitar
-    await w.find('[data-teste="depoente-posto-0"]').setValue("Sd PM");
+    await w.find('[data-teste="depoente-posto-0"]').setValue("SD PM");
     await w.find('[data-teste="depoente-nome-0"]').setValue("Diego Suposto");
     await w.find('[data-teste="novo-depoimento"]').trigger("click");
     const sel = w.find('[data-teste="depoente-1"]');
-    expect(sel.text()).toContain("Sim: Sd PM Diego Suposto");
+    expect(sel.text()).toContain("Sim: SD PM Diego Suposto");
     expect(sel.text()).not.toContain("sem nome");
     const opt = sel.findAll("option")[1].element as HTMLOptionElement;
     await sel.setValue(opt.value);
@@ -344,14 +345,29 @@ describe("Ajustes do teste real (10/11/2026)", () => {
     expect(w.findAll('[data-teste="pessoa"]')).toHaveLength(1);
   });
 
-  it("ofendido com nome de instituição: aviso no campo", async () => {
+  it("ofendido pessoa ou instituição, vários (V4 §23.3, c)", async () => {
     const cad = { ...cadastroPADS(), tipo: "SR", pecas: [{ id: "PEC-01", tipo: "PORTARIA", titulo: "", descricao: "", papel: "", pessoaIds: [], data: "", sei: "", naoApresentada: false, arquivos: [] }] };
     visaoAtual = visao("RECEBENDO_UPLOAD", { tipo: "SR", entrada: "UPLOAD", cadastro: cad });
     const w = mount(App);
     await flushPromises();
+    expect(w.text()).not.toContain("Só pessoas");
     await w.find('[data-teste="novo-ofendidos"]').trigger("click");
     await w.find('[data-teste="ofendidos-nome"]').setValue("Administração Pública");
+    // Nome com cara de instituição marcado como pessoa: só a sugestão.
     expect(w.find('[data-teste="ofendido-institucional"]').exists()).toBe(true);
+    await w.find('[data-teste="ofendidos-tipo"]').setValue("INSTITUICAO");
+    expect(w.find('[data-teste="ofendido-institucional"]').exists()).toBe(false);
+    await w.find('[data-teste="novo-ofendidos"]').trigger("click");
+    await w.findAll('[data-teste="ofendidos-nome"]')[1].setValue("Ofendida Fictícia");
+    // Pessoa (civil): sem posto/graduação (pedido do usuário, 12/11/2026).
+    expect(w.findAll('[data-teste="ofendidos-posto"]').length).toBe(1);
+    await w.findAll('[data-teste="ofendidos-tipo"]')[1].setValue("CIVIL");
+    expect(w.findAll('[data-teste="ofendidos-posto"]').length).toBe(0);
+    await w.find('[data-teste="arq-portaria-anexar"]').trigger("click");
+    await flushPromises();
+    const salvo = JSON.parse(chamadas.filter((c) => c.startsWith("salvar:")).at(-1)!.slice(7));
+    const ofendidos = salvo.pessoas.filter((p: any) => salvo.ofendidos.includes(p.id));
+    expect(ofendidos.map((p: any) => [p.nome, p.instituicao, p.civil])).toEqual([["Administração Pública", true, false], ["Ofendida Fictícia", false, true]]);
   });
 
   it("grupo sem campos visíveis nem conteúdo não aparece", async () => {
@@ -587,8 +603,8 @@ describe("F4 — perguntas com campos (T08)", () => {
 });
 
 describe("F4 — revisão, retomada e painel", () => {
-  it("parada recuperável (IA-007): tentar novamente e abrir configurações de IA", async () => {
-    visaoAtual = visao("DELIMITANDO", { parada: true, retomavel: true, erro: { codigo: "IA-007", titulo: "Sem conexão com a Gemini API", mensagem: "m", acao: "a" } });
+  it("parada recuperável (IA-007): tentar novamente e abrir configurações do assistente", async () => {
+    visaoAtual = visao("DELIMITANDO", { parada: true, retomavel: true, erro: { codigo: "IA-007", titulo: "Sem conexão com o assistente", mensagem: "m", acao: "a" } });
     const w = mount(App);
     await flushPromises();
     expect(w.find('[data-teste="parada"]').exists()).toBe(false);
@@ -603,7 +619,7 @@ describe("F4 — revisão, retomada e painel", () => {
   });
 
   it("parada com erro não retomável mostra o erro, não o aviso de fim de fase", async () => {
-    visaoAtual = visao("ANALISANDO", { parada: true, retomavel: false, erro: { codigo: "IA-005", titulo: "Limite de uso da Gemini API atingido", mensagem: "m", acao: "a" } });
+    visaoAtual = visao("ANALISANDO", { parada: true, retomavel: false, erro: { codigo: "IA-005", titulo: "Limite de uso do assistente atingido", mensagem: "m", acao: "a" } });
     const w = mount(App);
     await flushPromises();
     expect(w.find('[data-teste="parada"]').exists()).toBe(false);
@@ -660,7 +676,7 @@ describe("Telas mais horizontais: gavetas, modais e figura da espera", () => {
     let w = mount(App);
     await flushPromises();
     expect(w.find('[data-teste="estado-atual"] svg.robo').exists()).toBe(true);
-    expect(w.find('[data-teste="estado-atual"]').text()).toContain("A IA está trabalhando");
+    expect(w.find('[data-teste="estado-atual"]').text()).toContain("O assistente está trabalhando");
     visaoAtual = visao("EXTRAINDO");
     w = mount(App);
     await flushPromises();
@@ -769,11 +785,26 @@ describe("F6 — minuta", () => {
 });
 
 // T27 (emenda V4 §47): primeiro uso = cadastrar a chave da Gemini API e escolher o modelo.
-describe("T27 — configuração da Gemini API", () => {
-  it("primeiro uso leva às configurações de IA; a chave some do campo e nunca é exibida", async () => {
+describe("Identidade JURISPM (12/11/2026)", () => {
+  it("a tela inicial traz o nome, a descrição e a unidade", async () => {
     const w = mount(App);
     await flushPromises();
-    expect(w.find('[data-teste="primeiro-uso"]').text()).toContain("Gemini API");
+    const m = w.find('[data-teste="marca"]');
+    for (const t of ["JURISPM", "Assistente Inteligente de Análise Jurídico-Disciplinar", "7º Batalhão de Polícia Militar · PMRO"]) {
+      expect(m.text()).toContain(t);
+    }
+    expect(m.text()).not.toContain("LEXIA"); // retirada a pedido do usuário
+    expect(m.find("hr").exists()).toBe(false);
+  });
+});
+
+describe("T27 — configuração da Gemini API", () => {
+  it("primeiro uso leva às configurações do assistente; a chave some do campo e nunca é exibida", async () => {
+    const w = mount(App);
+    await flushPromises();
+    // V4 §50: fora das Configurações do assistente, o serviço não é nomeado.
+    expect(w.find('[data-teste="primeiro-uso"]').text()).toContain("Configure o assistente");
+    expect(w.find('[data-teste="primeiro-uso"]').text()).not.toMatch(/Gemini|ChatGPT/);
     await w.find('[data-teste="configurar-ia"]').trigger("click");
     await flushPromises();
     await w.find('[data-teste="aba-gemini"]').trigger("click");
@@ -851,7 +882,7 @@ describe("Ordem das visões", () => {
 
 // V4 §48.3 (Termos do Sign in with ChatGPT): aviso de privacidade antes da
 // conexão; botão só em texto; escolha explícita do serviço.
-describe("ChatGPT nas configurações de IA", () => {
+describe("ChatGPT nas configurações do assistente", () => {
   it("o aviso de privacidade precede a conexão; entrar, escolher e testar o modelo", async () => {
     const w = mount(App);
     await flushPromises();
@@ -1047,5 +1078,19 @@ describe("Telas do protótipo aprovado", () => {
     await w.find('[data-teste="campo-incluir_IMP-1-nao"]').setValue(true);
     expect(w.find('[data-teste="campo-data_IMP-1"]').exists()).toBe(false);
     expect(w.find('[data-teste="grupo-IMP-1"]').text()).toContain("Não será julgada.");
+  });
+});
+
+describe("Ajustes do teste da SR (12/11/2026)", () => {
+  // O rádio invisível dos cartões de escolha (.sobre) é absoluto: o rótulo
+  // precisa contê-lo. Sem isso ele cobria a pergunta inteira e o clique em
+  // "Trechos citados" marcava a última opção (o jsdom não calcula layout;
+  // a conferência visual foi feita na galeria, num navegador sem GPU).
+  it("cartão de escolha contém o rádio invisível", async () => {
+    const modulo = "node:fs"; // sem os tipos do Node no projeto
+    const { readFileSync } = (await import(/* @vite-ignore */ modulo)) as { readFileSync: (p: string, c: string) => string };
+    const css = readFileSync("src/estilo.css", "utf8"); // o vitest roda em frontend/
+    const regra = /\.escolhas > label \{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(regra).toMatch(/position:\s*relative/);
   });
 });

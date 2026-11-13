@@ -178,7 +178,7 @@ async function confirmarCancelamento() {
           <p v-if="v.erro.detalhe" class="detalhe">Diagnóstico ({{ v.erro.codigo }}): {{ v.erro.detalhe }}</p>
           <div class="acoes">
             <button v-if="v.retomavel" class="botao primario" :disabled="estado.ocupado" data-teste="retomar" @click="retomar">Tentar novamente</button>
-            <button v-if="erroDeIA" class="botao" data-teste="abrir-config-ia" @click="abrirConfigIA">Abrir configurações de IA</button>
+            <button v-if="erroDeIA" class="botao" data-teste="abrir-config-ia" @click="abrirConfigIA">Abrir configurações do assistente</button>
             <span class="espaco"></span>
             <span class="codigo">Código {{ v.erro.codigo }}</span>
           </div>
@@ -211,7 +211,7 @@ async function confirmarCancelamento() {
         <Figura :tipo="figura" :tamanho="104" />
         <div class="texto">
           <span class="quem" :class="figura">
-            <template v-if="figura === 'robo'">A IA está trabalhando</template>
+            <template v-if="figura === 'robo'">O assistente está trabalhando</template>
             <template v-else>Trabalhando neste computador</template>
           </span>
           <p class="descricao">{{ v.descricao }}</p>

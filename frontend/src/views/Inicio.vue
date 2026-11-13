@@ -5,15 +5,29 @@ import { abrirConfigIA, escolherTipo, estado, iaPronta } from "../estado";
 import AvisoErro from "../components/AvisoErro.vue";
 
 const opcoes = [TIPOS.PADS, TIPOS.SR];
-// Primeiro uso: o serviço de IA escolhido ainda não está pronto (ChatGPT
-// conectado com modelo, ou Gemini com chave e modelo).
+// Primeiro uso: o serviço escolhido em Configurações do assistente ainda não está
+// pronto (conta conectada ou chave cadastrada, e modelo escolhido). Fora das
+// Configurações, o aplicativo não nomeia o serviço (V4 §50).
 const faltaIA = computed(() => !!estado.ia && !iaPronta());
 </script>
 
 <template>
   <main class="inicio">
+    <section class="marca" aria-label="JURISPM" data-teste="marca">
+      <span class="marca-icone" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M24 9v29M13 14h22M13 14l-5 12M13 14l5 12M35 14l-5 12M35 14l5 12" />
+          <path d="M6.5 26h13c-.6 4-12.4 4-13 0zM28.5 26h13c-.6 4-12.4 4-13 0zM17 38h14" />
+          <circle cx="24" cy="9" r="2" fill="currentColor" stroke="none" />
+        </svg>
+      </span>
+      <h1 class="nome">JURISPM</h1>
+      <p class="descricao">Assistente Inteligente de Análise Jurídico-Disciplinar</p>
+      <p class="unidade">7º Batalhão de Polícia Militar · PMRO</p>
+    </section>
+
     <div class="cabeca">
-      <h1>Qual minuta você vai elaborar?</h1>
+      <h2>Qual minuta você vai elaborar?</h2>
       <p>Depois desta escolha, você indicará como obter os autos.</p>
     </div>
 
@@ -39,18 +53,18 @@ const faltaIA = computed(() => !!estado.ia && !iaPronta());
     <AvisoErro v-if="estado.erro" :erro="estado.erro" />
 
     <div v-if="faltaIA" class="primeiro-uso" role="status" data-teste="primeiro-uso">
-      <h2>Configure a IA</h2>
+      <h2>Configure o assistente</h2>
       <p>
-        A leitura e a análise dos autos usam um serviço de IA: o ChatGPT, com o seu plano Plus ou Pro, ou a Gemini API,
-        do Google, com a sua chave. Escolha o serviço, conecte a conta ou cadastre a chave e escolha o modelo; isso é feito
-        uma vez só. A análise por IA exige internet.
+        A leitura e a análise dos autos são feitas pelo assistente, que usa um serviço externo escolhido por você. Em
+        Configurações do assistente, escolha o serviço, conecte a conta ou cadastre a chave e escolha o modelo; isso é feito uma vez
+        só. O assistente exige internet.
       </p>
-      <button class="botao primario" data-teste="configurar-ia" @click="abrirConfigIA">Configurar a IA</button>
+      <button class="botao primario" data-teste="configurar-ia" @click="abrirConfigIA">Configurar o assistente</button>
     </div>
 
     <p class="rodape">
       O aplicativo prepara minutas de apoio. A decisão e a revisão integral do texto são sempre suas.
-      <button class="botao discreto" data-teste="link-config-ia" @click="abrirConfigIA">Configurações de IA</button>
+      <button class="botao discreto" data-teste="link-config-ia" @click="abrirConfigIA">Configurações do assistente</button>
     </p>
   </main>
 </template>
@@ -62,11 +76,37 @@ const faltaIA = computed(() => !!estado.ia && !iaPronta());
 .inicio {
   max-width: 980px;
   margin: 0 auto;
-  padding: 3.5rem 2rem 2rem;
+  padding: 1.8rem 2rem 2rem;
   display: grid;
   gap: 2.2rem;
 }
-.cabeca h1 { font-size: var(--t-2xl); }
+.cabeca h2 { font-size: var(--t-2xl); }
+
+/* Identidade do aplicativo (decisão do usuário, 12/11/2026). */
+.marca {
+  /* Sem fundo próprio: fica sobre o fundo da página (pedido do usuário). */
+  color: var(--tinta);
+  padding: 0.4rem 1.6rem 0;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 0.35rem;
+}
+.marca-icone {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  /* Tom suave de dourado, na família do ícone do aplicativo. */
+  background: #f3ead2;
+  border: 1.5px solid #dccb9c;
+  border-radius: 14px;
+  color: #8a6a2c;
+  margin-bottom: 0.6rem;
+}
+.nome { font-size: 1.6rem; font-weight: 700; letter-spacing: 0.02em; color: var(--tinta); font-family: inherit; }
+.descricao { color: var(--tinta); margin-top: 0.3rem; }
+.unidade { font-size: var(--t-sm); color: var(--tinta-suave); }
 .cabeca p { margin-top: 0.5rem; color: var(--tinta-suave); }
 
 .pastas {

@@ -28,6 +28,7 @@ async function finalizar() {
   await aprovar();
 }
 const ajustes = computed(() => [...(props.minuta.ajustes ?? [])].reverse());
+const ehSR = computed(() => estado.visao?.tipo === "SR");
 
 const copiado = ref(false);
 const texto = computed(() =>
@@ -159,12 +160,16 @@ function partes(t: string): { texto: string; pendente: boolean }[] {
 
       <div class="grupo">
         <h3><label for="pedido-ajuste">Solicitar ajustes</label></h3>
-        <p class="dica">
+        <p v-if="ehSR" class="dica">
+          Diga em qual parte (síntese dos fatos ou análise das provas de qual fato) e o que deve mudar. Só os trechos
+          atingidos são reescritos e conferidos de novo. Para mudar a conclusão ou o enquadramento, use “Alterar” em “Suas respostas”.
+        </p>
+        <p v-else class="dica">
           Diga em qual parte (relatório, fundamentação de qual imputação, exame do art. 36) e o que deve mudar. Só os trechos
           atingidos são reescritos e conferidos de novo. Para mudar resultado, punição, dias ou pontos, use “Alterar” em “Suas respostas”.
         </p>
         <textarea id="pedido-ajuste" v-model="pedido" rows="3" maxlength="2000" data-teste="minuta-pedido"
-          placeholder="Ex.: no relatório, acrescente que a defesa juntou a escala de serviço."></textarea>
+          :placeholder="ehSR ? 'Ex.: na análise das provas do fato 1, acrescente o que a testemunha disse sobre a chave da reserva.' : 'Ex.: no relatório, acrescente que a defesa juntou a escala de serviço.'"></textarea>
         <div class="linha-acoes">
           <button type="button" class="botao" :disabled="estado.ocupado || pedido.trim().length < 5" data-teste="minuta-ajustar" @click="enviarAjuste">
             Enviar pedido de ajuste
@@ -204,7 +209,7 @@ function partes(t: string): { texto: string; pendente: boolean }[] {
     </section>
 
     <p class="nota">
-      Os parágrafos com a barra lateral foram redigidos pela IA a partir dos trechos indicados; o restante é montado pelo
+      Os parágrafos com a barra lateral foram redigidos pelo assistente a partir dos trechos indicados; o restante é montado pelo
       aplicativo com as suas respostas e o cálculo oficial.
     </p>
     </aside>

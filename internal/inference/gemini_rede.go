@@ -23,7 +23,7 @@ const baseURLGemini = "https://" + HostGemini + "/"
 type ErrHostBloqueado struct{ Destino string }
 
 func (e ErrHostBloqueado) Error() string {
-	return fmt.Sprintf("destino de rede não permitido para a IA: %s", e.Destino)
+	return fmt.Sprintf("destino de rede não permitido para o assistente: %s", e.Destino)
 }
 
 // TransporteRestrito só deixa passar requisições para a base configurada

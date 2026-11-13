@@ -71,6 +71,13 @@ type Config struct {
 	TempoGeracao time.Duration // geração + download do PDF (padrão 20 min)
 }
 
+// Abertura do navegador: tentativas e pausa entre elas (a primeira abertura
+// do Edge depois de ligar o computador pode falhar).
+const (
+	tentativasAbertura = 2
+	pausaNovaAbertura  = 2 * time.Second
+)
+
 // LocalizarNavegador procura o Microsoft Edge instalado (ou SYSEXEC_NAVEGADOR).
 func LocalizarNavegador() (string, error) {
 	if p := os.Getenv("SYSEXEC_NAVEGADOR"); p != "" {
@@ -117,37 +124,68 @@ func ObterPDF(ctx context.Context, cfg Config, in Interlocutor) ([]byte, error) 
 		}
 	}
 
-	opts := []chromedp.ExecAllocatorOption{
-		chromedp.ExecPath(cfg.Navegador),
-		chromedp.UserDataDir(perfil),
-		chromedp.NoFirstRun, chromedp.NoDefaultBrowserCheck,
-		chromedp.Flag("disable-sync", true),
-		chromedp.Flag("disable-extensions", true),
-		chromedp.Flag("disable-background-networking", true),
-		chromedp.Flag("disable-crash-reporter", true),
-		chromedp.Flag("disable-breakpad", true),
-		chromedp.Flag("disable-features", "msEdgeSignIn,EdgeCollections,msShopping,Translate,AutofillServerCommunication"),
-		chromedp.Flag("password-store", "basic"),
-		chromedp.WindowSize(1280, 900),
+	// Abertura do navegador até a tela de login. A primeira abertura do Edge
+	// depois de ligar o computador pode falhar ou demorar (teste do usuário,
+	// 12/11/2026): uma nova tentativa, com perfil novo, antes de mostrar o erro.
+	abrir := func(tentativa int) (*sessaoNavegador, func(), error) {
+		dirPerfil := perfil
+		if tentativa > 0 {
+			dirPerfil = fmt.Sprintf("%s-%d", perfil, tentativa+1)
+		}
+		opts := []chromedp.ExecAllocatorOption{
+			chromedp.ExecPath(cfg.Navegador),
+			chromedp.UserDataDir(dirPerfil),
+			chromedp.NoFirstRun, chromedp.NoDefaultBrowserCheck,
+			chromedp.Flag("disable-sync", true),
+			chromedp.Flag("disable-extensions", true),
+			chromedp.Flag("disable-background-networking", true),
+			chromedp.Flag("disable-crash-reporter", true),
+			chromedp.Flag("disable-breakpad", true),
+			chromedp.Flag("disable-features", "msEdgeSignIn,EdgeCollections,msShopping,Translate,AutofillServerCommunication"),
+			chromedp.Flag("password-store", "basic"),
+			chromedp.WindowSize(1280, 900),
+		}
+		if !cfg.Visivel {
+			opts = append(opts, chromedp.Flag("headless", "new"), chromedp.Flag("hide-scrollbars", true), chromedp.Flag("mute-audio", true))
+		}
+		actx, cancelAloc := chromedp.NewExecAllocator(ctx, opts...)
+		bctx, cancelNav := chromedp.NewContext(actx)
+		fechar := func() { cancelNav(); cancelAloc() }
+		s := &sessaoNavegador{ctx: bctx, guarda: guarda, baixados: baixados, downloads: make(chan string, 1)}
+		if err := s.preparar(); err != nil {
+			fechar()
+			return nil, nil, erros.Com(erros.SEIIndisponivel, err)
+		}
+		if err := s.navegar(cfg.URLLogin); err != nil {
+			fechar()
+			return nil, nil, err
+		}
+		if _, err := s.esperar(cfg.TempoTela, func(e estadoTela) bool { return e.Login }); err != nil {
+			fechar()
+			return nil, nil, erros.Com(erros.SEIInterfaceAlterada, err)
+		}
+		return s, fechar, nil
 	}
-	if !cfg.Visivel {
-		opts = append(opts, chromedp.Flag("headless", "new"), chromedp.Flag("hide-scrollbars", true), chromedp.Flag("mute-audio", true))
-	}
-	actx, cancelAloc := chromedp.NewExecAllocator(ctx, opts...)
-	defer cancelAloc()
-	bctx, cancelNav := chromedp.NewContext(actx)
-	defer cancelNav()
-
-	s := &sessaoNavegador{ctx: bctx, guarda: guarda, baixados: baixados, downloads: make(chan string, 1)}
 	in.Fase(FaseConectando)
-	if err := s.preparar(); err != nil {
-		return nil, erros.Com(erros.SEIIndisponivel, err)
-	}
-	if err := s.navegar(cfg.URLLogin); err != nil {
-		return nil, err
-	}
-	if _, err := s.esperar(cfg.TempoTela, func(e estadoTela) bool { return e.Login }); err != nil {
-		return nil, erros.Com(erros.SEIInterfaceAlterada, err)
+	var s *sessaoNavegador
+	for tentativa := 0; ; tentativa++ {
+		var fechar func()
+		var err error
+		s, fechar, err = abrir(tentativa)
+		if err == nil {
+			defer fechar()
+			break
+		}
+		var e *erros.Erro
+		semRede := errors.As(err, &e) && e.Codigo == erros.RedeSemConexao
+		if ctx.Err() != nil || tentativa >= tentativasAbertura-1 || semRede {
+			return nil, err
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(pausaNovaAbertura):
+		}
 	}
 
 	// Login (com novas tentativas se o SEI recusar).
