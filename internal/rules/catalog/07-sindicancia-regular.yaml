@@ -289,17 +289,17 @@
   versao: 1
 
 - id: SR-SOL-004
-  origem: "§25.2"
+  origem: "§25.2; §49 (Emenda 3)"
   fluxo: SR
   rotulo: [APROVADO]
   tipo: [POLITICA_IA, DETERMINISTICA]
-  enunciado: "Indícios suficientes / ausência / inconclusivo; distinguir ocorrência de autoria"
+  enunciado: "Indícios suficientes ou ausência de indícios, sem resultado inconclusivo; dúvida ou lacuna leva à ausência, com as limitações explicitadas; distinguir ocorrência de autoria"
   modulo: "sr/solucao"
   enforced_by: [sr.ConclusaoSR]
   etapas: [analise]
-  instrucao_ia: "Para cada fato e sindicado, proponha indícios suficientes, ausência de indícios ou inconclusivo, distinguindo a ocorrência do fato da autoria."
+  instrucao_ia: "Para cada fato e sindicado, proponha indícios suficientes ou ausência de indícios, distinguindo a ocorrência do fato da autoria. Não há resultado inconclusivo: se faltam elementos ou persiste dúvida, proponha ausência de indícios e aponte as lacunas."
   testes: ["SR13", "SR18", "S3", "S4"]
-  versao: 1
+  versao: 2
 
 - id: SR-SOL-005
   origem: "§25.3"
@@ -309,7 +309,7 @@
   enunciado: "Enquadramento específico (crime comum, crime militar, transgressão), com diploma e artigo confirmados por fonte"
   modulo: "validate.LegalRefs"
   enforced_by: [sr.Enquadramento]
-  etapas: [analise, redacao]
+  etapas: [analise, redacao, enquadramento]
   instrucao_ia: "Enquadre só com diploma e artigo confirmados por fonte fornecida; NUNCA cite artigo de memória."
   testes: ["SR25", "SR26"]
   versao: 1
@@ -331,7 +331,7 @@
   tipo: [POLITICA_IA]
   enunciado: "Não preso à capitulação da portaria para os mesmos fatos"
   modulo: "sr/solucao"
-  etapas: [analise]
+  etapas: [analise, enquadramento]
   instrucao_ia: "O enquadramento não fica preso à capitulação da portaria para os mesmos fatos."
   testes: ["SR24"]
   versao: 1
@@ -363,12 +363,12 @@
   fluxo: SR
   rotulo: [APROVADO]
   tipo: [PERGUNTA, POLITICA_IA]
-  enunciado: "Lacuna impeditiva → alertar + diligências concretas; o usuário decide prosseguir; conclusão inconclusiva qualificada"
+  enunciado: "Lacuna impeditiva → alertar + diligências concretas; o usuário decide prosseguir; sem diligência, ausência de indícios com as limitações explicitadas (§49)"
   modulo: "workflow"
   etapas: [analise]
   instrucao_ia: "Lacuna que impede concluir: aponte-a e sugira diligências concretas; NUNCA conclua como se a prova estivesse completa."
   testes: ["SR13", "SR33"]
-  versao: 1
+  versao: 2
 
 - id: SR-NAT-001
   origem: "§21.1"

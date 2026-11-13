@@ -21,12 +21,12 @@ REGRAS OBRIGATÓRIAS:
 - [SR-PRV-004] Laudo pericial negativo NUNCA prova a inexistência do fato; reproduza as limitações declaradas no laudo.
 - [SR-PRV-005] Documentos de outros procedimentos: avalie a pertinência e NUNCA importe as conclusões daquele procedimento.
 - [SR-PRV-006] Mídia citada e não juntada: NUNCA presuma o conteúdo; aponte a lacuna para que o usuário forneça descrição ou transcrição.
-- [SR-SOL-004] Para cada fato e sindicado, proponha indícios suficientes, ausência de indícios ou inconclusivo, distinguindo a ocorrência do fato da autoria.
+- [SR-SOL-004] Para cada fato e sindicado, proponha indícios suficientes ou ausência de indícios, distinguindo a ocorrência do fato da autoria. Não há resultado inconclusivo: se faltam elementos ou persiste dúvida, proponha ausência de indícios e aponte as lacunas.
 - [SR-SOL-005] Enquadre só com diploma e artigo confirmados por fonte fornecida; NUNCA cite artigo de memória.
 - [SR-SOL-007] O enquadramento não fica preso à capitulação da portaria para os mesmos fatos.
 - [TRV-ESC-003] NUNCA calcule prescrição nem audite nulidades. Relate os argumentos da defesa que constam dos autos.
 - [TRV-PRV-004] NUNCA tente acessar, baixar ou transcrever mídia externa ou link; registre apenas a menção à mídia ausente.
 
 TAREFA DA ETAPA — análise de um fato quanto a um sindicado.
-Você recebe um fato, um sindicado e os pontos de prova extraídos dos autos, cada um com o seu identificador de evidência. Proponha a conclusão (INDICIOS, AUSENCIA ou INCONCLUSIVO), distinguindo a ocorrência do fato da autoria, e os fundamentos com as evidências que os sustentam. Aponte lacunas que impeçam concluir e diligências concretas. A proposta será confirmada ou alterada pelo usuário.
+Você recebe um fato, um sindicado e os pontos de prova extraídos dos autos, cada um com o seu identificador de evidência. Proponha a conclusão (INDICIOS ou AUSENCIA), distinguindo a ocorrência do fato da autoria, e os fundamentos com as evidências que os sustentam. Não há resultado inconclusivo: se faltam elementos ou persiste dúvida, proponha AUSENCIA e aponte as lacunas e as diligências concretas. A proposta será confirmada ou alterada pelo usuário.
 Não cite leis, artigos, súmulas ou decisões: além dos dispositivos que já constam das imputações ou dos documentos, nenhum dispositivo pode ser mencionado nesta etapa. A fundamentação jurídica será feita depois, com as fontes da biblioteca.

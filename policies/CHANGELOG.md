@@ -117,3 +117,48 @@ O CI falha enquanto o SHA-256 da V4 divergir do lock (GOV-LOCK-01).
 - **Regras do catálogo afetadas:** nova TRV-ING-008 (seleção local dos documentos do SEI), que entra com o código que a garante (etapa 7).
 - **Registro:** D-11, E2 revisado, em `docs/planning/REGISTRO_DUVIDAS_DECISOES.md`.
 - **Aprovação:** usuário, em 10/11/2026 ("Aprovo o texto").
+
+### 12/11/2026 — Emenda 3 (seção 49): SR sem resultado inconclusivo
+- **O que mudou na V4:**
+  - nova seção 49 e linha da Emenda 3 no cabeçalho;
+  - notas **[Emenda §49]** em §§21.1, 25.1, 25.2 (item 3), 25.5 (S3), 26.1, 27 (SR13 e SR33) e 27.2 (item 5), com o texto original mantido;
+  - novo "Estado final — V4 + Emendas 1, 2 e 3".
+- **Conteúdo:** a conclusão da SR, por fato e sindicado, é só **indícios suficientes** ou **ausência de indícios**. Dúvida, falta de elementos ou limitação grave levam à ausência de indícios, com as lacunas explicitadas e sem afirmar que o fato não ocorreu. As diligências continuam a ser apresentadas ao usuário.
+- **Regras do catálogo afetadas:** SR-SOL-004 v2 (enunciado e `instrucao_ia`) e SR-LAC-001 v2 (enunciado).
+- **Código:** `sr.Resultado` sem `INCONCLUSIVO`; o schema da análise da SR e a pergunta da conclusão oferecem só as duas opções.
+- **Prompt e golden:** `policies/sr/analise.md` e `internal/policy/testdata/golden/sr-analise.txt` mudam (só eles; os do PADS não mudam), com o aval do usuário.
+- **Testes:** SR13 e SR33 passam a ser verificados no sentido da seção 49; teste novo `TestAnaliseFatoPessoaSemInconclusivo`.
+- **Registro:** `docs/planning/PLANO_SR_MINUTA.md` (A4).
+- **Aprovação:** usuário, em 12/11/2026 ("Aprovo como está").
+
+### 12/11/2026 — Biblioteca jurídica em Markdown; RDPM substituído pela versão .md
+- **V4:** nenhuma alteração. A biblioteca segue a V4 §40; o enquadramento da SR segue a V4 §25.3.
+- **Acervo (`internal/legal/dados/manifesto.yaml`):**
+  - o `RDPM-RO.pdf` foi substituído por `RDPM RO - Decreto_13255_2007.md`, por decisão do usuário. O texto foi conferido palavra por palavra com o extraído do PDF: é igual, salvo o título "Dos Prazos";
+  - entraram 12 normas federais em Markdown (texto compilado vigente do normas.leg.br): CP, CPM, CPP, CPPM, CTB, Estatuto da Advocacia, ECA, Lei Maria da Penha, Lei de Abuso de Autoridade, Lei dos Juizados Especiais, Estatuto do Desarmamento e Lei de Tortura;
+  - os originais em Markdown não têm páginas: a passagem cita o dispositivo, e a página fica 0. As rubricas da norma ("Peculato") são guardadas e entram na busca.
+- **Catálogo de enquadramento (`internal/rules/enquadramento/dispositivos.yaml`):** só a fonte dos 100 itens do RDPM mudou, que passou a ser o `.md`, sem página. Os textos não mudaram. O teste novo `TestCatalogoConfereComABiblioteca` confere cada um com a biblioteca.
+- **Nota de vigência D-01** (art. 41, § 3º, do RDPM): mantida e conferida no `.md`.
+- **Aprovação:** usuário, em 12/11/2026 ("Substitua o RDPM-RO.pdf pela versão .md").
+
+### 12/11/2026 — Emenda 4 (seção 50): "assistente" nas telas dos fluxos, sem nomear provedor nem modelo
+- **O que mudou na V4:**
+  - nova seção 50 e linha da Emenda 4 no cabeçalho;
+  - notas **[Emenda §50]** em §§47.3, 48.1 e 48.6, com o texto original mantido;
+  - novo "Estado final — V4 + Emendas 1 a 4".
+- **Conteúdo:**
+  - nas telas dos fluxos, a IA é "assistente";
+  - o provedor e o modelo aparecem só em Configurações de IA;
+  - a autorização continua vinculada a provedor e modelo;
+  - a pergunta e o bloqueio de dados de criança continuam iguais, sem nomear o ChatGPT.
+- **Regras do catálogo afetadas:** nenhuma; os enunciados não citam a exibição do provedor.
+- **Contexto:** o aplicativo passa a se chamar **JURISPM — LEXIA, Assistente Inteligente de Análise Jurídico-Disciplinar**. O nome do projeto e a pasta de dados (`%LOCALAPPDATA%\sys-executor`) não mudam.
+- **Aprovação:** usuário, em 12/11/2026 ("Aprovo como está").
+
+### 12/11/2026 — Ajuste da Emenda 4 (§50, item a): sem estimativa de tokens
+- **O que mudou na V4:** o item (a) da seção 50 e as notas [Emenda §50] em §47.3 e §50.2.
+- **Conteúdo:**
+  - a confirmação de envio não mostra mais a estimativa de tokens;
+  - se o limite de uso da conta for atingido, a parada é recuperável, com aviso amigável para ajustar em Configurações do assistente.
+- **Regras do catálogo afetadas:** nenhuma.
+- **Aprovação:** usuário, em 12/11/2026 ("Aprovo como está").

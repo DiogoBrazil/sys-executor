@@ -66,11 +66,14 @@ const (
 	EtapaRedacao         = "redacao"
 	EtapaValidacao       = "validacao"
 	EtapaAjuste          = "ajuste"
+	// EtapaEnquadramento: proposta de enquadramento das conclusões da SR com
+	// indícios (V4 §25.3); no PADS o enquadramento é do usuário (§48.5).
+	EtapaEnquadramento = "enquadramento"
 )
 
 // Etapas lista as etapas de IA (fora o núcleo), em ordem.
 var Etapas = []string{EtapaClassificacao, EtapaCompatibilidade, EtapaDelimitacao, EtapaExtracao,
-	EtapaEscopo, EtapaAnalise, EtapaRedacao, EtapaValidacao, EtapaAjuste}
+	EtapaEscopo, EtapaAnalise, EtapaRedacao, EtapaValidacao, EtapaAjuste, EtapaEnquadramento}
 
 // Condições (flags do caso) que ativam regras.
 const (

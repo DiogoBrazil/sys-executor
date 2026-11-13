@@ -237,13 +237,13 @@ func (o *ObjetoSR) Sindicados() []string {
 	return append(o.SindicadosOriginais(), o.autorizados(MilitarNovo)...)
 }
 
-// Resultado da conclusão (§25.2).
+// Resultado da conclusão (§25.2; §49, Emenda 3): só indícios ou ausência.
+// Dúvida ou lacuna levam à ausência, com as limitações explicitadas.
 type Resultado string
 
 const (
-	Indicios     Resultado = "INDICIOS"
-	Ausencia     Resultado = "AUSENCIA"
-	Inconclusivo Resultado = "INCONCLUSIVO"
+	Indicios Resultado = "INDICIOS"
+	Ausencia Resultado = "AUSENCIA"
 )
 
 // TipoEnquadramento (§25.3).
@@ -311,8 +311,8 @@ func (o *ObjetoSR) ValidarConclusoes(cs []ConclusaoSR) []Violacao {
 			if len(c.Enquadramentos) == 0 {
 				vs = append(vs, Violacao{"SR-SOL-005", ref, "indícios sem enquadramento específico"})
 			}
-		case Ausencia, Inconclusivo:
-			if c.Resultado == Ausencia && len(c.Enquadramentos) > 0 {
+		case Ausencia:
+			if len(c.Enquadramentos) > 0 {
 				vs = append(vs, Violacao{"SR-SOL-004", ref, "ausência de indícios com enquadramento"})
 			}
 		default:

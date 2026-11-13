@@ -83,7 +83,7 @@ func TestFatoNovoSoComAutorizacao(t *testing.T) {
 // Regra: SR-ESC-002
 func TestMilitarNovoPerguntaAntesPortariaIntocada(t *testing.T) {
 	o := objeto(t)
-	c := []ConclusaoSR{{FatoID: "F1", PessoaID: "M9", Resultado: Inconclusivo}}
+	c := []ConclusaoSR{{FatoID: "F1", PessoaID: "M9", Resultado: Ausencia}}
 	if !temViolacao(o.ValidarConclusoes(c), "SR-ESC-002") {
 		t.Fatal("militar não sindicado como sujeito")
 	}

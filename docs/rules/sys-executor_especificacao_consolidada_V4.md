@@ -6,6 +6,8 @@
 > **Hierarquia de decisões:** as regras posteriores incluídas nesta versão substituem explicitamente disposições anteriores incompatíveis. As seções 15–20 detalham o PADS; as seções 21–27 consolidam as regras de SR, as diferenças entre os procedimentos e a revisão humana; **as seções 28–46 (V4) consolidam as decisões transversais e de IA e prevalecem sobre trechos das seções 1–27 que ainda tratavam esses assuntos como pendentes**. Os pontos das seções 1–27 alcançados por essas decisões estão sinalizados com **[Atualização V4]**, mantido o texto original para histórico. Preservar o restante.  
 > **Emenda 1 (09/11/2026) — seção 47:** a inferência por modelos locais foi substituída pela **Gemini API** (Google), por decisão expressa do usuário. A seção 47 prevalece sobre as seções 28–46 **somente** quanto ao mecanismo de inferência, à conectividade exigida pela IA, aos modelos e à guarda da chave de API; os pontos alcançados estão sinalizados com **[Emenda §47]**, mantido o texto original para histórico. **Nenhuma regra jurídica, de cálculo, de perguntas, de validação, de revisão ou do SEI foi alterada.**  
 > **Emenda 2 (09/11/2026) — seção 48:** por decisão expressa do usuário, o **ChatGPT** (*Sign in with ChatGPT*, plano do usuário) é admitido como segundo provedor de inferência, ao lado da Gemini API, à escolha explícita do usuário e sem troca automática; a entrada dos autos passa a ser por **peças cadastradas**; o **enquadramento** das imputações do PADS passa a ser informado pelo usuário a partir de catálogo curado; e passa a existir uma **barreira obrigatória de privacidade** antes de cada envio. A seção 48 prevalece **somente** nesses pontos; os pontos alcançados estão sinalizados com **[Emenda §48]**, mantido o texto original para histórico. **Nenhuma regra de conexão, dosimetria, reincidência, comportamento, pontuação, regressão, resultados do PADS, vinculação ao Memorando (seção 22) ou de fatos novos na SR (seção 24.3) foi alterada.**  
+> **Emenda 3 (12/11/2026) — seção 49:** por decisão expressa do usuário, a conclusão da Sindicância Regular, para cada fato e sindicado, é **somente** existência ou ausência de indícios suficientes: **não há conclusão inconclusiva**. Dúvida, falta de elementos ou limitação grave da prova levam à ausência de indícios, com as lacunas explicitadas. Os pontos alcançados estão sinalizados com **[Emenda §49]**, mantido o texto original para histórico. **Nenhuma outra regra da SR ou do PADS foi alterada.**  
+> **Emenda 4 (12/11/2026) — seção 50:** por decisão expressa do usuário, nas telas dos fluxos a IA é chamada de **"assistente"**, sem nomear o provedor nem o modelo, que aparecem somente em Configurações de IA. A autorização de envio continua vinculada a um provedor e a um modelo, e o bloqueio de dados de criança continua igual. Os pontos alcançados estão sinalizados com **[Emenda §50]**. **Nenhuma regra jurídica, de privacidade ou de bloqueio foi alterada.**  
 > **Legenda (V4):** **[APROVADO]** decisão explícita do usuário; **[PROPOSTA TÉCNICA]** detalhamento recomendado, não imposição normativa nem escolha técnica validada; **[VALIDAR EM TESTES]** solução/valor provisório dependente de prova de desempenho ou compatibilidade.  
 
 
@@ -788,6 +790,8 @@ Após regras dos dois documentos, discutir pendências de formato, fluxo de revi
 | Sanção e comportamento | Punição, dosimetria, reincidência, pontos e regressão quando cabíveis, conforme regras aprovadas | **Não** aplicar punição, dosimetria, reincidência, comportamento, pontuação ou regressão |
 | Etapas posteriores | Atos da autoridade competente, recursos, nota de punição e execução fora da automação | **Homologação e avocação não serão geradas**; atos posteriores são de competência externa ao aplicativo |
 
+> **[Emenda §49]** Finalidade da conclusão na SR: apontar, para cada fato e sindicado, a existência ou a ausência de indícios de crime comum, crime militar e transgressão disciplinar. Não há conclusão inconclusiva (seção 49).
+
 O sistema não deve confundir **acusado** (PADS) com **sindicado** (SR), nem chamar a SR de processo disciplinar julgador. A distinção não é apenas terminológica: altera os limites da apuração, a suficiência probatória e o tipo de documento.
 
 ### 21.2. Limites de atuação e autoridade
@@ -992,6 +996,8 @@ A seção **IV – SOLUÇÃO** consolidará, em texto **objetivo mas suficientem
 - **Vários sindicados, vários fatos:** organizar conclusão de forma legível por combinação fato/sindicado, sem transpor um resultado para outro.
 - **Somente militares sindicados figuram como sujeitos na solução** (seção 24.4). Policial não previsto na portaria somente se o usuário autorizou sua inclusão conforme seção 24.3.
 
+> **[Emenda §49]** Vários fatos em relação a um mesmo sindicado: a conclusão é distinta por fato, mas sempre entre indícios e ausência de indícios (por exemplo, indícios em um fato e ausência de indícios noutro). Não há conclusão inconclusiva (seção 49).
+
 ### 25.2. Critério aprovado de suficiência indiciária
 
 A SR é investigativa e **não exige prova suficiente para condenação ou imposição disciplinar**, mas não admite apontar infração com base em conjectura destituída de suporte. Distinguir:
@@ -999,6 +1005,8 @@ A SR é investigativa e **não exige prova suficiente para condenação ou impos
 1. **Existência de indícios suficientes:** elementos concretos dos autos sustentam razoavelmente ocorrência de possível crime comum, crime militar e/ou transgressão disciplinar e, quando couber, vínculo do sindicado com a conduta; fundamentar qual fato e qual suporte.
 2. **Ausência de indícios suficientes:** os elementos examinados não fornecem suporte razoável para imputar irregularidade na investigação, sem afirmar necessariamente que o fato é impossível ou comprovadamente inexistente.
 3. **Conclusão inconclusiva:** faltam elementos essenciais, ou existem limitações graves, de modo que **não é possível formar conclusão suficientemente segura nem em nível indiciário**; explicitar as lacunas e o que permanece sem esclarecimento. O usuário pode autorizar a emissão da minuta ainda assim, desde que a conclusão seja qualificada e fundamentada, sem mascarar insuficiência.
+
+> **[Emenda §49]** O item 3 (conclusão inconclusiva) foi substituído: quando faltarem elementos essenciais, persistirem dúvidas ou houver limitações graves, a conclusão é de **ausência de indícios suficientes**, com as lacunas e o que permanece sem esclarecimento explicitados, sem afirmar que o fato não ocorreu (seção 49).
 
 **Distinção entre ocorrência e autoria:** é admissível reconhecer **indícios da ocorrência da irregularidade sem indícios suficientes para individualizar o responsável**. Não atribuir autoria por mera presença, função ou vínculo circunstancial; explicar separadamente os elementos da ocorrência/materialidade e os da autoria na seção III e, quando relevante, na solução.
 
@@ -1040,6 +1048,8 @@ A SR é investigativa e **não exige prova suficiente para condenação ou impos
 
 > Quanto ao fato 1, há indícios de [INFRAÇÃO A, ARTIGO E LEI CONFIRMADOS]. Quanto ao fato 2, não foram identificados indícios suficientes de irregularidade. Quanto ao fato 3, as provas são inconclusivas, sobretudo pela ausência de [ELEMENTO ESSENCIAL], não sendo possível conclusão segura até mesmo em nível indiciário.
 
+> **[Emenda §49]** Exemplo S3 ajustado: "Quanto ao fato 3, não foram reunidos indícios suficientes, sobretudo pela ausência de [ELEMENTO ESSENCIAL], o que não equivale a afirmar que o fato não ocorreu." (seção 49).
+
 **S4 — ocorrência indiciada, autoria não definida:**
 
 > Os elementos analisados permitem apontar indícios da ocorrência de [IRREGULARIDADE], mas não fornecem suporte suficiente para atribuir sua autoria individualmente ao(s) sindicado(s) [IDENTIFICAÇÕES], conforme as limitações probatórias examinadas.
@@ -1058,6 +1068,8 @@ Todos os marcadores acima são **ilustrações para testes** e não autorizaçõ
 - **O usuário decide** se prossegue sem a diligência. Se optar por prosseguir, permitir minuta com resultado compatível com o conjunto probatório, incluindo **conclusão inconclusiva** quando necessária (seção 25.2).
 - **Não confundir ausência de indícios com prova positiva de inexistência da irregularidade**; evitar redação categórica incompatível com lacunas conhecidas.
 - O sistema não realiza autonomamente diligências externas, atos de investigação, intimações ou alterações de processo no SEI.
+
+> **[Emenda §49]** Se o usuário prosseguir sem a diligência, a minuta conclui pela ausência de indícios suficientes quanto ao que não ficou demonstrado, com as limitações explicitadas; não há conclusão inconclusiva (seção 49).
 
 ### 26.2. Política de perguntas: apenas o essencial
 
@@ -1130,6 +1142,8 @@ Estes cenários complementam as seções 13 e 19. São exemplos funcionais fict�
 | SR35 | Usuário não autoriza inclusão de fato novo ou novo militar | Não incluir automaticamente na análise/solução; não inventar providência |
 | SR36 | Dois sindicados com conclusão conjunta, mas provas individualmente diferentes | Conclusão conjunta admissível **só se** cada conduta foi examinada e resultado efetivamente igual |
 
+> **[Emenda §49]** SR13 e SR33: permitir o prosseguimento e qualificar as limitações; o resultado é ausência de indícios suficientes quanto ao que não ficou demonstrado, nunca "inconclusivo" (seção 49).
+
 ### 27.1. Modelos fornecidos pelo usuário e limites de utilização
 
 **Modelo A — relatório com indícios:** documento de seis páginas, identificado no arquivo enviado como `Relatorio de Sindicância Regular 2 - com indicação de crime ou transgressão(2).pdf`. Características observadas: múltiplos sindicados, investigação de fatos distintos, uso de depoimentos e provas provenientes de outros procedimentos juntados, análise individualizada da situação funcional e desfechos distintos; solução aponta indícios para determinados sindicados e ausência para outro, com encaminhamentos pontuais. **Usar como exemplo de forma e raciocínio, não como precedente obrigatório ou como fonte de fatos para outra SR.**
@@ -1160,6 +1174,8 @@ Estes cenários complementam as seções 13 e 19. São exemplos funcionais fict�
 18. **Regra crítica de PADS:** imputações do Memorando Disciplinar são **limite intransponível do julgamento**; infração diversa descoberta não vira acusação nova. Julgar procedente/parcial/improcedente exclusivamente o memorando.
 19. **Revisão humana:** sempre informar ao usuário, ao fim da elaboração de minutas de PADS e SR, que deve revisar integralmente; decisão final é humana.
 20. **Próxima etapa:** as regras funcionais de SR estão **encerradas por decisão expressa do usuário**. Não continuar perguntas periféricas; quando solicitado, abordar pendências transversais e, só mais tarde, a IA. **Não gerar prompt de implementação sem autorização expressa.**
+
+> **[Emenda §49]** Item 5 (Suficiência): distinguir apenas indícios suficientes e ausência de indícios; lacunas que impeçam resultado seguro levam à ausência de indícios, explicitadas (seção 49).
 
 ### 27.3. Pendências que permanecem fora desta conclusão funcional
 
@@ -1671,6 +1687,8 @@ O usuário aprovou **avaliar tecnicamente** as seguintes escolhas, sem necessida
 > **[Emenda §48]** Somam-se a barreira obrigatória, a revisão item a item e o bloqueio de dados de crianças no ChatGPT (seção 48.6). A autorização de envio passa a valer para um provedor e um modelo (seção 48.1).
 
 - **Somente o necessário:** o texto dos autos continua extraído localmente (pdfium/OCR), segmentado e conferido no computador; a IA recebe apenas os blocos de texto de cada etapa, como antes. **Não** se envia o PDF, **não** se usa a Files API nem armazenamento de contexto no provedor.
+> **[Emenda §50]** Na confirmação de envio, o provedor e o modelo não são nomeados e a estimativa de tokens não é mostrada: a tela diz que o envio vai ao assistente configurado (seção 50).
+
 - **Confirmação em cada tarefa:** antes da primeira etapa de IA, o usuário vê o modelo, as peças e páginas que serão lidas, uma estimativa aproximada de tokens e o resumo da pseudonimização, e **autoriza ou recusa** o envio. Sem autorização, nada é enviado e a tarefa para de forma recuperável.
 - **Pseudonimização (melhor esforço):** antes do envio, nomes de pessoas, CPF, RG, matrícula, telefone, e-mail, CEP, endereço e data de nascimento detectados localmente são substituídos por marcadores (ex.: `[PESSOA-03]`, `[CPF-01]`) e restaurados na resposta. Datas dos fatos, números SEI e de processo e links não são substituídos. Posto/graduação é mantido. O usuário pode informar, na confirmação, outros nomes ou dados a ocultar. **Não é anonimização garantida**: dados sem padrão reconhecível podem passar, e o contexto pode permitir reidentificação.
 - **Sem retenção opcional:** toda requisição desliga o registro de requisições do provedor ("store" = falso); o modelo não recebe ferramentas (sem busca na web, URL, execução de código ou chamada de funções).
@@ -1717,6 +1735,7 @@ O usuário aprovou **avaliar tecnicamente** as seguintes escolhas, sem necessida
 - A integração é implementada diretamente no backend Go do aplicativo, sem serviço intermediário, Node.js, Codex CLI, proxy local, reaproveitamento de cookies ou tokens de outros aplicativos, nem endpoints privados do ChatGPT.
 - O provedor e o modelo são **escolhidos explicitamente** pelo usuário. **Não há troca automática** entre provedores.
 - A autorização de envio de cada tarefa (47.3) vale para **um provedor e um modelo**. Se qualquer um dos dois mudar, ou se mudar o conjunto de dados a ocultar, o aplicativo pergunta de novo.
+  > **[Emenda §50]** O vínculo permanece, mas a tela da autorização não nomeia o provedor nem o modelo; eles aparecem só em Configurações de IA (seção 50).
 - A entrada dos autos passa a ser feita por **peças cadastradas individualmente** (48.4), e o **enquadramento** das imputações do PADS passa a ser **informado manualmente** pelo usuário a partir de um catálogo curado (48.5).
 - Continuam **integralmente em vigor**:
   - as regras jurídicas e de redação das seções 1–27;
@@ -1819,6 +1838,8 @@ O usuário aprovou **avaliar tecnicamente** as seguintes escolhas, sem necessida
   - Encontrou possível dado pessoal **não cadastrado**? A requisição só segue depois de uma decisão do usuário **item a item**, numa tela que lista os itens sem despejar o texto dos autos. Não existe confirmação genérica para ignorar tudo.
 - A tabela de correspondência entre marcadores e valores reais existe somente na memória da tarefa. Ela **nunca** é enviada ao provedor, gravada em disco, registrada em logs ou mostrada em mensagens de erro.
 - **Restauração.** As respostas são restauradas localmente de forma determinística. Marcador desconhecido ou alterado interrompe a etapa como resposta incompleta. O aplicativo nunca adivinha identidades.
+> **[Emenda §50]** A pergunta e o bloqueio abaixo continuam iguais, mas a tela não nomeia o ChatGPT: fala do assistente configurado e orienta a escolher outro serviço em Configurações de IA (seção 50).
+
 - **Crianças.** Na confirmação de envio de cada tarefa com o ChatGPT, o aplicativo pergunta se os autos contêm dados pessoais de **criança menor de 13 anos**. Em caso afirmativo, ou se alguma pessoa do cadastro estiver marcada como criança, o ChatGPT fica **bloqueado** para a tarefa. Os Termos do *Sign in with ChatGPT* proíbem o envio desses dados, mesmo pseudonimizados. A análise só prossegue com outro provedor escolhido explicitamente pelo usuário, sem troca automática.
 - **Limite.** Pseudonimização não é anonimização: o contexto (local, cargo, datas, circunstâncias) pode permitir reidentificação, e o aplicativo não promete anonimato. A confirmação do usuário não substitui autorização institucional para tratar dados da PMRO em serviço externo.
 
@@ -1838,3 +1859,42 @@ O usuário aprovou **avaliar tecnicamente** as seguintes escolhas, sem necessida
 ## ESTADO FINAL — V4 + EMENDAS 1 E 2 (09/11/2026)
 
 **INFERÊNCIA PELA GEMINI API (CHAVE DO USUÁRIO) OU PELO CHATGPT (PLANO DO USUÁRIO), À ESCOLHA EXPLÍCITA DO USUÁRIO E SEM TROCA AUTOMÁTICA. ENTRADA POR PEÇAS CADASTRADAS (UPLOAD OU SEI, SÓ OS SELECIONADOS). ENQUADRAMENTO DO PADS INFORMADO PELO USUÁRIO A PARTIR DE CATÁLOGO CURADO. PSEUDONIMIZAÇÃO COM BARREIRA OBRIGATÓRIA ANTES DO ENVIO E RESTAURAÇÃO LOCAL. TODAS AS DEMAIS REGRAS DA V4 PERMANECEM EM VIGOR.**
+
+## 49. EMENDA 3 — Conclusão da Sindicância Regular sem resultado inconclusivo — [APROVADO] (12/11/2026)
+
+> **Origem:** decisão expressa do usuário em 12/11/2026, depois do teste da SR no aplicativo: "Nunca vai ser inconclusivo. Ou tem ou não tem indícios. Se ficou dúvidas, faltou informações e outros, vai ser ausência de indícios e não inconclusivo."
+
+### 49.1. Regra
+- A conclusão da Sindicância Regular, para cada fato e sindicado, é **somente**:
+  1. **existência de indícios suficientes**; ou
+  2. **ausência de indícios suficientes**.
+- **Não há conclusão inconclusiva.** Quando faltarem elementos essenciais, persistirem dúvidas ou houver limitações graves da prova, a conclusão é de **ausência de indícios suficientes**.
+- Nesse caso, a análise (seção III) explicita as lacunas e o que permanece sem esclarecimento, e a redação **não afirma** que o fato não ocorreu nem que a irregularidade é comprovadamente inexistente (seção 26.1, parte final).
+- As lacunas e as diligências sugeridas continuam a ser apresentadas ao usuário, que decide se prossegue (seção 26.1).
+- A distinção entre ocorrência e autoria (seção 25.2) permanece: indícios da ocorrência sem indícios suficientes de autoria levam à ausência de indícios quanto ao sindicado, com a ressalva sobre a ocorrência.
+
+### 49.2. Alcance
+- Prevalece sobre as menções a "inconclusivo" nas seções 21.1, 25.1, 25.2 (item 3), 25.5 (S3), 26.1, 27 (SR13 e SR33) e 27.2 (item 5), sinalizadas com **[Emenda §49]**.
+- Nenhuma outra regra da SR ou do PADS foi alterada.
+
+## ESTADO FINAL — V4 + EMENDAS 1, 2 E 3 (12/11/2026)
+
+**AS EMENDAS 1 E 2 PERMANECEM EM VIGOR. NA SINDICÂNCIA REGULAR, A CONCLUSÃO DE CADA FATO E SINDICADO É EXISTÊNCIA OU AUSÊNCIA DE INDÍCIOS SUFICIENTES, SEM RESULTADO INCONCLUSIVO. TODAS AS DEMAIS REGRAS DA V4 PERMANECEM EM VIGOR.**
+
+## 50. EMENDA 4 — "Assistente" nas telas dos fluxos, sem nomear provedor nem modelo — [APROVADO] (12/11/2026)
+
+> **Origem:** decisão expressa do usuário em 12/11/2026, ao dar ao aplicativo a identidade **JURISPM — LEXIA, Assistente Inteligente de Análise Jurídico-Disciplinar**: "Durante os fluxos vamos também retirar menção da palavra 'IA'. Vamos trocar por assistente. Também não precisa mencionar chatgpt, gemini ou outro, exceto na parte de configuração da IA."
+
+### 50.1. Regra
+- Nas telas dos fluxos, a IA é chamada de **"assistente"**, sem nomear o provedor nem o modelo. Eles aparecem **somente em Configurações de IA**, onde são escolhidos (seção 48.1).
+- **(a) Confirmação de envio (47.3):** a tela mostra as peças e páginas e o resumo da pseudonimização, e diz que o envio vai ao assistente configurado, sem nomear provedor nem modelo e sem estimativa de tokens. Se o limite de uso da conta for atingido durante a análise, o aplicativo para de forma recuperável e mostra um aviso amigável para ajustar em Configurações do assistente. *(Redação ajustada em 12/11/2026, com a aprovação do usuário.)*
+- **(b) Vínculo da autorização (48.1):** a autorização continua vinculada, internamente, a um provedor e a um modelo, e é pedida de novo se qualquer um mudar.
+- **(c) Dados de criança (48.6):** a pergunta continua sendo feita quando o assistente configurado é o ChatGPT, sem nomeá-lo. O bloqueio orienta a escolher outro serviço em Configurações de IA.
+
+### 50.2. Alcance
+- Prevalece sobre a exibição do provedor, do modelo e da estimativa de tokens nas telas descritas nas seções 47.3, 48.1 e 48.6, sinalizadas com **[Emenda §50]**.
+- Nenhuma regra jurídica, de privacidade ou de bloqueio foi alterada.
+
+## ESTADO FINAL — V4 + EMENDAS 1 A 4 (12/11/2026)
+
+**AS EMENDAS 1, 2 E 3 PERMANECEM EM VIGOR. NAS TELAS DOS FLUXOS, A IA É CHAMADA DE "ASSISTENTE", E O PROVEDOR E O MODELO SÓ APARECEM EM CONFIGURAÇÕES DE IA. TODAS AS DEMAIS REGRAS DA V4 PERMANECEM EM VIGOR.**
