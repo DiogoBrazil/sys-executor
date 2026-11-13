@@ -175,6 +175,9 @@ input[type="radio"], input[type="checkbox"] { accent-color: var(--acento); width
 .segmentado > label:has(input:focus-visible) { outline: 3px solid var(--foco); outline-offset: -3px; }
 .escolhas { display: grid; gap: 0.4rem; }
 .escolhas > label {
+  /* Contém o rádio invisível (.sobre): sem isto, ele cobria a pergunta
+     inteira e o clique nos "Trechos citados" marcava a última opção. */
+  position: relative;
   display: flex; align-items: center; gap: 0.6rem; cursor: pointer;
   border: 1.5px solid var(--campo-borda); border-radius: var(--r-sm); padding: 0.6rem 0.8rem; background: var(--superficie);
   font-size: var(--t-sm);

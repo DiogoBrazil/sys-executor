@@ -1232,6 +1232,19 @@ export class PessoaCadastro {
      */
     "crianca": boolean;
 
+    /**
+     * Instituicao: ente ofendido (ex.: "Administração Pública"), V4 §23.3,
+     * c. Só pode ser ofendido; não tem posto e não é pseudonimizado (não é
+     * dado pessoal).
+     */
+    "instituicao": boolean;
+
+    /**
+     * Civil: pessoa civil (ofendido, testemunha ou declarante), sem posto ou
+     * graduação. Falso = militar. Sindicado e acusado são sempre militares.
+     */
+    "civil": boolean;
+
     /** Creates a new PessoaCadastro instance. */
     constructor($$source: Partial<PessoaCadastro> = {}) {
         if (!("id" in $$source)) {
@@ -1248,6 +1261,12 @@ export class PessoaCadastro {
         }
         if (!("crianca" in $$source)) {
             this["crianca"] = false;
+        }
+        if (!("instituicao" in $$source)) {
+            this["instituicao"] = false;
+        }
+        if (!("civil" in $$source)) {
+            this["civil"] = false;
         }
 
         Object.assign(this, $$source);

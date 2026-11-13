@@ -51,7 +51,19 @@ type PessoaCadastro struct {
 	PostoGrad string   `json:"postoGrad"`
 	Grafias   []string `json:"grafias"`
 	Crianca   bool     `json:"crianca"` // menor de 13 anos (V4 §48.6)
+	// Instituicao: ente ofendido (ex.: "Administração Pública"), V4 §23.3,
+	// c. Só pode ser ofendido; não tem posto e não é pseudonimizado (não é
+	// dado pessoal).
+	Instituicao bool `json:"instituicao"`
+	// Civil: pessoa civil (ofendido, testemunha ou declarante), sem posto ou
+	// graduação. Falso = militar. Sindicado e acusado são sempre militares.
+	Civil bool `json:"civil"`
 }
+
+// PostosGraduacoes: lista de posto/graduação da PMRO oferecida no cadastro
+// (pedido do usuário, 12/11/2026).
+var PostosGraduacoes = []string{"CEL PM", "TC PM", "MAJ PM", "CAP PM", "1º TEN PM", "2º TEN PM", "CAD PM",
+	"ST PM", "1º SGT PM", "2º SGT PM", "3º SGT PM", "CB PM", "SD PM"}
 
 // EnquadramentoCadastro: dispositivo do catálogo e, no Estatuto, a natureza.
 type EnquadramentoCadastro struct {
@@ -218,6 +230,12 @@ func (c *Cadastro) aplicar(n Cadastro) error {
 			problemas = append(problemas, "pessoa sem nome")
 			continue
 		}
+		if p.Instituicao {
+			p.PostoGrad, p.Crianca, p.Grafias, p.Civil = "", false, nil, false
+		}
+		if p.Civil {
+			p.PostoGrad = ""
+		}
 		if c.pessoa(p.ID) == nil || ids[p.ID] {
 			provisorio := p.ID
 			p.ID = c.novoID("PES")
@@ -241,9 +259,23 @@ func (c *Cadastro) aplicar(n Cadastro) error {
 		}
 		return id
 	}
+	instituicao, civil := map[string]bool{}, map[string]bool{}
+	for _, p := range pessoas {
+		instituicao[p.ID], civil[p.ID] = p.Instituicao, p.Civil
+	}
 	conferirPessoa := func(id, onde string) bool {
 		if id != "" && !ids[id] {
 			problemas = append(problemas, onde+": pessoa inexistente")
+			return false
+		}
+		// Instituição só pode ser ofendida (V4 §23.3, c).
+		if id != "" && instituicao[id] && onde != "ofendido" {
+			problemas = append(problemas, onde+": uma instituição só pode ser ofendida")
+			return false
+		}
+		// Sindicado e acusado são sempre militares.
+		if id != "" && civil[id] && (onde == "sindicado" || onde == "acusado") {
+			problemas = append(problemas, onde+": deve ser militar (com posto ou graduação)")
 			return false
 		}
 		return id != ""

@@ -11,12 +11,13 @@ import {
 import type { Cadastro, DispositivoVisao } from "../api";
 import type { PecaCadastro } from "../../bindings/github.com/DiogoBrazil/sys-executor/internal/workflow/models";
 import ArquivosPeca from "../components/ArquivosPeca.vue";
+import CampoPosto from "../components/CampoPosto.vue";
 import EditorEnquadramento, { type LinhaEnquadramento } from "../components/EditorEnquadramento.vue";
 import AvisoErro from "../components/AvisoErro.vue";
 import Icone from "../components/ui/Icone.vue";
 import Janela from "../components/ui/Janela.vue";
 
-interface PessoaLocal { id: string; nome: string; postoGrad: string; grafias: string; crianca: boolean }
+interface PessoaLocal { id: string; nome: string; postoGrad: string; grafias: string; crianca: boolean; instituicao: boolean; civil: boolean }
 interface FatoLocal { id: string; resumo: string; data: string; linhas: LinhaEnquadramento[] }
 interface Local {
   tipo: string; pessoas: PessoaLocal[]; acusadoId: string; fatos: FatoLocal[];
@@ -33,7 +34,7 @@ const diplomaDe = (id: string) => (id.startsWith("RDPM-") ? "RDPM" : id.startsWi
 function doServidor(c: Cadastro): Local {
   const l: Local = {
     tipo: c.tipo,
-    pessoas: (c.pessoas ?? []).map((p) => ({ id: p.id, nome: p.nome, postoGrad: p.postoGrad, grafias: (p.grafias ?? []).join("; "), crianca: p.crianca })),
+    pessoas: (c.pessoas ?? []).map((p) => ({ id: p.id, nome: p.nome, postoGrad: p.postoGrad, grafias: (p.grafias ?? []).join("; "), crianca: p.crianca, instituicao: !!p.instituicao, civil: !!p.civil })),
     acusadoId: c.acusadoId,
     fatos: (c.fatos ?? []).map((f) => ({
       id: f.id, resumo: f.resumo, data: f.data,
@@ -44,7 +45,7 @@ function doServidor(c: Cadastro): Local {
   };
   if (l.tipo === "PADS" && !l.acusadoId) {
     const id = novoId();
-    l.pessoas.unshift({ id, nome: "", postoGrad: "", grafias: "", crianca: false });
+    l.pessoas.unshift({ id, nome: "", postoGrad: "", grafias: "", crianca: false, instituicao: false, civil: false });
     l.acusadoId = id;
   }
   if (l.tipo === "PADS" && l.fatos.length === 0) l.fatos.push({ id: novoId(), resumo: "", data: "", linhas: [] });
@@ -53,7 +54,7 @@ function doServidor(c: Cadastro): Local {
   for (const p of l.pecas) {
     if (p.tipo === "DEPOIMENTO" && p.pessoaIds.length === 0) {
       const id = novoId();
-      l.pessoas.push({ id, nome: "", postoGrad: "", grafias: "", crianca: false });
+      l.pessoas.push({ id, nome: "", postoGrad: "", grafias: "", crianca: false, instituicao: false, civil: false });
       p.pessoaIds = [id];
     }
   }
@@ -87,8 +88,9 @@ function paraServidor(): Cadastro {
   return {
     tipo: l.tipo,
     pessoas: l.pessoas.filter((p) => validas.has(p.id)).map((p) => ({
-      id: p.id, nome: p.nome, postoGrad: p.postoGrad, crianca: p.crianca,
-      grafias: p.grafias.split(/[;\n]/).map((g) => g.trim()).filter(Boolean),
+      id: p.id, nome: p.nome, postoGrad: p.instituicao || p.civil ? "" : p.postoGrad, crianca: p.instituicao ? false : p.crianca,
+      grafias: p.instituicao ? [] : p.grafias.split(/[;\n]/).map((g) => g.trim()).filter(Boolean), instituicao: p.instituicao,
+      civil: !p.instituicao && p.civil,
     })),
     acusadoId: ref(l.acusadoId),
     fatos: l.fatos.map((f) => ({
@@ -148,7 +150,7 @@ function retirarPeca(p: PecaCadastro) {
   marcar();
 }
 function novaPessoa(): PessoaLocal {
-  const p = { id: novoId(), nome: "", postoGrad: "", grafias: "", crianca: false };
+  const p = { id: novoId(), nome: "", postoGrad: "", grafias: "", crianca: false, instituicao: false, civil: false };
   local.value.pessoas.push(p);
   marcar();
   return p;
@@ -172,10 +174,27 @@ function opcoesReuso(p: PecaCadastro): PessoaLocal[] {
   const atual = p.pessoaIds[0] ?? "";
   return depoentes.value.filter((ps) => ps.nome.trim() && (ps.id !== atual || compartilhada(atual, p)));
 }
-// ---- Pessoas repetidas e ofendido institucional (teste da SR, 10/11/2026) ----
+// ---- Pessoas repetidas; ofendido pessoa ou instituição (testes da SR, 10 e 12/11/2026) ----
 const chaveNome = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/g, " ").trim();
 const reInstitucional = /\b(administracao|estado|fazenda|policia|municipio|prefeitura|secretaria|uniao|governo|ministerio|corregedoria|batalhao)\b/;
-const institucional = (ps: PessoaLocal) => reInstitucional.test(chaveNome(ps.nome));
+// Nome com cara de instituição num ofendido marcado como pessoa: só sugere a troca.
+const pareceInstituicao = (ps: PessoaLocal) => !ps.instituicao && reInstitucional.test(chaveNome(ps.nome));
+// Ofendido: militar, civil ou instituição; testemunha e declarante: militar
+// ou civil (pedido do usuário, 12/11/2026). Civil e instituição não têm posto.
+const tipoPessoa = (ps: PessoaLocal) => (ps.instituicao ? "INSTITUICAO" : ps.civil ? "CIVIL" : "MILITAR");
+function tipoOfendido(ps: PessoaLocal, valor: string) {
+  ps.instituicao = valor === "INSTITUICAO";
+  ps.civil = valor === "CIVIL";
+  if (ps.instituicao || ps.civil) ps.postoGrad = "";
+  if (ps.instituicao) ps.crianca = false;
+  marcar();
+}
+// Depoente sindicado (ou acusado) é sempre militar.
+function papelDepoente(p: PecaCadastro) {
+  const ps = pessoa(p.pessoaIds[0]);
+  if (ps && p.papel === "SINDICADO") ps.civil = false;
+  marcar();
+}
 function referencias(id: string): number {
   const l = local.value;
   return l.pecas.filter((x) => x.pessoaIds.includes(id)).length + (l.acusadoId === id ? 1 : 0) +
@@ -372,7 +391,7 @@ function papelDe(ps: PessoaLocal): string {
   const l = local.value;
   if (l.acusadoId === ps.id) return "acusado";
   if (l.sindicados.includes(ps.id)) return "sindicado";
-  if (l.ofendidos.includes(ps.id)) return "ofendido";
+  if (l.ofendidos.includes(ps.id)) return ps.instituicao ? "ofendido (instituição)" : "ofendido";
   const dep = l.pecas.find((p) => p.tipo === "DEPOIMENTO" && p.pessoaIds.includes(ps.id));
   return dep ? rotuloPapel(dep.papel).toLowerCase() || "depoente" : "";
 }
@@ -417,7 +436,7 @@ function descricaoPeca(p: PecaCadastro): string {
         <p>
           O PDF do processo foi baixado do SEI e separado em {{ documentosSei.length }} documento(s). Em cada peça, use
           "Documento do SEI" para escolher os que a compõem (o tipo sugerido vem do título e deve ser conferido). Os documentos não
-          escolhidos não entram nos autos, não são enviados à IA e são apagados ao final.
+          escolhidos não entram nos autos, não são enviados ao assistente e são apagados ao final.
         </p>
       </div>
 
@@ -457,7 +476,7 @@ function descricaoPeca(p: PecaCadastro): string {
           <Icone nome="chevron" :tamanho="16" class="volta" />Voltar às peças
         </button>
         <h2>Confira antes de processar</h2>
-        <p>Revise as peças e os envolvidos. Os nomes e as outras grafias são trocados por marcadores antes de qualquer envio à IA.</p>
+        <p>Revise as peças e os envolvidos. Os nomes e as outras grafias são trocados por marcadores antes de qualquer envio ao assistente.</p>
       </div>
       <div class="conf">
         <div class="coluna">
@@ -496,10 +515,13 @@ function descricaoPeca(p: PecaCadastro): string {
                   <tr v-for="p in envolvidos" :key="p.id" data-teste="pessoa">
                     <td><strong>{{ rotuloPessoa(p) }}</strong></td>
                     <td class="suave">{{ papelDe(p) }}</td>
-                    <td><input v-model="p.grafias" :aria-label="'Outras grafias de ' + p.nome" placeholder="Ex.: Cabo Inventado; Inventado" @input="marcar" /></td>
                     <td>
-                      <label v-if="!institucional(p)" class="marca"><input v-model="p.crianca" type="checkbox" data-teste="crianca" @change="marcar" /> Sim</label>
-                      <span v-else class="selo alerta">Instituição?</span>
+                      <input v-if="!p.instituicao" v-model="p.grafias" :aria-label="'Outras grafias de ' + p.nome" placeholder="Ex.: Cabo Inventado; Inventado" @input="marcar" />
+                      <span v-else class="suave">Instituição: não é dado pessoal</span>
+                    </td>
+                    <td>
+                      <label v-if="!p.instituicao" class="marca"><input v-model="p.crianca" type="checkbox" data-teste="crianca" @change="marcar" /> Sim</label>
+                      <span v-else class="suave">—</span>
                     </td>
                   </tr>
                 </tbody>
@@ -523,7 +545,7 @@ function descricaoPeca(p: PecaCadastro): string {
             <template v-if="local.tipo === 'PADS'"><dt>Imputações</dt><dd>{{ totalImputacoes }}</dd></template>
           </dl>
           <button type="button" class="botao primario grande" :disabled="estado.ocupado" data-teste="concluir-cadastro" @click="concluir">Concluir e processar</button>
-          <p class="ajuda">Nada é enviado à IA sem a sua autorização, que vem a seguir.</p>
+          <p class="ajuda">Nada é enviado ao assistente sem a sua autorização, que vem a seguir.</p>
         </aside>
       </div>
     </template>
@@ -547,9 +569,9 @@ function descricaoPeca(p: PecaCadastro): string {
           </section>
           <section v-if="pessoa(local.acusadoId)" class="parte">
             <h3>Acusado</h3>
-            <label>Posto/graduação <input v-model="pessoa(local.acusadoId)!.postoGrad" data-teste="acusado-posto" @input="marcar" /></label>
+            <label>Posto/graduação <CampoPosto v-model="pessoa(local.acusadoId)!.postoGrad" teste="acusado-posto" @update:model-value="marcar" /></label>
             <label>Nome completo <input v-model="pessoa(local.acusadoId)!.nome" data-teste="acusado-nome" @input="marcar" /></label>
-            <p class="ajuda">Um único acusado. O nome é conferido com a leitura do Memorando e ocultado antes de qualquer envio à IA.</p>
+            <p class="ajuda">Um único acusado. O nome é conferido com a leitura do Memorando e ocultado antes de qualquer envio ao assistente.</p>
           </section>
         </div>
         <section class="parte separada">
@@ -587,14 +609,24 @@ function descricaoPeca(p: PecaCadastro): string {
               <h3>{{ lista === "sindicados" ? "Sindicados" : "Ofendidos" }}</h3>
               <button v-if="lista === 'ofendidos'" type="button" class="botao ajuda-botao" @click="ajuda = 'ofendidos'"><Icone nome="ajuda" :tamanho="16" />Como funciona?</button>
             </div>
-            <p v-if="lista === 'ofendidos'" class="ajuda">Só pessoas. Se o ofendido é a Administração ou uma instituição, não a cadastre aqui.</p>
-            <div v-for="id in local[lista]" :key="id" class="linha2" :data-teste="lista + '-item'">
+            <p v-if="lista === 'ofendidos'" class="ajuda">Pessoas (militares ou civis) ou instituições (ex.: Administração Pública), uma por linha.</p>
+            <div v-for="id in local[lista]" :key="id" class="linha2" :class="{ ofendido: lista === 'ofendidos' }" :data-teste="lista + '-item'">
               <template v-if="pessoa(id)">
-                <label>Posto/graduação <input v-model="pessoa(id)!.postoGrad" @input="marcar" /></label>
-                <label>Nome <input v-model="pessoa(id)!.nome" :data-teste="lista + '-nome'" @input="marcar" /></label>
+                <label v-if="lista === 'ofendidos'">Tipo
+                  <select :value="tipoPessoa(pessoa(id)!)" data-teste="ofendidos-tipo"
+                    @change="tipoOfendido(pessoa(id)!, ($event.target as HTMLSelectElement).value)">
+                    <option value="MILITAR">Pessoa (militar)</option>
+                    <option value="CIVIL">Pessoa (civil)</option>
+                    <option value="INSTITUICAO">Instituição</option>
+                  </select>
+                </label>
+                <label v-if="lista === 'sindicados' || tipoPessoa(pessoa(id)!) === 'MILITAR'">Posto/graduação
+                  <CampoPosto v-model="pessoa(id)!.postoGrad" :teste="lista + '-posto'" @update:model-value="marcar" /></label>
+                <label :class="{ largo: pessoa(id)!.instituicao || pessoa(id)!.civil }">{{ pessoa(id)!.instituicao ? "Nome da instituição" : "Nome" }}
+                  <input v-model="pessoa(id)!.nome" :data-teste="lista + '-nome'" :placeholder="pessoa(id)!.instituicao ? 'Ex.: Administração Pública' : ''" @input="marcar" /></label>
                 <button type="button" class="botao icone" aria-label="Retirar" title="Retirar" @click="retirarEnvolvido(lista, id)"><Icone nome="lixeira" /></button>
-                <p v-if="lista === 'ofendidos' && institucional(pessoa(id)!)" class="alerta-campo" data-teste="ofendido-institucional">
-                  Parece uma instituição, e não uma pessoa. Se for, retire-a e marque "Não há ofendido individualizado".
+                <p v-if="lista === 'ofendidos' && pareceInstituicao(pessoa(id)!)" class="alerta-campo" data-teste="ofendido-institucional">
+                  Parece uma instituição. Se for, escolha "Instituição" em Tipo.
                 </p>
               </template>
             </div>
@@ -627,53 +659,62 @@ function descricaoPeca(p: PecaCadastro): string {
       <!-- Depoimentos: uma linha por oitiva -->
       <div v-if="atual === 'depoimentos'" class="corpo">
         <div class="cab-bloco">
-          <p class="ajuda">Cada oitiva é uma peça: papel, posto e nome de quem depôs, e o PDF do termo.
+          <p class="ajuda">Cada oitiva é uma peça: papel, posto/graduação (se militar) e nome de quem depôs, e o PDF do termo.
             <template v-if="local.tipo === 'PADS'">O interrogatório do acusado vai em "Outros documentos".</template></p>
           <button type="button" class="botao ajuda-botao" @click="ajuda = 'depoimentos'"><Icone nome="ajuda" :tamanho="16" />Como funciona?</button>
         </div>
-        <div class="rolagem">
-          <div class="tabela-dep">
-            <div v-if="doTipo('DEPOIMENTO').length" class="linha-dep cab" aria-hidden="true">
-              <span>#</span><span>Papel</span><span>Posto</span><span>Nome do depoente</span><span>Data da oitiva</span><span>PDF do termo</span><span></span>
-            </div>
-            <section v-for="(p, i) in doTipo('DEPOIMENTO')" :key="p.id" class="dep" :class="{ aviso: homonimo(p) }" data-teste="depoimento">
-              <div class="linha-dep">
-                <strong class="num">{{ i + 1 }}</strong>
-                <fieldset class="papel">
-                  <legend class="visualmente-oculto">Papel do depoente {{ i + 1 }}</legend>
-                  <div class="segmentado">
-                    <label v-for="o in papeis" :key="o.id" :class="{ marcado: p.papel === o.id }">
-                      <input v-model="p.papel" type="radio" :value="o.id" :data-teste="'papel-' + i + '-' + o.id" @change="marcar" /> {{ o.rotulo }}
-                    </label>
-                  </div>
-                </fieldset>
-                <template v-if="pessoa(p.pessoaIds[0])">
-                  <input v-model="pessoa(p.pessoaIds[0])!.postoGrad" :aria-label="'Posto do depoente ' + (i + 1)" placeholder="Posto" :data-teste="'depoente-posto-' + i" @input="marcar" />
-                  <input v-model="pessoa(p.pessoaIds[0])!.nome" :aria-label="'Nome do depoente ' + (i + 1)" placeholder="Nome completo" :data-teste="'depoente-nome-' + i" @input="marcar" />
-                </template>
-                <template v-else><span></span><span></span></template>
-                <input v-model="p.data" :aria-label="'Data da oitiva ' + (i + 1)" placeholder="DD/MM/AAAA" @input="marcar" />
-                <ArquivosPeca :peca="p" :ocupado="estado.ocupado" :teste="'arq-dep-' + i" compacto :carregando="anexando === p.id"
-                  :documentos="documentosSei" @anexar="anexar(p)" @anexar-sei="(d) => anexarSei(p, d)" @remover="(a) => remover(p, a)" @mover="(a, d) => mover(p, a, d)" />
-                <button type="button" class="botao icone" :aria-label="'Retirar o depoimento ' + (i + 1)" title="Retirar este depoimento" @click="retirarPeca(p)"><Icone nome="lixeira" /></button>
-              </div>
-              <div v-if="homonimo(p)" class="sugestao" :data-teste="'depoente-homonimo-' + i">
-                <span>Esta pessoa já está cadastrada como {{ papelCadastrado(homonimo(p)!.id) }}.</span>
-                <button type="button" class="botao" :data-teste="'depoente-usar-mesma-' + i" @click="usarMesma(p, homonimo(p)!)">Usar a mesma</button>
-              </div>
-              <div v-if="opcoesReuso(p).length" class="reuso">
-                <label>Já cadastrada em outra parte? (opcional)
-                  <select :value="valorReuso(p)" :data-teste="'depoente-' + i" @change="trocarDepoente(p, ($event.target as HTMLSelectElement).value)">
-                    <option value="">Não: é a pessoa digitada acima</option>
-                    <option v-for="ps in opcoesReuso(p)" :key="ps.id" :value="ps.id">Sim: {{ rotuloPessoa(ps) }}</option>
+        <div class="lista-dep">
+          <section v-for="(p, i) in doTipo('DEPOIMENTO')" :key="p.id" class="dep" :class="{ aviso: homonimo(p) }" data-teste="depoimento">
+            <header class="dep-cab">
+              <strong class="num">Oitiva {{ i + 1 }}</strong>
+              <button type="button" class="botao icone" :aria-label="'Retirar o depoimento ' + (i + 1)" title="Retirar este depoimento" @click="retirarPeca(p)"><Icone nome="lixeira" /></button>
+            </header>
+            <div class="dep-campos">
+              <label>Papel
+                <select v-model="p.papel" class="papel" :aria-label="'Papel do depoente ' + (i + 1)" :data-teste="'papel-' + i" @change="papelDepoente(p)">
+                  <option v-for="o in papeis" :key="o.id" :value="o.id">{{ o.rotulo }}</option>
+                </select>
+              </label>
+              <template v-if="pessoa(p.pessoaIds[0])">
+                <label v-if="p.papel !== 'SINDICADO'">Militar ou civil
+                  <select :value="pessoa(p.pessoaIds[0])!.civil ? 'CIVIL' : 'MILITAR'" :aria-label="'Militar ou civil ' + (i + 1)" :data-teste="'depoente-tipo-' + i"
+                    @change="tipoOfendido(pessoa(p.pessoaIds[0])!, ($event.target as HTMLSelectElement).value)">
+                    <option value="MILITAR">Militar</option>
+                    <option value="CIVIL">Civil</option>
                   </select>
                 </label>
-                <p v-if="valorReuso(p)" class="ajuda" :data-teste="'depoente-reuso-' + i">
-                  Mesma pessoa de outra parte do cadastro: o que você alterar no nome ou no posto vale para as duas.
-                </p>
-              </div>
-            </section>
-          </div>
+                <label v-if="p.papel === 'SINDICADO' || !pessoa(p.pessoaIds[0])!.civil">Posto/graduação
+                  <CampoPosto v-model="pessoa(p.pessoaIds[0])!.postoGrad" :rotulo="'Posto/graduação do depoente ' + (i + 1)" :teste="'depoente-posto-' + i" @update:model-value="marcar" />
+                </label>
+                <label class="dep-nome">Nome do depoente
+                  <input v-model="pessoa(p.pessoaIds[0])!.nome" :aria-label="'Nome do depoente ' + (i + 1)" placeholder="Nome completo" :data-teste="'depoente-nome-' + i" @input="marcar" />
+                </label>
+              </template>
+              <label>Data da oitiva
+                <input v-model="p.data" :aria-label="'Data da oitiva ' + (i + 1)" placeholder="DD/MM/AAAA" @input="marcar" />
+              </label>
+            </div>
+            <div class="dep-pdf">
+              <span class="rotulo-pdf">PDF do termo</span>
+              <ArquivosPeca :peca="p" :ocupado="estado.ocupado" :teste="'arq-dep-' + i" compacto :carregando="anexando === p.id"
+                :documentos="documentosSei" @anexar="anexar(p)" @anexar-sei="(d) => anexarSei(p, d)" @remover="(a) => remover(p, a)" @mover="(a, d) => mover(p, a, d)" />
+            </div>
+            <div v-if="homonimo(p)" class="sugestao" :data-teste="'depoente-homonimo-' + i">
+              <span>Esta pessoa já está cadastrada como {{ papelCadastrado(homonimo(p)!.id) }}.</span>
+              <button type="button" class="botao" :data-teste="'depoente-usar-mesma-' + i" @click="usarMesma(p, homonimo(p)!)">Usar a mesma</button>
+            </div>
+            <div v-if="opcoesReuso(p).length" class="reuso">
+              <label>Já cadastrada em outra parte? (opcional)
+                <select :value="valorReuso(p)" :data-teste="'depoente-' + i" @change="trocarDepoente(p, ($event.target as HTMLSelectElement).value)">
+                  <option value="">Não: é a pessoa digitada acima</option>
+                  <option v-for="ps in opcoesReuso(p)" :key="ps.id" :value="ps.id">Sim: {{ rotuloPessoa(ps) }}</option>
+                </select>
+              </label>
+              <p v-if="valorReuso(p)" class="ajuda" :data-teste="'depoente-reuso-' + i">
+                Mesma pessoa de outra parte do cadastro: o que você alterar no nome ou no posto/graduação vale para as duas.
+              </p>
+            </div>
+          </section>
         </div>
         <div><button type="button" class="botao tracejado" data-teste="novo-depoimento" @click="novoDepoimento"><Icone nome="mais" :tamanho="16" />Acrescentar depoimento</button></div>
       </div>
@@ -723,11 +764,12 @@ function descricaoPeca(p: PecaCadastro): string {
         </template>
         <template v-else-if="ajuda === 'envolvidos'">
           <p>Os nomes e as outras grafias informadas (apelidos, abreviações, separados por ponto e vírgula) são trocados por marcadores antes
-            de qualquer envio à IA e restaurados na resposta, só neste computador.</p>
+            de qualquer envio ao assistente e restaurados na resposta, só neste computador.</p>
         </template>
         <template v-else-if="ajuda === 'ofendidos'">
-          <p>Cadastre aqui só pessoas. Se o ofendido é a Administração ou uma instituição, não a cadastre: deixe a lista vazia e marque
-            "Não há ofendido individualizado".</p>
+          <p>O ofendido pode ser uma pessoa ou uma instituição (ex.: a Administração Pública, quando o fato atinge um bem público). Pode haver
+            vários: acrescente um por linha e escolha o tipo. Se ninguém foi ofendido, deixe a lista vazia e marque "Não há ofendido individualizado".</p>
+          <p>O nome de uma instituição não é dado pessoal: ele não é trocado por pseudônimo no envio ao assistente.</p>
         </template>
       </div>
     </Janela>
@@ -798,24 +840,26 @@ label.marca { display: flex; gap: 0.5rem; align-items: center; font-weight: 400;
 .fato { display: grid; gap: 0.7rem; padding: 0.95rem; border: 1px solid var(--linha); border-radius: var(--r-md); background: #fbfbf9; }
 .linha-fato { display: grid; grid-template-columns: minmax(0, 1fr) 11rem auto; gap: 0.7rem; align-items: end; }
 .linha2 { display: grid; grid-template-columns: minmax(8rem, 11rem) minmax(0, 1fr) auto; gap: 0.6rem; align-items: end; }
+.linha2.ofendido { grid-template-columns: 8.5rem minmax(7rem, 9.5rem) minmax(0, 1fr) auto; }
+.linha2.ofendido .largo { grid-column: span 2; }
 .alerta-campo { grid-column: 1 / -1; color: var(--alerta); font-size: var(--t-sm); }
 .botao.tracejado { border: 1.5px dashed var(--linha-forte); background: transparent; color: var(--acento); font-weight: 600; }
 .botao.tracejado:hover:not(:disabled) { border-color: var(--acento); background: var(--acento-claro); }
 .rolagem { overflow-x: auto; }
-.tabela-dep { min-width: 960px; display: grid; gap: 0.6rem; }
-.linha-dep {
-  display: grid;
-  grid-template-columns: 1.6rem 13.5rem 7.5rem minmax(0, 1fr) 8.5rem 16rem 2.6rem;
-  gap: 0.6rem;
-  align-items: center;
-}
-.linha-dep.cab { font-size: var(--t-xs); font-weight: 600; color: var(--tinta-suave); padding: 0 0.8rem; }
-.dep { border: 1px solid var(--linha); border-radius: var(--r-md); background: #fbfbf9; padding: 0.7rem 0.8rem; display: grid; gap: 0.6rem; }
+/* Depoimentos em cartões, responsivos (pedido do usuário, 12/11/2026). */
+.lista-dep { display: grid; gap: 0.8rem; }
+.dep { border: 1px solid var(--linha); border-radius: var(--r-md); background: #fbfbf9; padding: 0.8rem 1rem 1rem; display: grid; gap: 0.75rem; }
+.dep-cab { display: flex; align-items: center; justify-content: space-between; }
+.dep-campos { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.6rem 0.8rem; align-items: end; }
+.dep-campos label { display: grid; gap: 0.25rem; font-size: var(--t-sm); font-weight: 600; min-width: 0; }
+.dep-campos select, .dep-campos input { width: 100%; min-width: 0; }
+.dep-nome { grid-column: span 2; }
+@media (max-width: 720px) { .dep-nome { grid-column: 1 / -1; } }
+.dep-pdf { display: grid; gap: 0.3rem; }
+.rotulo-pdf { font-size: var(--t-sm); font-weight: 600; }
 .dep.aviso { border-color: var(--info); }
 .num { color: var(--tinta-suave); }
-.papel { border: 0; margin: 0; padding: 0; min-width: 0; }
-.papel .segmentado > label { padding-inline: 0.6rem; font-weight: 400; }
-.papel .segmentado > label.marcado { font-weight: 600; }
+.papel { min-width: 0; }
 .sugestao { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; background: var(--info-claro); border: 1px solid var(--info-linha); border-radius: var(--r-sm); padding: 0.5rem 0.8rem; font-size: var(--t-sm); }
 .sugestao span { flex: 1; }
 .reuso { display: grid; gap: 0.3rem; max-width: 34rem; }

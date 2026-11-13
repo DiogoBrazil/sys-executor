@@ -169,6 +169,28 @@ func TestCadastroSR(t *testing.T) {
 	if _, err := g.SalvarCadastro(c); err == nil {
 		t.Fatal("defesa prévia não existe na SR")
 	}
+	// Ofendidos: pessoa e instituição, vários (V4 §23.3, c). A instituição
+	// não tem posto nem a marca de criança e só pode ser ofendida.
+	c = *v.Cadastro
+	c.Pessoas = append(c.Pessoas, PessoaCadastro{ID: "NOVO-1", Nome: "Administração Pública Militar", PostoGrad: "x", Crianca: true, Instituicao: true},
+		PessoaCadastro{ID: "NOVO-2", Nome: "Ofendida Fictícia"})
+	c.Ofendidos = []string{"NOVO-1", "NOVO-2"}
+	v, err = g.SalvarCadastro(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(v.Cadastro.Ofendidos) != 2 || strings.Contains(strings.Join(v.PendenciasCadastro, " "), "ofendido") {
+		t.Fatalf("%+v %v", v.Cadastro.Ofendidos, v.PendenciasCadastro)
+	}
+	inst := v.Cadastro.Pessoas[len(v.Cadastro.Pessoas)-2]
+	if !inst.Instituicao || inst.PostoGrad != "" || inst.Crianca {
+		t.Fatalf("%+v", inst)
+	}
+	c = *v.Cadastro
+	c.Sindicados = append(c.Sindicados, inst.ID)
+	if _, err := g.SalvarCadastro(c); err == nil {
+		t.Fatal("instituição aceita como sindicada")
+	}
 }
 
 // IDs provisórios da interface: a pessoa nova ganha ID definitivo e as
