@@ -13,10 +13,12 @@ import (
 	"time"
 
 	"github.com/DiogoBrazil/sys-executor/internal/analise"
+	"github.com/DiogoBrazil/sys-executor/internal/documento"
 	"github.com/DiogoBrazil/sys-executor/internal/erros"
 	"github.com/DiogoBrazil/sys-executor/internal/inference"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/autos"
 	"github.com/DiogoBrazil/sys-executor/internal/ingest/segment"
+	"github.com/DiogoBrazil/sys-executor/internal/minuta"
 	"github.com/DiogoBrazil/sys-executor/internal/policy"
 	"github.com/DiogoBrazil/sys-executor/internal/rules/engine"
 	"github.com/DiogoBrazil/sys-executor/internal/session"
@@ -621,7 +623,7 @@ func (m *motorSR) Gerar(_ context.Context, p inference.Pedido) (inference.Respos
 		}
 		json.Unmarshal(p.Schema, &s)
 		ev := s.Properties.Fundamentos.Items.Properties.Evid.Items.Enum
-		out = js(map[string]any{"fato_id": "F-1", "sindicado_id": s.Properties.Sind.Enum[0], "conclusao_proposta": "INCONCLUSIVO",
+		out = js(map[string]any{"fato_id": "F-1", "sindicado_id": s.Properties.Sind.Enum[0], "conclusao_proposta": "AUSENCIA",
 			"ocorrencia_do_fato": "DEMONSTRADA", "autoria": "INCERTA", "lacunas": []string{"sem perícia na reserva"}, "diligencias": []string{},
 			"fundamentos": []map[string]any{{"texto": "A testemunha situa o sindicado na reserva.", "evid_refs": ev[:1]}}})
 	case "relatorio_pads":
@@ -648,8 +650,29 @@ func (m *motorSR) Gerar(_ context.Context, p inference.Pedido) (inference.Respos
 			fs = append(fs, f)
 		}
 		out = js(map[string]any{"fatores": fs})
+	case "enquadramento_sr":
+		ev := evidDoSchema(p.Schema)[:1]
+		// 1ª resposta: crime comum no CPM, que o aplicativo recusa (volta à IA).
+		if m.conta("enquadramento_sr") == 1 {
+			out = js(map[string]any{"itens": []map[string]any{{"tipo": "CRIME_COMUM", "transgressao_id": "", "diploma": "CPM", "artigo": "303",
+				"paragrafo": "", "inciso": "", "alinea": "", "art9_alinea": "", "fundamento": "Apropriação de bem sob a guarda do militar.", "evid_refs": ev}}})
+			break
+		}
+		out = js(map[string]any{"itens": []map[string]any{
+			{"tipo": "CRIME_MILITAR", "transgressao_id": "", "diploma": "CPM", "artigo": "303", "paragrafo": "", "inciso": "", "alinea": "", "art9_alinea": "",
+				"fundamento": "A arma estava sob a guarda do sindicado em razão do serviço.", "evid_refs": ev},
+			{"tipo": "TRANSGRESSAO", "transgressao_id": "RDPM-17-XXXVIII", "diploma": "", "artigo": "", "paragrafo": "", "inciso": "", "alinea": "", "art9_alinea": "",
+				"fundamento": "Falta de zelo com o material sob sua responsabilidade.", "evid_refs": ev}}})
+	case "sintese_sr":
+		out = js(map[string]any{"paragrafos": []map[string]any{{"texto": "A Portaria incluída nos autos determina a apuração do extravio de uma arma de fogo da reserva da unidade.",
+			"evid_refs": evidDoSchema(p.Schema)[:1]}}, "lacunas": []string{}})
+	case "analise_fato_sr":
+		out = js(map[string]any{"fato_id": "F-1", "paragrafos": []map[string]any{
+			{"texto": "No Termo de Inquirição incluído nos autos, a testemunha situa o primeiro sindicado na reserva, de serviço, no dia do extravio.", "evid_refs": evidDoSchema(p.Schema)[:1]},
+			{"texto": "Quanto ao segundo sindicado, a mesma testemunha diz apenas que ele também tinha a chave da reserva, o que não basta para vinculá-lo ao extravio.", "evid_refs": evidDoSchema(p.Schema)[:1]}},
+			"lacunas": []string{}})
 	default:
-		out = js(map[string]any{"funcao": "INDETERMINADA", "trecho_literal": ""})
+		return m.motorRoteiro.Gerar(context.Background(), p)
 	}
 	return inference.Resposta{Conteudo: []byte(out)}, nil
 }
@@ -697,10 +720,10 @@ func TestFluxoSRComIA(t *testing.T) {
 	if pg.ID != perguntaObjeto || campo(pg, "nome_S-1").Valor != "CB PM JOÃO SOUZA" {
 		t.Fatalf("%+v", pg)
 	}
-	if _, err := g.Responder(perguntaObjeto, "confirmar", map[string]string{"portaria": "55/2026", "incluir_F-1": "sim", "fato_F-1": "extravio", "incluir_S-1": "nao"}); err == nil {
+	if _, err := g.Responder(perguntaObjeto, "confirmar", map[string]string{"portaria_numero": "55/2026", "portaria_autoridade": "Corregedor", "portaria_data": "10/10/2026", "incluir_F-1": "sim", "fato_F-1": "extravio", "incluir_S-1": "nao"}); err == nil {
 		t.Fatal("objeto sem sindicado deveria ser recusado")
 	}
-	responder(t, g, perguntaObjeto, "confirmar", map[string]string{"portaria": "55/2026", "incluir_F-1": "sim", "fato_F-1": "extravio de arma",
+	responder(t, g, perguntaObjeto, "confirmar", map[string]string{"portaria_numero": "55/2026", "portaria_autoridade": "Corregedor", "portaria_data": "10/10/2026", "incluir_F-1": "sim", "fato_F-1": "extravio de arma",
 		"incluir_S-1": "sim", "nome_S-1": "CB PM JOÃO SOUZA"})
 	// SR19: fato novo → pergunta antes de incluir; SR35: recusado fica fora.
 	pg = perguntaAtual(t, g)
@@ -712,13 +735,60 @@ func TestFluxoSRComIA(t *testing.T) {
 	responder(t, g, "autorizacao:AUT-2", "autorizar", nil)
 	// SR12/SR-SOL-003: uma conclusão por fato × sindicado.
 	pg = perguntaAtual(t, g)
-	if pg.ID != "conclusao:F-1:S-1" || campo(pg, "conclusao").Valor != "INCONCLUSIVO" {
+	if pg.ID != "conclusao:F-1:S-1" || campo(pg, "conclusao").Valor != "AUSENCIA" || len(campo(pg, "conclusao").Opcoes) != 2 {
 		t.Fatalf("%+v", pg)
 	}
-	responder(t, g, "conclusao:F-1:S-1", "confirmar", map[string]string{"conclusao": "INCONCLUSIVO"})
+	responder(t, g, "conclusao:F-1:S-1", "confirmar", map[string]string{"conclusao": "INDICIOS"})
 	responder(t, g, "conclusao:F-1:S-N1", "confirmar", map[string]string{"conclusao": "AUSENCIA"})
-	esperar(t, g, func(v *workflow.Visao) bool { return v.Parada && v.Estado == workflow.Redigindo })
+
+	// Enquadramento (V4 §25.3): só na conclusão com indícios; a proposta da
+	// IA foi conferida na biblioteca (o crime comum no CPM foi recusado).
+	if v := esperar(t, g, func(v *workflow.Visao) bool { return v.Estado == workflow.AguardandoEsclarecimento || v.Parada }); v.Pergunta == nil {
+		t.Fatalf("parou sem a pergunta de enquadramento: %s %+v", v.Estado, v.Erro)
+	}
+	pg = perguntaAtual(t, g)
+	if pg.ID != "enquadramento:F-1:S-1" || len(pg.Grupos) != 3 || campo(pg, "manter_1").Valor != "sim" || campo(pg, "manter_2").Valor != "sim" {
+		t.Fatalf("pergunta de enquadramento: %+v", pg)
+	}
+	if m.conta("enquadramento_sr") != 2 || !strings.Contains(pg.Grupos[1].Titulo, "art. 303 do Código Penal Militar (Peculato)") ||
+		!strings.Contains(pg.Grupos[2].Titulo, "art. 17, inciso XXXVIII, do RDPM") {
+		t.Fatalf("proposta: %d pedidos; %q; %q", m.conta("enquadramento_sr"), pg.Grupos[1].Titulo, pg.Grupos[2].Titulo)
+	}
+	for _, l := range []string{"art. 999 do CP", "art. 155 do CP c/c art. 9º do CPM", "art. 4º do RDPM", "art. 1º da Lei 9.099"} {
+		if _, err := g.Responder(pg.ID, "confirmar", map[string]string{"manter_1": "sim", "manter_2": "nao", "acrescentar": l}); err == nil {
+			t.Fatalf("linha inválida aceita: %q", l)
+		}
+	}
+	if _, err := g.Responder(pg.ID, "confirmar", map[string]string{"manter_1": "nao", "manter_2": "nao", "acrescentar": ""}); err == nil {
+		t.Fatal("indícios sem enquadramento aceitos")
+	}
+	responder(t, g, pg.ID, "confirmar", map[string]string{"manter_1": "sim", "manter_2": "nao", "acrescentar": "art. 155, § 4º, do CP c/c art. 9º, II, e, do CPM"})
+
+	// Redação, validação e revisão, como no PADS.
+	v := esperar(t, g, func(v *workflow.Visao) bool { return v.Estado == workflow.AguardandoRevisao })
 	d := g.Dados().(*Dados)
+	if len(d.Achados) != 0 || v.Minuta == nil || !v.Minuta.Validada {
+		t.Fatalf("validação da SR: %+v", d.Achados)
+	}
+	txt := d.Minuta.Texto()
+	for _, quer := range []string{"RELATÓRIO DE SINDICÂNCIA REGULAR", minuta.SecaoDadosSR, minuta.SecaoSinteseSR, minuta.SecaoAnaliseSR, minuta.SecaoSolucaoSR,
+		"a. Portaria: Portaria nº 55/2026, de 10/10/2026, expedida por Corregedor.", "b. Sindicados: CB PM JOÃO SOUZA; SD PM PEDRO LIMA.",
+		"Há indícios da prática de crimes militares previstos no art. 303 do Código Penal Militar (peculato) e no art. 155, § 4º, do Código Penal, c/c o art. 9º, inciso II, alínea e, do Código Penal Militar (furto qualificado)",
+		"Não foram identificados indícios suficientes", "não foram identificados indícios de crime comum ou transgressão disciplinar"} {
+		if !strings.Contains(txt, quer) {
+			t.Errorf("minuta sem %q:\n%s", quer, txt)
+		}
+	}
+	if strings.Contains(strings.ToLower(txt), "inconclusiv") || strings.Contains(txt, "RDPM-17") {
+		t.Errorf("minuta com resultado inconclusivo ou identificador interno:\n%s", txt)
+	}
+	if b, nome, err := p.GerarDocumento(context.Background(), d, t.TempDir(), documento.FormatoDOCX); err != nil || len(b) == 0 || !strings.Contains(nome, "Sindicancia") {
+		t.Fatalf("DOCX da SR: %v %q", err, nome)
+	}
+	// O painel mostra os enquadramentos confirmados.
+	if !strings.Contains(js(v.Painel), "enquadramento — fato F-1") {
+		t.Error("painel sem o enquadramento da SR")
+	}
 	if fatos := d.IA.Objeto.FatosAdmitidos(); len(fatos) != 1 || len(d.IA.Objeto.Sindicados()) != 2 || len(d.IA.Objeto.SindicadosOriginais()) != 1 {
 		t.Fatalf("objeto: fatos %v sindicados %v", fatos, d.IA.Objeto.Sindicados())
 	}
@@ -769,7 +839,9 @@ func TestConfirmacaoDeEnvio(t *testing.T) {
 	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
 
 	p := perguntaAtual(t, g)
-	if p == nil || p.ID != PerguntaEnvioIA || !strings.Contains(p.Contexto, "gemini-teste") || !strings.Contains(p.Contexto, "pessoa") {
+	// V4 §50 (Emenda 4): a tela fala do "assistente", sem nomear serviço nem modelo.
+	if p == nil || p.ID != PerguntaEnvioIA || !strings.Contains(p.Contexto, "assistente") || !strings.Contains(p.Contexto, "pessoa") ||
+		strings.Contains(p.Contexto, "gemini-teste") || strings.Contains(p.Contexto, "Gemini") || strings.Contains(p.Titulo, "IA") {
 		t.Fatalf("confirmação: %+v", p)
 	}
 	responder(t, g, PerguntaEnvioIA, opcaoNaoEnviar, nil)
@@ -949,7 +1021,8 @@ func TestAutorizacaoVinculadaAoAlvo(t *testing.T) {
 	responder(t, g, perguntaDelimitacao, "confirmar", base)
 
 	p := perguntaAtual(t, g)
-	if p == nil || p.ID != PerguntaEnvioIA || !strings.Contains(p.Contexto, "gemini-outro") {
+	// O vínculo ao modelo continua (V4 §48.1), mesmo sem o nome na tela (§50).
+	if p == nil || p.ID != PerguntaEnvioIA || strings.Contains(p.Contexto, "gemini-outro") {
 		t.Fatalf("deveria pedir nova autorização para o novo modelo: %+v", p)
 	}
 	if m.conta("extracao") != antes || fonte.fechado != 1 {
@@ -980,6 +1053,10 @@ func TestCriancaBloqueiaChatGPT(t *testing.T) {
 	_, _ = g.ReceberUpload([]byte("%PDF-1.7\n%%EOF\n"))
 
 	p := perguntaAtual(t, g)
+	// V4 §50: a pergunta continua, mas a tela não nomeia o serviço.
+	if js(p) != "" && strings.Contains(js(p), "ChatGPT") {
+		t.Fatalf("a confirmação não pode nomear o ChatGPT: %s", js(p))
+	}
 	if p == nil || p.ID != PerguntaEnvioIA || campo(p, campoCrianca).ID == "" || !campo(p, campoCrianca).Obrigatorio {
 		t.Fatalf("a confirmação do ChatGPT deve perguntar por crianças: %+v", p)
 	}
@@ -1001,7 +1078,7 @@ func TestCriancaBloqueiaChatGPT(t *testing.T) {
 	fonte.provedor, fonte.modelo = "", ""
 	_, _ = g.Retomar()
 	p = perguntaAtual(t, g)
-	if p == nil || p.ID != PerguntaEnvioIA || campo(p, campoCrianca).ID != "" || !strings.Contains(p.Contexto, "Gemini") {
+	if p == nil || p.ID != PerguntaEnvioIA || campo(p, campoCrianca).ID != "" || strings.Contains(p.Contexto, "Gemini") {
 		t.Fatalf("confirmação com a Gemini: %+v", p)
 	}
 	autorizarEnvio(t, g)
@@ -1100,7 +1177,7 @@ func conferirFontesPADS(t *testing.T, d *Dados, v *workflow.Visao) {
 	}
 	for _, im := range d.IA.Conjunto.Imputacoes() {
 		p, ok := f.Enquadramento[im.ID]
-		if !ok || !p.Exata || p.Texto == "" || p.Versao == "" || p.Pagina == 0 {
+		if !ok || !p.Exata || p.Texto == "" || p.Versao == "" || p.Arquivo == "" { // RDPM em Markdown: sem página
 			t.Fatalf("enquadramento da %s (%s): %+v", im.ID, im.Dispositivo, p)
 		}
 	}

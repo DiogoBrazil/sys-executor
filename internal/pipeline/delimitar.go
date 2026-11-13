@@ -24,7 +24,7 @@ const (
 	maxExtras           = 1 // imputação/fato não identificado pela IA, informado pelo usuário
 )
 
-var errSemIA = erros.Com(erros.IAChaveAusente, errors.New("IA não configurada"))
+var errSemIA = erros.Com(erros.IAChaveAusente, errors.New("assistente não configurado"))
 
 var opcoesNatureza = []workflow.OpcaoVisao{{ID: "LEVE", Rotulo: "Leve"}, {ID: "MEDIA", Rotulo: "Média"}, {ID: "GRAVE", Rotulo: "Grave"}}
 
@@ -157,7 +157,7 @@ func perguntaImputacoes(r analise.PropostaDelimitacaoPADS, ant workflow.Resposta
 	}
 	pg := workflow.Pergunta{
 		ID: perguntaDelimitacao, Titulo: "Confirme as imputações do Memorando Disciplinar", Revisavel: true,
-		Contexto: "A IA leu o Memorando Disciplinar e propôs as condutas e datas abaixo. Confira cada uma no trecho original e corrija o que for preciso. " +
+		Contexto: "O assistente leu o Memorando Disciplinar e propôs as condutas e datas abaixo. Confira cada uma no trecho original e corrija o que for preciso. " +
 			"O enquadramento é seu: escolha o diploma e o dispositivo de cada imputação (o dispositivo citado no Memorando aparece só para conferência). " +
 			"Depois de confirmadas, só estas imputações serão julgadas; conduta diversa encontrada na instrução não vira acusação.",
 		Opcoes: []workflow.Opcao{{ID: "confirmar", Rotulo: "Confirmar imputações", Validar: true},
@@ -238,12 +238,12 @@ func perguntaImputacoes(r analise.PropostaDelimitacaoPADS, ant workflow.Resposta
 		if k <= len(pre.extras) {
 			x := pre.extras[k-1]
 			add(id, "Enquadramento do cadastro sem correspondência no Memorando",
-				[]string{"Informado no cadastro, no " + rotuloFato(x) + ". A IA não encontrou no Memorando imputação com este dispositivo: " +
+				[]string{"Informado no cadastro, no " + rotuloFato(x) + ". O assistente não encontrou no Memorando imputação com este dispositivo: " +
 					"confira no Memorando se ela consta da acusação; se não constar, não a inclua."},
 				nil, nil, x.Fato.Resumo, x.Fato.Data, "sim")
 			continue
 		}
-		add(id, "Imputação não identificada pela IA", []string{"Use só se o memorando trouxer outra imputação que não apareceu acima."},
+		add(id, "Imputação não identificada pelo assistente", []string{"Use só se o memorando trouxer outra imputação que não apareceu acima."},
 			nil, nil, "", "", "nao")
 	}
 	for _, pnd := range r.Pendencias {
@@ -324,14 +324,15 @@ func (p *Pipeline) delimitarSR(ctx context.Context, c *workflow.Contexto, d *Dad
 		}
 		e.DelimSR = &r
 	}
+	prop := comSindicadosDoCadastro(*e.DelimSR, c.Cadastro())
 	resp, ok := c.RespostaCompleta(perguntaObjeto)
 	if !ok {
 		ant, _ := c.Anterior(perguntaObjeto)
-		c.Perguntar(perguntaObjetoSR(*e.DelimSR, ant, c.Cadastro()))
+		c.Perguntar(perguntaObjetoSR(prop, ant, c.Cadastro()))
 		publicarPainel(c, d)
 		return workflow.AguardandoEsclarecimento, nil
 	}
-	obj, nomes, err := montarObjeto(*e.DelimSR, resp)
+	obj, nomes, err := montarObjeto(prop, resp)
 	if err != nil {
 		return "", erros.Com(erros.InternoInesperado, err)
 	}
@@ -350,15 +351,21 @@ func perguntaObjetoSR(r analise.PropostaObjetoSR, ant workflow.Resposta, cad *wo
 	}
 	pg := workflow.Pergunta{
 		ID: perguntaObjeto, Titulo: "Confirme o objeto da Sindicância", Revisavel: true,
-		Contexto: "A IA leu a Portaria de instauração e propôs os fatos e os sindicados abaixo. Confira no trecho original e corrija o que for preciso. " +
+		Contexto: "O assistente leu a Portaria de instauração e propôs os fatos e os sindicados abaixo. Confira no trecho original e corrija o que for preciso. " +
 			"Fatos ou militares novos encontrados na instrução só entram depois da sua autorização.",
 		Opcoes: []workflow.Opcao{{ID: "confirmar", Rotulo: "Confirmar objeto", Validar: true},
 			{ID: "cancelar", Rotulo: "Cancelar a tarefa", Destino: workflow.Cancelada}},
 	}
 	port := workflow.GrupoCampos{ID: "portaria", Titulo: "Portaria", Alertas: append(append([]string(nil), r.Pendencias...), alertasGerais...)}
 	pg.Grupos = append(pg.Grupos, port)
-	pg.Campos = append(pg.Campos, workflow.Campo{ID: "portaria", Rotulo: "Identificação da portaria", Tipo: workflow.CampoTexto, Obrigatorio: true, Grupo: "portaria",
-		Valor: val("portaria", strings.TrimSpace(strings.Join([]string{r.Numero, r.Autoridade, dataTexto(r.Data)}, " — "))), Ajuda: "Número, autoridade e data"})
+	// Número, autoridade e data em campos separados (pedido do usuário, 12/11/2026).
+	pg.Campos = append(pg.Campos,
+		workflow.Campo{ID: campoPortariaNumero, Rotulo: "Número da Portaria", Tipo: workflow.CampoTexto, Obrigatorio: true, Grupo: "portaria",
+			Valor: val(campoPortariaNumero, strings.TrimSpace(r.Numero)), Ajuda: "Ex.: 28/2026/PM-7BPM"},
+		workflow.Campo{ID: campoPortariaAutoridade, Rotulo: "Autoridade que instaurou", Tipo: workflow.CampoTexto, Obrigatorio: true, Grupo: "portaria",
+			Valor: val(campoPortariaAutoridade, strings.TrimSpace(r.Autoridade)), Ajuda: "Posto/graduação, nome e função"},
+		workflow.Campo{ID: campoPortariaData, Rotulo: "Data da Portaria", Tipo: workflow.CampoData, Obrigatorio: true, Grupo: "portaria",
+			Valor: val(campoPortariaData, dataTexto(r.Data)), Ajuda: "DD/MM/AAAA"})
 	for _, f := range r.Fatos {
 		id := f.ID
 		pg.Grupos = append(pg.Grupos, workflow.GrupoCampos{ID: id, Titulo: "Fato " + id, Fontes: []workflow.Fonte{fonteDe(f.Ponto, "Portaria")}})
@@ -369,7 +376,16 @@ func perguntaObjetoSR(r analise.PropostaObjetoSR, ant workflow.Resposta, cad *wo
 	}
 	for _, s := range r.Sindicados {
 		id := s.ID
-		pg.Grupos = append(pg.Grupos, workflow.GrupoCampos{ID: id, Titulo: "Sindicado " + id, Fontes: []workflow.Fonte{fonteDe(s.Ponto, "Portaria")}, Alertas: alertasSind[id]})
+		g := workflow.GrupoCampos{ID: id, Titulo: "Sindicado " + id, Alertas: alertasSind[id]}
+		if strings.HasPrefix(id, prefixoSindCadastro) {
+			// Do cadastro, sem leitura na Portaria (ex.: o nome está na capa
+			// do processo): fica a critério do usuário, com o alerta.
+			g.Titulo = "Sindicado informado no cadastro"
+			g.Alertas = append(g.Alertas, "Não encontrado na leitura da Portaria; pode constar da capa ou de outra peça de instauração. Confira e mantenha se for o caso.")
+		} else {
+			g.Fontes = []workflow.Fonte{fonteDe(s.Ponto, "Portaria")}
+		}
+		pg.Grupos = append(pg.Grupos, g)
 		pg.Campos = append(pg.Campos,
 			workflow.Campo{ID: "incluir_" + id, Rotulo: "Incluir como sindicado", Tipo: workflow.CampoSimNao, Obrigatorio: true, Grupo: id, Valor: val("incluir_"+id, "sim")},
 			workflow.Campo{ID: "nome_" + id, Rotulo: "Posto/graduação e nome", Tipo: workflow.CampoTexto, Obrigatorio: true, Grupo: id,
@@ -404,7 +420,7 @@ func montarObjeto(r analise.PropostaObjetoSR, resp workflow.Resposta) (*sr.Objet
 			nomes[s.ID] = resp.Valor("nome_" + s.ID)
 		}
 	}
-	o, err := sr.NovoObjeto(resp.Valor("portaria"), fatos, pessoas, sind)
+	o, err := sr.NovoObjeto(identificacaoDaPortaria(resp), fatos, pessoas, sind)
 	return o, nomes, err
 }
 
@@ -415,4 +431,58 @@ func contemTexto(xs []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// prefixoSindCadastro: sindicado do cadastro que a leitura da Portaria não
+// encontrou ("S-C1"…). Começa com "S" para contar como sindicado.
+const prefixoSindCadastro = "S-C"
+
+// comSindicadosDoCadastro acrescenta à proposta os sindicados informados no
+// cadastro que não foram encontrados na leitura da Portaria (pedido do
+// usuário, 12/11/2026: os nomes podem estar só na capa do processo, que não
+// é enviada). Eles entram marcados, com alerta, e o usuário confirma.
+func comSindicadosDoCadastro(r analise.PropostaObjetoSR, cad *workflow.Cadastro) analise.PropostaObjetoSR {
+	if cad == nil || len(cad.Sindicados) == 0 {
+		return r
+	}
+	out := r
+	out.Sindicados = append([]analise.PessoaProposta(nil), r.Sindicados...)
+	n := 0
+	for _, id := range cad.Sindicados {
+		ps, existe := cad.Pessoa(id)
+		if !existe {
+			continue
+		}
+		achado := false
+		for _, s := range r.Sindicados {
+			achado = achado || mesmaPessoa(ps.Nome, s.Nome)
+		}
+		if achado {
+			continue
+		}
+		n++
+		out.Sindicados = append(out.Sindicados, analise.PessoaProposta{ID: fmt.Sprintf("%s%d", prefixoSindCadastro, n), Nome: ps.Nome, PostoGraduacao: ps.PostoGrad})
+	}
+	return out
+}
+
+const (
+	campoPortariaNumero     = "portaria_numero"
+	campoPortariaAutoridade = "portaria_autoridade"
+	campoPortariaData       = "portaria_data"
+)
+
+// identificacaoDaPortaria junta os três campos na forma usada na minuta:
+// "Portaria nº 28/2026/PM-7BPM, de 14/08/2026, expedida por TC PM …".
+func identificacaoDaPortaria(resp workflow.Resposta) string {
+	n := strings.TrimSpace(resp.Valor(campoPortariaNumero))
+	n = strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(n, "nº"), "n°"))
+	t := "Portaria nº " + n
+	if d := strings.TrimSpace(resp.Valor(campoPortariaData)); d != "" {
+		t += ", de " + d
+	}
+	if a := strings.TrimSpace(resp.Valor(campoPortariaAutoridade)); a != "" {
+		t += ", expedida por " + a
+	}
+	return t
 }

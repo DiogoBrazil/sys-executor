@@ -6,6 +6,7 @@ import (
 
 	"github.com/DiogoBrazil/sys-executor/internal/analise"
 	"github.com/DiogoBrazil/sys-executor/internal/domain/pads"
+	"github.com/DiogoBrazil/sys-executor/internal/domain/sr"
 	"github.com/DiogoBrazil/sys-executor/internal/rules/engine"
 )
 
@@ -114,6 +115,136 @@ func TestValidarPADSApontaDivergencias(t *testing.T) {
 		}
 		if !achou {
 			t.Errorf("%s: esperava achado %q, veio %+v", c.nome, c.regra, as)
+		}
+	}
+}
+
+func entradaSR() (EntradaSR, *sr.ObjetoSR) {
+	tr := func(t string) analise.Trecho {
+		return analise.Trecho{Paragrafos: []analise.Paragrafo{{Texto: t, Evid: []string{"EV-1"}}}}
+	}
+	transg := EnquadramentoSR{Tipo: sr.Transgressao, Referencia: "art. 17, inciso XXXVIII, do RDPM", Texto: "deixar de zelar pelo material"}
+	crime := EnquadramentoSR{Tipo: sr.CrimeMilitar, Referencia: "art. 303 do Código Penal Militar", Rubrica: "Peculato"}
+	e := EntradaSR{
+		Portaria:    "Portaria nº 55/2026 (SEI nº 0012345)",
+		Sindicados:  []PessoaSR{{Nome: "CB PM FULANO TESTE", SEI: "0012350"}, {Nome: "SD PM BELTRANO TESTE"}},
+		Ofendidos:   []string{"Administração Pública Militar"},
+		Testemunhas: []PessoaSR{{Nome: "SGT PM CICRANO TESTE", SEI: "0012360"}},
+		Sintese:     tr("A Portaria determina a apuração do extravio de uma arma da reserva."),
+		Fatos: []FatoSR{
+			{ID: "F-1", Descricao: "extravio de arma", Analise: tr("A testemunha situa o primeiro sindicado na reserva."),
+				Conclusoes: []ConclusaoSR{{SindicadoID: "S-1", Sindicado: "CB PM FULANO TESTE", Indicios: true, Enquadramentos: []EnquadramentoSR{crime, transg}},
+					{SindicadoID: "S-2", Sindicado: "SD PM BELTRANO TESTE"}}},
+			{ID: "F-2", Descricao: "dano em viatura", Analise: tr("Não há prova de quem danificou a viatura."),
+				Conclusoes: []ConclusaoSR{{SindicadoID: "S-1", Sindicado: "CB PM FULANO TESTE"}, {SindicadoID: "S-2", Sindicado: "SD PM BELTRANO TESTE"}}},
+		},
+	}
+	obj, err := sr.NovoObjeto("55/2026", []sr.Fato{{ID: "F-1"}, {ID: "F-2"}},
+		[]sr.Pessoa{{ID: "S-1", Tipo: sr.Militar}, {ID: "S-2", Tipo: sr.Militar}}, []string{"S-1", "S-2"})
+	if err != nil {
+		panic(err)
+	}
+	return e, obj
+}
+
+// Regra: SR-SOL-003, SR-SOL-004, SR-SOL-005
+func TestComporEValidarSR(t *testing.T) {
+	e, obj := entradaSR()
+	d := ComporSR(e)
+	ev := map[string]bool{"EV-1": true}
+	if as := ValidarSR(d, e, obj, ev); len(as) != 0 {
+		t.Fatalf("achados na minuta composta: %+v\n%s", as, d.Texto())
+	}
+	txt := d.Texto()
+	for _, quer := range []string{
+		"a. Portaria: Portaria nº 55/2026 (SEI nº 0012345).",
+		"b. Sindicados: CB PM FULANO TESTE (SEI nº 0012350); SD PM BELTRANO TESTE.",
+		"c. Ofendido: Administração Pública Militar.",
+		"d. Testemunhas ouvidas: SGT PM CICRANO TESTE (SEI nº 0012360).",
+		"Fato 1 – extravio de arma", "Fato 2 – dano em viatura",
+		"a) CB PM FULANO TESTE.",
+		"Quanto ao fato 1, há indícios da prática de crime militar previsto no art. 303 do Código Penal Militar (peculato); " +
+			"há indícios da prática de transgressão disciplinar prevista no art. 17, inciso XXXVIII, do RDPM – “deixar de zelar pelo material”; " +
+			"não foram identificados indícios de crime comum.",
+		"Quanto ao fato 2, não foram identificados indícios suficientes de crime comum, crime militar ou transgressão disciplinar.",
+	} {
+		if !strings.Contains(txt, quer) {
+			t.Errorf("sem %q:\n%s", quer, txt)
+		}
+	}
+	// Sem perícia identificada: só o rótulo, com a pendência (V4 §23.2).
+	if !strings.Contains(txt, "e. Perícias realizadas:\n") || len(d.Pendencias) == 0 {
+		t.Errorf("alínea e sem pendência:\n%s\n%v", txt, d.Pendencias)
+	}
+}
+
+// Um fato e o mesmo resultado para todos: conclusão conjunta (V4 §25.1).
+func TestSolucaoSRConjunta(t *testing.T) {
+	e, _ := entradaSR()
+	e.Fatos = e.Fatos[1:]
+	d := ComporSR(e)
+	if !strings.Contains(d.Texto(), "Quanto ao fato investigado, em relação ao CB PM FULANO TESTE e ao SD PM BELTRANO TESTE, não foram identificados indícios suficientes") ||
+		!strings.Contains(d.Texto(), "examinadas individualmente") {
+		t.Fatalf("conclusão conjunta:\n%s", d.Texto())
+	}
+}
+
+// Regra: SR-SOL-004, SR-SOL-008
+func TestValidarSRApontaDivergencias(t *testing.T) {
+	ev := map[string]bool{"EV-1": true}
+	casos := []struct {
+		nome    string
+		mudar   func(*Documento, *EntradaSR)
+		esperar string
+	}{
+		{"sem a seção III", func(d *Documento, _ *EntradaSR) {
+			for i, b := range d.Blocos {
+				if b.Texto == SecaoAnaliseSR {
+					d.Blocos = append(d.Blocos[:i], d.Blocos[i+1:]...)
+					return
+				}
+			}
+		}, "seções estão fora de ordem"},
+		{"inconclusivo na solução", func(d *Documento, _ *EntradaSR) {
+			d.Blocos = append(d.Blocos[:len(d.Blocos)-2], append([]Bloco{{Tipo: Paragrafo, Texto: "Quanto ao fato 3, o resultado é inconclusivo.", Origem: Fixo}}, d.Blocos[len(d.Blocos)-2:]...)...)
+		}, "inconclusivo"},
+		{"providência automática", func(d *Documento, _ *EntradaSR) {
+			d.Blocos = append(d.Blocos[:len(d.Blocos)-2], append([]Bloco{{Tipo: Paragrafo, Texto: "Sugiro o arquivamento.", Origem: Fixo}}, d.Blocos[len(d.Blocos)-2:]...)...)
+		}, "providência"},
+		{"enquadramento confirmado fora da solução", func(_ *Documento, e *EntradaSR) {
+			e.Fatos[0].Conclusoes[0].Enquadramentos = append(e.Fatos[0].Conclusoes[0].Enquadramentos,
+				EnquadramentoSR{Tipo: sr.CrimeComum, Referencia: "art. 312 do Código Penal"})
+		}, "art. 312 do Código Penal"},
+		{"ausência com enquadramento", func(_ *Documento, e *EntradaSR) {
+			e.Fatos[1].Conclusoes[0].Enquadramentos = []EnquadramentoSR{{Tipo: sr.Transgressao, Referencia: "art. 17, inciso XXXVIII, do RDPM"}}
+		}, "ausência de indícios com enquadramento"},
+		{"parágrafo da IA sem evidência", func(d *Documento, _ *EntradaSR) {
+			for i := range d.Blocos {
+				if d.Blocos[i].Origem == IA {
+					d.Blocos[i].Evid = nil
+					return
+				}
+			}
+		}, "não cita evidência"},
+		{"identificador interno", func(d *Documento, _ *EntradaSR) {
+			for i := range d.Blocos {
+				if d.Blocos[i].Origem == IA {
+					d.Blocos[i].Texto += " (EV-1)"
+					return
+				}
+			}
+		}, "identificador interno"},
+	}
+	for _, c := range casos {
+		e, obj := entradaSR()
+		d := ComporSR(e)
+		c.mudar(d, &e)
+		var msgs []string
+		for _, a := range ValidarSR(d, e, obj, ev) {
+			msgs = append(msgs, a.Mensagem)
+		}
+		if !strings.Contains(strings.Join(msgs, " | "), c.esperar) {
+			t.Errorf("%s: esperado %q em %v", c.nome, c.esperar, msgs)
 		}
 	}
 }

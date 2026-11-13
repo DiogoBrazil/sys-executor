@@ -26,7 +26,7 @@ func publicarPainel(c *workflow.Contexto, d *Dados) {
 				Linhas: []string{im.Texto, fmt.Sprintf("%s — natureza %s — fato em %s", im.Dispositivo, rotuloNatureza[string(im.Natureza)], dataTexto(im.Fato.Data))}})
 		}
 	case e.DelimPADS != nil:
-		obj.Itens = append(obj.Itens, workflow.ItemPainel{Titulo: "Imputações propostas pela IA", Situacao: "aguardando confirmação",
+		obj.Itens = append(obj.Itens, workflow.ItemPainel{Titulo: "Imputações propostas pelo assistente", Situacao: "aguardando confirmação",
 			Linhas: []string{fmt.Sprintf("%d imputação(ões) encontradas no Memorando Disciplinar.", len(e.DelimPADS.Imputacoes))}})
 	case e.Objeto != nil:
 		for _, f := range e.Objeto.FatosAdmitidos() {
@@ -37,7 +37,7 @@ func publicarPainel(c *workflow.Contexto, d *Dados) {
 			obj.Itens = append(obj.Itens, workflow.ItemPainel{Titulo: "Sindicado " + s, Situacao: "admitido", Linhas: []string{e.nomes[s]}})
 		}
 	case e.DelimSR != nil:
-		obj.Itens = append(obj.Itens, workflow.ItemPainel{Titulo: "Objeto proposto pela IA", Situacao: "aguardando confirmação",
+		obj.Itens = append(obj.Itens, workflow.ItemPainel{Titulo: "Objeto proposto pelo assistente", Situacao: "aguardando confirmação",
 			Linhas: []string{fmt.Sprintf("%d fato(s) e %d sindicado(s) na Portaria.", len(e.DelimSR.Fatos), len(e.DelimSR.Sindicados))}})
 	}
 	if len(obj.Itens) > 0 {
@@ -61,7 +61,7 @@ func publicarPainel(c *workflow.Contexto, d *Dados) {
 		p.Secoes = append(p.Secoes, lei)
 	}
 	// Propostas.
-	prop := workflow.SecaoPainel{Titulo: "Propostas da IA (a confirmar)"}
+	prop := workflow.SecaoPainel{Titulo: "Propostas do assistente (a confirmar)"}
 	if e.Conjunto != nil {
 		for _, im := range e.Conjunto.Imputacoes() {
 			an, ok := e.Analises[im.ID]

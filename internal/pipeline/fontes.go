@@ -17,6 +17,9 @@ type FontesJuridicas struct {
 	Enquadramento map[string]legal.Passagem
 	// Base: dispositivos que regem o julgamento, na ordem em que são usados.
 	Base []legal.Passagem
+	// EnquadramentoSR: enquadramentos confirmados de cada conclusão da SR
+	// com indícios ("fato:sindicado").
+	EnquadramentoSR map[string][]EnquadSR
 	// Lacunas: o que foi procurado e não está na biblioteca (V4 §41: sinalizar
 	// a limitação; nunca suprir com texto inventado).
 	Lacunas []string
@@ -47,8 +50,8 @@ const documentoRDPM = "rdpm"
 
 // consultarFontes recupera, na biblioteca jurídica local, os dispositivos
 // que a minuta vai citar. Não usa a IA nem a rede. No PADS: o dispositivo de
-// cada imputação e a base do julgamento. Na SR ainda não há conjunto
-// definido: a etapa só registra que a biblioteca está disponível.
+// cada imputação e a base do julgamento. Na SR: o enquadramento de cada
+// conclusão com indícios, proposto pela IA e confirmado pelo usuário.
 func (p *Pipeline) consultarFontes(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
 	d := dados(c)
 	abrir := p.Biblioteca
@@ -60,8 +63,11 @@ func (p *Pipeline) consultarFontes(ctx context.Context, c *workflow.Contexto) (w
 	if err != nil {
 		return workflow.ConsultandoFontes, err
 	}
+	if c.Tipo == workflow.TipoSR {
+		return p.fontesSR(ctx, c, d, b)
+	}
 	f := &FontesJuridicas{Enquadramento: map[string]legal.Passagem{}}
-	if c.Tipo == workflow.TipoSR || d.IA == nil || d.IA.Conjunto == nil {
+	if d.IA == nil || d.IA.Conjunto == nil {
 		d.Fontes = f
 		publicarPainel(c, d)
 		return workflow.Redigindo, nil
@@ -111,7 +117,10 @@ func secaoFontes(d *Dados) (workflow.SecaoPainel, bool) {
 		return s, false
 	}
 	origem := func(p legal.Passagem) string {
-		o := fmt.Sprintf("%s — pág. %d — versão %s", p.Arquivo, p.Pagina, p.Versao)
+		o := fmt.Sprintf("%s — versão %s", p.Arquivo, p.Versao)
+		if p.Pagina > 0 { // original em Markdown não tem páginas
+			o = fmt.Sprintf("%s — pág. %d — versão %s", p.Arquivo, p.Pagina, p.Versao)
+		}
 		if p.OCR {
 			o += " — texto lido por OCR: confira no original"
 		}
@@ -129,6 +138,20 @@ func secaoFontes(d *Dados) (workflow.SecaoPainel, bool) {
 			}
 			it.Linhas = append(it.Linhas, p.Texto, origem(p))
 			s.Itens = append(s.Itens, it)
+		}
+	}
+	if e := d.IA; e != nil && e.Objeto != nil {
+		for _, fato := range e.Objeto.FatosAdmitidos() {
+			for _, sind := range e.Objeto.Sindicados() {
+				for _, q := range f.EnquadramentoSR[fato+":"+sind] {
+					it := workflow.ItemPainel{Titulo: q.Rotulo(), Situacao: fmt.Sprintf("enquadramento — fato %s, %s", fato, e.nomes[sind])}
+					if q.Passagem.Caput != "" {
+						it.Linhas = append(it.Linhas, q.Passagem.Caput)
+					}
+					it.Linhas = append(it.Linhas, q.Passagem.Texto, origem(q.Passagem))
+					s.Itens = append(s.Itens, it)
+				}
+			}
 		}
 	}
 	for _, p := range f.Base {

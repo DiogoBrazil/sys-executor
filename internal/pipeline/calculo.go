@@ -271,7 +271,7 @@ func maxDias(s engine.Sancao) int {
 // continua a mesma; se o cálculo mudou, vale a nova proposta.
 func perguntaCalculoPADS(calc *CalculoOficial, anteriores map[string][2]int) workflow.Pergunta {
 	pg := workflow.Pergunta{ID: perguntaCalculo, Titulo: "Confira a dosimetria e o comportamento proposto", Revisavel: true,
-		Contexto: "O cálculo é feito pelo aplicativo, não pela IA, a partir das suas respostas. Confira a memória de cálculo. " +
+		Contexto: "O cálculo é feito pelo aplicativo, não pelo assistente, a partir das suas respostas. Confira a memória de cálculo. " +
 			"A quantidade de dias é uma proposta: ajuste, se for o caso. Para mudar um dado de entrada, use \"Alterar\" em \"Suas respostas\".",
 		Opcoes: []workflow.Opcao{{ID: "confirmar", Rotulo: "Confirmar", Validar: true}}}
 	for _, s := range calc.Sancoes {

@@ -22,9 +22,6 @@ const (
 	campoOcultar   = "ocultar"
 	// campoCrianca: só no ChatGPT (V4 §48.6; Termos do Sign in with ChatGPT).
 	campoCrianca = "crianca"
-	// fatorEstimativa cobre instruções das etapas, dados estruturados e
-	// eventuais reenvios sobre o texto dos autos (estimativa aproximada).
-	fatorEstimativa = 1.5
 )
 
 // autorizarEnvio garante a autorização da tarefa. Devolve aguardar=true
@@ -108,37 +105,32 @@ func (p *Pipeline) autorizarEnvio(c *workflow.Contexto, d *Dados) (aguardar bool
 }
 
 func perguntaEnvio(alvo inference.Alvo, d *Dados, r pseudonimo.Resumo, ss []suspeito) workflow.Pergunta {
-	paginas, tokens := 0, 0
+	paginas := 0
 	if d.Autos != nil {
 		paginas = len(d.Autos.Paginas)
-		for _, pg := range d.Autos.Paginas {
-			tokens += inference.EstimarTokens(pg.Texto)
-		}
 	}
-	est := int(float64(tokens)*fatorEstimativa/1000 + 0.5)
-	if est < 1 {
-		est = 1
-	}
-	ctx := fmt.Sprintf("Para analisar os autos, o sys-executor enviará ao serviço %s, modelo %s, trechos do texto extraído "+
-		"das %d peça(s) identificadas (%d página(s)). Estimativa aproximada do envio: %d mil tokens de entrada no total, "+
-		"somadas as instruções de cada etapa. O arquivo PDF não é enviado.\n\n"+
+	// O serviço, o modelo e a estimativa de tokens não aparecem aqui (V4 §50,
+	// Emenda 4): o serviço fica em Configurações do assistente. O vínculo da
+	// autorização a ele continua (alvo).
+	ctx := fmt.Sprintf("Para analisar os autos, o JURISPM enviará ao assistente trechos do texto extraído "+
+		"das %d peça(s) identificadas (%d página(s)). O arquivo PDF não é enviado.\n\n"+
 		"Antes do envio, os dados pessoais reconhecidos (%s) serão trocados por marcadores, e a resposta volta com os dados originais. "+
 		"É um melhor esforço: nomes sem posto, papel processual ou rótulo podem não ser reconhecidos. "+
 		"Se quiser ocultar outros nomes ou números, informe-os abaixo, um por linha.\n\n"+
 		"Sem a sua autorização, nada é enviado. Esta confirmação não substitui eventual autorização institucional "+
 		"para tratar os dados em serviço externo.",
-		alvo.Rotulo, alvo.Modelo, len(d.Pecas), paginas, est, r.Texto())
+		len(d.Pecas), paginas, r.Texto())
 	gs, cs := camposRevisao(ss)
 	if alvo.Provedor == inference.ProvedorChatGPT {
 		cs = append(cs, workflow.Campo{ID: campoCrianca, Tipo: workflow.CampoSimNao, Obrigatorio: true,
 			Rotulo: "Os autos contêm dados pessoais de criança menor de 13 anos?",
-			Ajuda:  "Os termos do uso do plano ChatGPT em outros aplicativos proíbem enviar esses dados, mesmo com os nomes ocultados. Se houver, o ChatGPT fica bloqueado nesta tarefa."})
+			Ajuda:  "Os termos do serviço configurado para o assistente proíbem enviar esses dados, mesmo com os nomes ocultados. Se houver, esse serviço fica bloqueado nesta tarefa: escolha outro em Configurações do assistente."})
 	}
 	if len(ss) > 0 {
 		ctx += fmt.Sprintf("\n\nHá %d possível(is) nome(s) não reconhecido(s) abaixo: decida cada um antes de autorizar.", len(ss))
 	}
 	return workflow.Pergunta{
-		ID: PerguntaEnvioIA, Titulo: "Autorizar o envio à IA", Contexto: ctx,
+		ID: PerguntaEnvioIA, Titulo: "Autorizar o envio ao assistente", Contexto: ctx,
 		Grupos: gs,
 		Campos: append(cs, workflow.Campo{ID: campoOcultar, Rotulo: "Outros nomes ou dados a ocultar (opcional)",
 			Tipo: workflow.CampoTextoLongo, Ajuda: "Um por linha. Ex.: o nome de uma testemunha citada sem posto ou papel."}),
@@ -148,7 +140,7 @@ func perguntaEnvio(alvo inference.Alvo, d *Dados, r pseudonimo.Resumo, ss []susp
 		},
 		Resumir: func(rs workflow.Resposta) string {
 			if rs.Opcao == opcaoAutorizar {
-				return fmt.Sprintf("envio autorizado: %s, modelo %s", alvo.Rotulo, alvo.Modelo)
+				return "envio ao assistente autorizado"
 			}
 			return "envio não autorizado"
 		},

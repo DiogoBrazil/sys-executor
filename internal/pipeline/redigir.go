@@ -27,11 +27,14 @@ type Redacao struct {
 	Verificado    map[string]string
 	Ciclos        map[string]int
 	PendValidacao map[string][]string
+	// SR: síntese dos fatos (seção II) e análise das provas por fato (III).
+	Sintese     *analise.Trecho
+	AnaliseFato map[string]analise.Trecho
 }
 
 func novaRedacao() *Redacao {
 	return &Redacao{Fundamentacao: map[string]analise.Trecho{}, Fatores: map[string][]analise.FatorArt36{}, PendFatores: map[string]string{},
-		Verificado: map[string]string{}, Ciclos: map[string]int{}, PendValidacao: map[string][]string{}}
+		Verificado: map[string]string{}, Ciclos: map[string]int{}, PendValidacao: map[string][]string{}, AnaliseFato: map[string]analise.Trecho{}}
 }
 
 // citacoesPermitidas: o que a redação pode citar de norma, além do que está
@@ -70,9 +73,14 @@ type redator struct {
 	resultados map[string]pads.Resultado
 	sancoes    map[string]SancaoCalculada
 	ordem      []string // trechos, na ordem da minuta
+	// sr: o redator atende a Sindicância Regular (trechos de redigir_sr.go).
+	sr bool
 }
 
 func (p *Pipeline) novoRedator(d *Dados) *redator {
+	if d.IA.Conjunto == nil && d.IA.Objeto != nil {
+		return p.novoRedatorSR(d)
+	}
 	e := d.IA
 	_, congeladas := alvos(d)
 	r := &redator{d: d, x: e.executor(policy.FluxoPADS), congeladas: congeladas, permitidos: citacoesPermitidas(d.Fontes), rotulos: rotulosArt36(p),
@@ -95,6 +103,9 @@ func (p *Pipeline) novoRedator(d *Dados) *redator {
 
 // descricao: como o trecho é chamado para o usuário e para a IA.
 func (r *redator) descricao(slot string) string {
+	if r.sr {
+		return r.descricaoSR(slot)
+	}
 	switch {
 	case slot == slotRelatorio:
 		return "relatório (relato dos fatos, da defesa e das provas)"
@@ -107,6 +118,9 @@ func (r *redator) descricao(slot string) string {
 // feito informa se o trecho já foi redigido.
 func (r *redator) feito(slot string) bool {
 	rd := r.d.Redacao
+	if r.sr {
+		return rd.trechoSR(slot) != nil
+	}
 	switch {
 	case slot == slotRelatorio:
 		return rd.Relatorio != nil
@@ -122,6 +136,12 @@ func (r *redator) feito(slot string) bool {
 // verificação de suporte confere).
 func (r *redator) paragrafos(slot string) []analise.Paragrafo {
 	rd := r.d.Redacao
+	if r.sr {
+		if t := rd.trechoSR(slot); t != nil {
+			return t.Paragrafos
+		}
+		return nil
+	}
 	switch {
 	case slot == slotRelatorio:
 		if rd.Relatorio == nil {
@@ -156,6 +176,9 @@ func (r *redator) textoAtual(slot string) []string {
 }
 
 func (r *redator) pontos(slot string) []analise.Ponto {
+	if r.sr {
+		return r.pontosSR(slot)
+	}
 	if slot == slotRelatorio {
 		return r.d.IA.Pontos
 	}
@@ -165,6 +188,9 @@ func (r *redator) pontos(slot string) []analise.Ponto {
 
 // resultado confirmado da imputação do trecho ("" fora da fundamentação).
 func (r *redator) resultado(slot string) string {
+	if r.sr {
+		return r.resultadoSR(slot)
+	}
 	if strings.HasPrefix(slot, prefixoSlotFund) {
 		return string(r.resultados[strings.TrimPrefix(slot, prefixoSlotFund)])
 	}
@@ -174,6 +200,9 @@ func (r *redator) resultado(slot string) string {
 // redigir pede o trecho à IA e o guarda. Numa reescrita (re != nil) que a IA
 // não consiga fazer com segurança, o texto anterior é mantido (mantido=true).
 func (r *redator) redigir(ctx context.Context, slot string, re *analise.Reescrita) (mantido bool, err error) {
+	if r.sr {
+		return r.redigirSR(ctx, slot, re)
+	}
 	d, e, rd := r.d, r.d.IA, r.d.Redacao
 	switch {
 	case slot == slotRelatorio:
@@ -231,12 +260,11 @@ func (p *Pipeline) prepararIA(ctx context.Context, c *workflow.Contexto, d *Dado
 }
 
 // redigir é a etapa 12/13: a IA redige os trechos e o aplicativo compõe a
-// minuta. Só o PADS, por enquanto. A minuta só é mostrada depois da
-// validação (V4 §42.1).
+// minuta (PADS: julgamento; SR: relatório). A minuta só é mostrada depois
+// da validação (V4 §42.1).
 func (p *Pipeline) redigir(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
 	d := dados(c)
-	if c.Tipo != workflow.TipoPADS || d.IA == nil || d.IA.Conjunto == nil || d.IA.Julgamento == nil {
-		// A redação da SR ainda não existe: pára como etapa futura.
+	if !prontoParaRedigir(c, d) {
 		return workflow.Redigindo, erros.Novo(erros.TarefaEtapaIndisponiv)
 	}
 	if aguardar, err := p.prepararIA(ctx, c, d); err != nil {
@@ -260,7 +288,7 @@ func (p *Pipeline) redigir(ctx context.Context, c *workflow.Contexto) (workflow.
 		}
 	}
 	c.Progresso(len(r.ordem), len(r.ordem), unidadeDeProgresso)
-	d.Minuta, d.entradaMinuta = comporMinutaPADS(d, r.rotulos)
+	r.compor()
 	return workflow.Validando, nil
 }
 

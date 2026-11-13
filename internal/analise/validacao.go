@@ -83,7 +83,11 @@ func VerificarSuporte(ctx context.Context, x *Executor, alvo string, ps []Paragr
 	props := map[string]any{"n": inteiro(1, len(ps)), "suporte": enum(string(Suporta), string(Parcial), string(NaoSuporta)), "motivo": str(300)}
 	secoes := []policy.Secao{{Nome: "FRASES_A_VERIFICAR", Dados: frases}}
 	if resultado != "" {
-		tarefa += fmt.Sprintf(" O resultado desta imputação, confirmado pelo usuário, é %s. coerencia: CONTRADIZ quando o texto conclui em sentido contrário a esse resultado; COERENTE nos demais casos.", resultado)
+		if x.Fluxo == policy.FluxoSR {
+			tarefa += fmt.Sprintf(" As conclusões confirmadas pelo usuário para este trecho são: %s. coerencia: CONTRADIZ quando o texto conclui em sentido contrário a alguma delas (ou trata a conclusão como inconclusiva); COERENTE nos demais casos.", resultado)
+		} else {
+			tarefa += fmt.Sprintf(" O resultado desta imputação, confirmado pelo usuário, é %s. coerencia: CONTRADIZ quando o texto conclui em sentido contrário a esse resultado; COERENTE nos demais casos.", resultado)
+		}
 		props["coerencia"] = enum("COERENTE", "CONTRADIZ")
 		secoes = append(secoes, policy.Secao{Nome: "RESULTADO_CONFIRMADO", Dados: resultado})
 	}
@@ -188,12 +192,8 @@ func ClassificarAjuste(ctx context.Context, x *Executor, pedido string, trechos 
 	var out ClassificacaoAjuste
 	err := x.Chamar(ctx, Chamada{
 		Etapa: catalog.EtapaAjuste, Alvo: "pedido de ajuste",
-		Secoes: []policy.Secao{{Nome: "TRECHOS_AJUSTAVEIS", Dados: trechos}, {Nome: "PEDIDO_DO_USUARIO", Dados: pedido}},
-		Tarefa: "classifique o PEDIDO_DO_USUARIO; não reescreva nada agora. tipo: " +
-			"REDACAO quando ele pede mudança de redação, complemento, correção ou supressão em trecho(s) de TRECHOS_AJUSTAVEIS (liste em trechos os ids atingidos; se o pedido for geral, liste todos os que ele atinge); " +
-			"DECISAO quando pede mudar resultado de imputação, punição, natureza, número de dias, pontos, comportamento, atenuantes, agravantes ou reincidência; " +
-			"TEXTO_FIXO quando trata só de cabeçalho, título, dispositivo da decisão, providências, fecho, assinatura ou formatação; " +
-			"INDEFINIDO quando não dá para saber o que mudar. Se o pedido misturar redação com decisão, use o tipo DECISAO. Quando o tipo não for REDACAO, deixe trechos vazio.",
+		Secoes:     []policy.Secao{{Nome: "TRECHOS_AJUSTAVEIS", Dados: trechos}, {Nome: "PEDIDO_DO_USUARIO", Dados: pedido}},
+		Tarefa:     tarefaClassificarAjuste(x.Fluxo),
 		NomeSchema: "classificacao_ajuste", Reserva: 300,
 		Schema: objeto(map[string]any{
 			"tipo":    enum(string(AjusteRedacao), string(AjusteDecisao), string(AjusteTextoFixo), string(AjusteIndefinido)),
@@ -225,4 +225,17 @@ func ClassificarAjuste(ctx context.Context, x *Executor, pedido string, trechos 
 		return ClassificacaoAjuste{}, err
 	}
 	return out, nil
+}
+
+func tarefaClassificarAjuste(fluxo string) string {
+	decisao := "DECISAO quando pede mudar resultado de imputação, punição, natureza, número de dias, pontos, comportamento, atenuantes, agravantes ou reincidência; "
+	fixo := "TEXTO_FIXO quando trata só de cabeçalho, título, dispositivo da decisão, providências, fecho, assinatura ou formatação; "
+	if fluxo == policy.FluxoSR {
+		decisao = "DECISAO quando pede mudar a conclusão (indícios ou ausência de indícios), o enquadramento (crime ou transgressão), os fatos ou os sindicados; "
+		fixo = "TEXTO_FIXO quando trata só de cabeçalho, título, dados da sindicância (seção I), solução, fecho, assinatura ou formatação; "
+	}
+	return "classifique o PEDIDO_DO_USUARIO; não reescreva nada agora. tipo: " +
+		"REDACAO quando ele pede mudança de redação, complemento, correção ou supressão em trecho(s) de TRECHOS_AJUSTAVEIS (liste em trechos os ids atingidos; se o pedido for geral, liste todos os que ele atinge); " +
+		decisao + fixo +
+		"INDEFINIDO quando não dá para saber o que mudar. Se o pedido misturar redação com decisão, use o tipo DECISAO. Quando o tipo não for REDACAO, deixe trechos vazio."
 }

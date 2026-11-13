@@ -98,7 +98,7 @@ func descricaoCitado(im analise.ImputacaoProposta) string {
 	if ref := im.Dispositivo(); ref != "" {
 		return "Dispositivo citado no Memorando (para conferência): " + ref + "."
 	}
-	return "O Memorando não cita dispositivo para esta conduta (segundo a leitura da IA)."
+	return "O Memorando não cita dispositivo para esta conduta (segundo a leitura do assistente)."
 }
 
 // divergencias confere a escolha de cada imputação incluída contra o
@@ -125,7 +125,7 @@ func divergencias(r analise.PropostaDelimitacaoPADS, resp workflow.Resposta) (ma
 		var msg string
 		switch {
 		case !proposta:
-			msg = fmt.Sprintf("Esta imputação não foi identificada pela IA no Memorando. Confira no Memorando se ela consta da acusação: "+
+			msg = fmt.Sprintf("Esta imputação não foi identificada pelo assistente no Memorando. Confira no Memorando se ela consta da acusação: "+
 				"o PADS só julga as imputações do Memorando Disciplinar (V4 §22.1). Escolhido: %s.", d.Referencia())
 		case !temCitado && im.Dispositivo() != "":
 			msg = fmt.Sprintf("O Memorando cita %s, que não está no catálogo (RDPM arts. 15 a 17; Estatuto arts. 29 e 32). "+

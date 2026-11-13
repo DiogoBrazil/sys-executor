@@ -50,7 +50,12 @@ type Dados struct {
 	Redacao *Redacao
 	Minuta  *minuta.Documento
 	// entradaMinuta: o que compôs a minuta (a validação confere contra ela).
-	entradaMinuta *minuta.EntradaPADS
+	entradaMinuta   *minuta.EntradaPADS
+	entradaMinutaSR *minuta.EntradaSR
+	// SR: conclusões confirmadas ("fato:sindicado" → INDICIOS/AUSENCIA) e o
+	// cadastro, copiados na etapa de fontes para a redação e a validação.
+	conclusoesSR map[string]string
+	cadastro     *workflow.Cadastro
 	// Achados da validação determinística da versão atual (V4 §42).
 	Achados []minuta.Achado
 	// Ajustes pedidos pelo usuário nesta tarefa (só memória; V4 §31.3).
@@ -120,7 +125,7 @@ func (p *Pipeline) Etapas() map[workflow.Estado]workflow.Etapa {
 		workflow.Compatibilidade:   p.compatibilidade,
 		workflow.Delimitando:       p.comRevisao(workflow.Delimitando, p.delimitar),
 		workflow.Analisando:        p.comRevisao(workflow.Analisando, p.analisar),
-		workflow.ConsultandoFontes: p.consultarFontes,
+		workflow.ConsultandoFontes: p.comRevisao(workflow.ConsultandoFontes, p.consultarFontes), // SR: proposta de enquadramento pela IA
 		workflow.Calculando:        p.calcular,
 		workflow.Redigindo:         p.comRevisao(workflow.Redigindo, p.redigir),
 		workflow.Validando:         p.comRevisao(workflow.Validando, p.validar),

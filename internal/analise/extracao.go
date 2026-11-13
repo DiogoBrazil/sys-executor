@@ -289,7 +289,7 @@ func extrairBlocos(ctx context.Context, x *Executor, a *autos.Autos, blocos []Bl
 		if err != nil {
 			// Itens que conferiram ficam; os demais são descartados e a
 			// limitação aparece (nunca se aceita trecho não verificado).
-			r.Pendencias = append(r.Pendencias, fmt.Sprintf("Na peça %s (pág. %d), %d item(ns) da IA não conferiram com o documento e foram descartados.",
+			r.Pendencias = append(r.Pendencias, fmt.Sprintf("Na peça %s (pág. %d), %d item(ns) do assistente não conferiram com o documento e foram descartados.",
 				b.Peca.Titulo, b.PaginaInicial(), descartes))
 			r.Descartes += descartes
 		}

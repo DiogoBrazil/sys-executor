@@ -49,7 +49,7 @@ func inicioDe(texto string) string {
 // aplicativo confere a minuta inteira contra as decisões e o cálculo.
 func (p *Pipeline) validar(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
 	d := dados(c)
-	if c.Tipo != workflow.TipoPADS || d.IA == nil || d.Redacao == nil || d.IA.Conjunto == nil || d.IA.Julgamento == nil {
+	if !prontoParaRedigir(c, d) || d.Redacao == nil {
 		return workflow.Validando, erros.Novo(erros.TarefaEtapaIndisponiv)
 	}
 	if aguardar, err := p.prepararIA(ctx, c, d); err != nil {
@@ -111,13 +111,16 @@ func (p *Pipeline) validar(ctx context.Context, c *workflow.Contexto) (workflow.
 	}
 	c.Progresso(len(r.ordem), len(r.ordem), unidadeDeProgresso)
 
-	doc, entrada := comporMinutaPADS(d, r.rotulos)
 	evid := map[string]bool{}
 	for _, pt := range d.IA.Pontos {
 		evid[pt.ID] = true
 	}
-	d.Minuta, d.entradaMinuta = doc, entrada
-	d.Achados = minuta.ValidarPADS(doc, *entrada, evid)
+	doc := r.compor()
+	if r.sr {
+		d.Achados = minuta.ValidarSR(doc, *d.entradaMinutaSR, d.IA.Objeto, evid)
+	} else {
+		d.Achados = minuta.ValidarPADS(doc, *d.entradaMinuta, evid)
+	}
 	for _, a := range d.Achados {
 		doc.Pendencia("Validação automática: " + a.Mensagem + ".")
 	}
@@ -139,7 +142,7 @@ func (p *Pipeline) validar(ctx context.Context, c *workflow.Contexto) (workflow.
 func (p *Pipeline) ajustar(ctx context.Context, c *workflow.Contexto) (workflow.Estado, error) {
 	d := dados(c)
 	pedido := strings.TrimSpace(c.Ajuste())
-	if pedido == "" || d.IA == nil || d.Redacao == nil || d.IA.Conjunto == nil || d.IA.Julgamento == nil {
+	if pedido == "" || d.Redacao == nil || !prontoParaRedigir(c, d) {
 		c.ConcluirAjuste()
 		return workflow.Validando, nil
 	}
@@ -195,11 +198,20 @@ func (p *Pipeline) ajustar(ctx context.Context, c *workflow.Contexto) (workflow.
 			reg.Resultado = strings.TrimSpace(reg.Resultado + " Não foi possível reescrever com apoio nas provas: " + strings.Join(mantidos, "; ") + ". O texto anterior foi mantido.")
 		}
 	case analise.AjusteDecisao:
-		reg.Resultado = "O pedido altera uma decisão já confirmada (resultado, punição, dias, pontos ou circunstâncias). A IA não muda decisões: use “Alterar” em “Suas respostas”, e a minuta é refeita em seguida."
+		reg.Resultado = "O pedido altera uma decisão já confirmada (resultado, punição, dias, pontos ou circunstâncias). O assistente não muda decisões: use “Alterar” em “Suas respostas”, e a minuta é refeita em seguida."
+		if r.sr {
+			reg.Resultado = "O pedido altera uma decisão já confirmada (conclusão, enquadramento, fatos ou sindicados). O assistente não muda decisões: use “Alterar” em “Suas respostas”, e a minuta é refeita em seguida."
+		}
 	case analise.AjusteTextoFixo:
-		reg.Resultado = "O pedido trata de texto padrão do aplicativo (cabeçalho, dispositivo da decisão, providências, fecho ou formatação), que a IA não reescreve. Faça essa alteração no arquivo DOCX."
+		reg.Resultado = "O pedido trata de texto padrão do aplicativo (cabeçalho, dispositivo da decisão, providências, fecho ou formatação), que o assistente não reescreve. Faça essa alteração no arquivo DOCX."
+		if r.sr {
+			reg.Resultado = "O pedido trata de texto composto pelo aplicativo (cabeçalho, dados da sindicância, solução, fecho ou formatação), que o assistente não reescreve. Para mudar a solução, use “Alterar” na conclusão ou no enquadramento; o restante, faça no arquivo DOCX."
+		}
 	default:
 		reg.Resultado = "Não foi possível identificar o que ajustar. Diga em qual parte (relatório, fundamentação de qual imputação, exame do art. 36) e o que deve mudar."
+		if r.sr {
+			reg.Resultado = "Não foi possível identificar o que ajustar. Diga em qual parte (síntese dos fatos ou análise das provas de qual fato) e o que deve mudar."
+		}
 	}
 	d.Ajustes = append(d.Ajustes, reg)
 	d.ajusteAplicado = nil

@@ -227,7 +227,7 @@ func delimitarBlocosPADS(ctx context.Context, x *Executor, a *autos.Autos, bloco
 			return err
 		}
 		if err != nil {
-			r.Pendencias = append(r.Pendencias, fmt.Sprintf("Parte do memorando (página %d) não foi lida com segurança pela IA; confira as imputações.", b.PaginaInicial()))
+			r.Pendencias = append(r.Pendencias, fmt.Sprintf("Parte do memorando (página %d) não foi lida com segurança pelo assistente; confira as imputações.", b.PaginaInicial()))
 		}
 		r.Imputacoes = mesclarImputacoes(r.Imputacoes, ultimo)
 		r.Acusados = mesclarPessoas(r.Acusados, acus)
@@ -474,7 +474,7 @@ func delimitarBlocosSR(ctx context.Context, x *Executor, a *autos.Autos, blocos 
 			return err
 		}
 		if err != nil {
-			r.Pendencias = append(r.Pendencias, fmt.Sprintf("Parte da portaria (página %d) não foi lida com segurança pela IA; confira o objeto.", b.PaginaInicial()))
+			r.Pendencias = append(r.Pendencias, fmt.Sprintf("Parte da portaria (página %d) não foi lida com segurança pelo assistente; confira o objeto.", b.PaginaInicial()))
 		}
 		if r.Numero == "" {
 			r.Numero, r.Autoridade = parcial.Numero, parcial.Autoridade

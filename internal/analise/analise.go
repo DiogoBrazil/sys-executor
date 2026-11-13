@@ -283,7 +283,7 @@ func AnalisarImputacao(ctx context.Context, x *Executor, imp AlvoExtracao, conge
 type AnaliseFatoPessoa struct {
 	FatoID      string       `json:"fatoId"`
 	PessoaID    string       `json:"pessoaId"`
-	Conclusao   string       `json:"conclusao"` // INDICIOS, AUSENCIA, INCONCLUSIVO ou ""
+	Conclusao   string       `json:"conclusao"` // INDICIOS, AUSENCIA ou "" (sem inconclusivo: §49)
 	Ocorrencia  string       `json:"ocorrencia"`
 	Autoria     string       `json:"autoria"`
 	Fundamentos []Fundamento `json:"fundamentos"`
@@ -307,7 +307,7 @@ type saidaAnaliseSR struct {
 func schemaAnaliseSR(fato, pessoa string, evs []string) map[string]any {
 	return objeto(map[string]any{
 		"fato_id": enum(fato), "sindicado_id": enum(pessoa),
-		"conclusao_proposta": enum("INDICIOS", "AUSENCIA", "INCONCLUSIVO"),
+		"conclusao_proposta": enum("INDICIOS", "AUSENCIA"),
 		"ocorrencia_do_fato": enum("DEMONSTRADA", "NAO_DEMONSTRADA", "INCERTA"),
 		"autoria":            enum("DEMONSTRADA", "NAO_DEMONSTRADA", "INCERTA"),
 		"fundamentos":        lista(fundSchema(evs), 1, 10),
@@ -349,7 +349,7 @@ func AnalisarFatoPessoa(ctx context.Context, x *Executor, fato, sindicado AlvoEx
 			if s.Fato != fato.ID || s.Sindicado != sindicado.ID {
 				return fmt.Errorf("fato_id e sindicado_id devem ser %s e %s", fato.ID, sindicado.ID)
 			}
-			if !em(s.Conclusao, "INDICIOS", "AUSENCIA", "INCONCLUSIVO") || !em(s.Ocorrencia, "DEMONSTRADA", "NAO_DEMONSTRADA", "INCERTA") ||
+			if !em(s.Conclusao, "INDICIOS", "AUSENCIA") || !em(s.Ocorrencia, "DEMONSTRADA", "NAO_DEMONSTRADA", "INCERTA") ||
 				!em(s.Autoria, "DEMONSTRADA", "NAO_DEMONSTRADA", "INCERTA") {
 				return fmt.Errorf("conclusão, ocorrência ou autoria fora das opções do schema")
 			}

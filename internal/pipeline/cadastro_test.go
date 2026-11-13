@@ -123,6 +123,13 @@ func TestSemearMapaDoCadastro(t *testing.T) {
 	if strings.Contains(o, "Jojô") || strings.Contains(o, "joana") || strings.Contains(o, "Pedrinho") {
 		t.Fatal(o)
 	}
+	// Instituição ofendida não é dado pessoal: não vira pseudônimo.
+	cad = &workflow.Cadastro{Pessoas: []workflow.PessoaCadastro{{ID: "PES-03", Nome: "Administração Pública Militar", Instituicao: true}}}
+	m = pseudonimo.NovoMapa()
+	semearMapa(m, cad)
+	if o := m.Ocultar("o colete pertence à Administração Pública Militar."); !strings.Contains(o, "Administração Pública Militar") {
+		t.Fatal(o)
+	}
 }
 
 // E9: o cadastro confere a leitura do Memorando. O dispositivo do cadastro
@@ -167,5 +174,48 @@ func TestConferirComCadastro(t *testing.T) {
 	resp := workflow.Resposta{Opcao: "confirmar", Valores: valor}
 	if div, pend := divergencias(r, resp); pend == 0 || div["IMP-X1"] == "" {
 		t.Fatalf("divergência da extra: %v %d", div, pend)
+	}
+}
+
+// Sindicados que estão só na capa do processo (pedido do usuário,
+// 12/11/2026): a leitura da Portaria não os encontra; os do cadastro entram
+// na pergunta marcados, com alerta, e o objeto pode ser confirmado.
+// Regra: SR-ESC-002
+func TestObjetoSRComSindicadosSoNoCadastro(t *testing.T) {
+	cad := &workflow.Cadastro{Tipo: workflow.TipoSR,
+		Pessoas: []workflow.PessoaCadastro{
+			{ID: "PES-01", Nome: "FULANO TESTE", PostoGrad: "CB PM"},
+			{ID: "PES-02", Nome: "BELTRANO TESTE", PostoGrad: "SD PM"},
+		},
+		Sindicados: []string{"PES-01", "PES-02"}}
+	r := analise.PropostaObjetoSR{Numero: "28/2026", Fatos: []analise.FatoProposto{{ID: "F-1", Descricao: "abordagem"}},
+		Pendencias: []string{"Nenhum sindicado foi identificado com segurança na Portaria."}}
+	prop := comSindicadosDoCadastro(r, cad)
+	if len(prop.Sindicados) != 2 || prop.Sindicados[0].ID != "S-C1" || prop.Sindicados[1].Nome != "BELTRANO TESTE" {
+		t.Fatalf("sindicados do cadastro: %+v", prop.Sindicados)
+	}
+	pg := perguntaObjetoSR(prop, workflow.Resposta{}, cad)
+	var achou bool
+	for _, g := range pg.Grupos {
+		if g.ID == "S-C1" {
+			achou = len(g.Alertas) > 0 && len(g.Fontes) == 0
+		}
+	}
+	if !achou {
+		t.Fatalf("grupo do sindicado do cadastro sem alerta: %+v", pg.Grupos)
+	}
+	for _, a := range pg.Grupos[0].Alertas {
+		if strings.Contains(a, "não foi encontrado na leitura da Portaria. Confira na Portaria") {
+			t.Fatalf("alerta geral repetido: %q", a)
+		}
+	}
+	vals := map[string]string{"portaria_numero": "28/2026", "portaria_autoridade": "TC PM FICTÍCIO", "portaria_data": "14/08/2026", "incluir_F-1": "sim", "fato_F-1": "abordagem",
+		"incluir_S-C1": "sim", "nome_S-C1": "CB PM FULANO TESTE", "incluir_S-C2": "sim", "nome_S-C2": "SD PM BELTRANO TESTE"}
+	if err := pg.Conferir(vals); err != nil {
+		t.Fatalf("o usuário deve poder confirmar: %v", err)
+	}
+	obj, nomes, err := montarObjeto(prop, workflow.Resposta{Opcao: "confirmar", Valores: vals})
+	if err != nil || len(obj.Sindicados()) != 2 || nomes["S-C2"] != "SD PM BELTRANO TESTE" {
+		t.Fatalf("objeto: %v %v %v", obj, nomes, err)
 	}
 }

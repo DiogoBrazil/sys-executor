@@ -484,7 +484,7 @@ func perguntaResultado(e *EstadoIA, im pads.Imputacao, an analise.AnaliseImputac
 	g := workflow.GrupoCampos{ID: im.ID, Titulo: fmt.Sprintf("%s — %s", im.ID, im.Dispositivo),
 		Descricao: []string{im.Texto}, Alertas: an.Pendencias}
 	if an.Resultado != "" {
-		g.Descricao = append(g.Descricao, "Proposta da IA: "+strings.ToLower(an.Resultado)+".")
+		g.Descricao = append(g.Descricao, "Proposta do assistente: "+strings.ToLower(an.Resultado)+".")
 	}
 	g.Descricao = append(g.Descricao, linhasFundamentos("Fundamento", an.Fundamentos)...)
 	g.Descricao = append(g.Descricao, linhasFundamentos("Tese da defesa", an.TesesDefesa)...)
@@ -493,7 +493,7 @@ func perguntaResultado(e *EstadoIA, im pads.Imputacao, an analise.AnaliseImputac
 	}
 	g.Fontes = fontesDosFundamentos(e, append(append([]analise.Fundamento{}, an.Fundamentos...), an.TesesDefesa...))
 	pg := workflow.Pergunta{ID: id, Titulo: "Resultado da imputação " + im.ID, Revisavel: true,
-		Contexto: "Confira a proposta e as fontes. O resultado é seu: a IA apenas sugere.",
+		Contexto: "Confira a proposta e as fontes. O resultado é seu: o assistente apenas sugere.",
 		Grupos:   []workflow.GrupoCampos{g},
 		Opcoes:   []workflow.Opcao{{ID: "confirmar", Rotulo: "Confirmar", Validar: true}}}
 	pg.Campos = append(pg.Campos, workflow.Campo{ID: "resultado", Rotulo: "Resultado", Tipo: workflow.CampoEscolha, Obrigatorio: true, Grupo: im.ID,
@@ -563,7 +563,7 @@ func perguntaConexaoPADS(ps []engine.ImputacaoProcedente) workflow.Pergunta {
 // nos autos: pergunta objetiva (PADS-CMP-002).
 func perguntaComportamentoPADS(c *workflow.Contexto) workflow.Pergunta {
 	return workflow.Pergunta{ID: perguntaComportamento, Titulo: "Comportamento e pontuação atuais do acusado", Revisavel: true,
-		Contexto: "Informe a situação atual, conforme a ficha do militar. O cálculo do comportamento proposto é feito pelo aplicativo, não pela IA.",
+		Contexto: "Informe a situação atual, conforme a ficha do militar. O cálculo do comportamento proposto é feito pelo aplicativo, não pelo assistente.",
 		Opcoes:   []workflow.Opcao{{ID: "confirmar", Rotulo: "Confirmar", Validar: true}},
 		Campos: []workflow.Campo{
 			{ID: "comportamento", Rotulo: "Comportamento atual", Tipo: workflow.CampoEscolha, Obrigatorio: true,
@@ -668,7 +668,7 @@ func confirmacoesSR(c *workflow.Contexto, d *Dados) bool {
 			an := e.AnalisesSR[f+":"+s]
 			g := workflow.GrupoCampos{ID: f + s, Titulo: fmt.Sprintf("Fato %s — %s", f, e.nomes[s]), Descricao: []string{fato.Descricao}, Alertas: an.Pendencias}
 			if an.Conclusao != "" {
-				g.Descricao = append(g.Descricao, "Proposta da IA: "+rotuloConclusao[an.Conclusao]+".")
+				g.Descricao = append(g.Descricao, "Proposta do assistente: "+rotuloConclusao[an.Conclusao]+".")
 			}
 			g.Descricao = append(g.Descricao, linhasFundamentos("Fundamento", an.Fundamentos)...)
 			for _, l := range an.Lacunas {
@@ -679,7 +679,7 @@ func confirmacoesSR(c *workflow.Contexto, d *Dados) bool {
 			}
 			g.Fontes = fontesDosFundamentos(e, an.Fundamentos)
 			var ops []workflow.OpcaoVisao
-			for _, k := range []string{"INDICIOS", "AUSENCIA", "INCONCLUSIVO"} {
+			for _, k := range []string{"INDICIOS", "AUSENCIA"} { // sem inconclusivo (V4 §49)
 				ops = append(ops, workflow.OpcaoVisao{ID: k, Rotulo: rotuloConclusao[k]})
 			}
 			// O título leva o sindicado: com dois sindicados no mesmo fato,
@@ -689,7 +689,7 @@ func confirmacoesSR(c *workflow.Contexto, d *Dados) bool {
 				titulo += ": " + nome
 			}
 			c.Perguntar(workflow.Pergunta{ID: id, Titulo: titulo, Revisavel: true,
-				Contexto: "Confira a proposta e as fontes. A conclusão é sua: a IA apenas sugere.",
+				Contexto: "Confira a proposta e as fontes. A conclusão é sua: o assistente apenas sugere.",
 				Grupos:   []workflow.GrupoCampos{g},
 				Opcoes:   []workflow.Opcao{{ID: "confirmar", Rotulo: "Confirmar", Validar: true}},
 				Campos: []workflow.Campo{{ID: "conclusao", Rotulo: "Conclusão", Tipo: workflow.CampoEscolha, Obrigatorio: true, Opcoes: ops,
@@ -701,4 +701,4 @@ func confirmacoesSR(c *workflow.Contexto, d *Dados) bool {
 	return false
 }
 
-var rotuloConclusao = map[string]string{"INDICIOS": "indícios suficientes", "AUSENCIA": "ausência de indícios", "INCONCLUSIVO": "inconclusivo"}
+var rotuloConclusao = map[string]string{"INDICIOS": "indícios suficientes", "AUSENCIA": "ausência de indícios"}

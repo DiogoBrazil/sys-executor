@@ -53,6 +53,10 @@ type EstadoIA struct {
 	Pontos     []analise.Ponto             // todos os pontos conferidos + descrições de mídia do usuário
 	Analises   map[string]analise.AnaliseImputacao
 	AnalisesSR map[string]analise.AnaliseFatoPessoa
+	// PropostasSR: enquadramento proposto pela IA e conferido na biblioteca,
+	// por conclusão com indícios ("fato:sindicado"). Mantido quando outra
+	// resposta é revista: depende só da análise.
+	PropostasSR map[string]propostaSR
 	// Condutas diversas do PADS: só registro interno (I-05), nunca na minuta.
 	CondutasDiversas   []analise.Achado
 	autorizacoesFeitas map[string]string // chave do achado → ID da autorização
@@ -85,6 +89,7 @@ func novoEstadoIA() *EstadoIA {
 	g.Depende("analise", "extracao", "midias", "autorizacao:*")
 	g.Depende("resultado:*", "analise")
 	g.Depende("conclusao:*", "analise")
+	g.Depende(prefixoPerguntaEnq+"*", "conclusao:*")
 	g.Depende("conexao", "resultado:*")
 	g.Depende("reincidencia:*", "resultado:*", "conexao")
 	g.Depende("servicos", "resultado:*")
@@ -141,6 +146,7 @@ func (d *Dados) Revisar(perguntaID string) (workflow.Estado, []string, bool) {
 			e.midiasAplicadas = false
 		case a == "analise":
 			e.Analises, e.AnalisesSR = map[string]analise.AnaliseImputacao{}, map[string]analise.AnaliseFatoPessoa{}
+			e.PropostasSR = nil
 		case a == "midias":
 			e.Pontos = semDescricoesDoUsuario(e.Pontos)
 			e.Pendencias = semPendenciasDeMidia(e.Pendencias)
@@ -217,7 +223,7 @@ func (d *Dados) perguntasConhecidas() []string {
 	if e.Objeto != nil {
 		for _, f := range e.Objeto.FatosAdmitidos() {
 			for _, s := range e.Objeto.Sindicados() {
-				ids = append(ids, "conclusao:"+f+":"+s)
+				ids = append(ids, "conclusao:"+f+":"+s, prefixoPerguntaEnq+f+":"+s)
 			}
 		}
 		for _, a := range e.Objeto.Autorizacoes() {

@@ -101,7 +101,7 @@ func camposRevisao(ss []suspeito) ([]workflow.GrupoCampos, []workflow.Campo) {
 	}
 	g := workflow.GrupoCampos{ID: grupoRevisao, Titulo: "Possíveis nomes não reconhecidos",
 		Descricao: []string{"Estes trechos parecem nomes de pessoas, mas não têm posto, papel processual ou rótulo que permitam reconhecê-los com segurança. " +
-			"Decida cada um: o que for ocultado vai à IA como marcador e volta com o texto original."}}
+			"Decida cada um: o que for ocultado vai ao assistente como marcador e volta com o texto original."}}
 	cs := make([]workflow.Campo, len(ss))
 	for i, s := range ss {
 		cs[i] = workflow.Campo{ID: fmt.Sprintf("%s%d", campoSuspeito, i), Rotulo: s.Forma, Tipo: workflow.CampoEscolha,
@@ -133,7 +133,7 @@ func perguntaRevisao(r *revisaoPendente) workflow.Pergunta {
 	gs, cs := camposRevisao(r.itens)
 	return workflow.Pergunta{
 		ID: r.id, Titulo: "Revisar possíveis dados pessoais antes do envio",
-		Contexto: "O próximo envio à IA contém trechos que parecem nomes de pessoas e ainda não foram decididos. " +
+		Contexto: "O próximo envio ao assistente contém trechos que parecem nomes de pessoas e ainda não foram decididos. " +
 			"Nada foi enviado. Decida cada item para continuar.",
 		Grupos: gs, Campos: cs,
 		Opcoes: []workflow.Opcao{

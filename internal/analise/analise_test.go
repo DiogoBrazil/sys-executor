@@ -448,12 +448,33 @@ func TestAnaliseFatoPessoa(t *testing.T) {
 	ruim := js(map[string]any{"fato_id": "F-1", "sindicado_id": "S-1", "conclusao_proposta": "INDICIOS",
 		"ocorrencia_do_fato": "DEMONSTRADA", "autoria": "NAO_DEMONSTRADA",
 		"fundamentos": []map[string]any{{"texto": "x", "evid_refs": []string{"EV-0001"}}}, "lacunas": []string{}, "diligencias": []string{}})
-	boa := strings.Replace(ruim, `"INDICIOS"`, `"INCONCLUSIVO"`, 1)
+	boa := strings.Replace(ruim, `"INDICIOS"`, `"AUSENCIA"`, 1)
 	m := &motorFalso{ctx: 16384, filas: map[string][]string{"analise_fato_sindicado": {ruim, boa}}}
 	obj := policy.Secao{Nome: "OBJETO_SR", Dados: map[string]any{"fatos": []string{"F-1"}}}
 	r, err := AnalisarFatoPessoa(context.Background(), executor(t, m, policy.FluxoSR), AlvoExtracao{"F-1", "extravio"}, AlvoExtracao{"S-1", "BELTRANO"}, obj, ps)
-	if err != nil || r.Conclusao != "INCONCLUSIVO" || len(m.pedidos) != 2 {
+	if err != nil || r.Conclusao != "AUSENCIA" || len(m.pedidos) != 2 {
 		t.Fatalf("%+v %v", r, err)
+	}
+}
+
+// Cobre: SR13
+// Regra: SR-SOL-004
+// V4 §49 (Emenda 3): a SR não tem resultado inconclusivo; a resposta que o
+// traz é recusada e pedida de novo.
+func TestAnaliseFatoPessoaSemInconclusivo(t *testing.T) {
+	ps := []Ponto{{ID: "EV-0001", Alvo: "F-1", Trecho: "a arma estava sob a guarda do armeiro de serviço"}}
+	ruim := js(map[string]any{"fato_id": "F-1", "sindicado_id": "S-1", "conclusao_proposta": "INCONCLUSIVO",
+		"ocorrencia_do_fato": "INCERTA", "autoria": "INCERTA",
+		"fundamentos": []map[string]any{{"texto": "x", "evid_refs": []string{"EV-0001"}}}, "lacunas": []string{"sem registro da reserva"}, "diligencias": []string{}})
+	boa := strings.Replace(ruim, `"INCONCLUSIVO"`, `"AUSENCIA"`, 1)
+	m := &motorFalso{ctx: 16384, filas: map[string][]string{"analise_fato_sindicado": {ruim, boa}}}
+	obj := policy.Secao{Nome: "OBJETO_SR", Dados: map[string]any{"fatos": []string{"F-1"}}}
+	r, err := AnalisarFatoPessoa(context.Background(), executor(t, m, policy.FluxoSR), AlvoExtracao{"F-1", "extravio"}, AlvoExtracao{"S-1", "BELTRANO"}, obj, ps)
+	if err != nil || r.Conclusao != "AUSENCIA" || len(m.pedidos) != 2 || len(r.Lacunas) != 1 {
+		t.Fatalf("%+v %v", r, err)
+	}
+	if strings.Contains(string(m.pedidos[0].Schema), "INCONCLUSIVO") {
+		t.Fatal("o schema ainda oferece INCONCLUSIVO")
 	}
 }
 

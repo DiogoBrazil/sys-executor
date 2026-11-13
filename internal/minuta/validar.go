@@ -157,7 +157,7 @@ func ValidarPADS(d *Documento, e EntradaPADS, evidencias map[string]bool) []Acha
 			continue
 		}
 		if b.Tipo == Paragrafo && len(b.Evid) == 0 {
-			falha("evidencia", "o %s, redigido pela IA, não cita evidência dos autos", campo)
+			falha("evidencia", "o %s, redigido pelo assistente, não cita evidência dos autos", campo)
 		}
 		for _, id := range b.Evid {
 			if !evidencias[id] {

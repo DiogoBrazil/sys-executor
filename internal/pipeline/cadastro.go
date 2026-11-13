@@ -150,6 +150,9 @@ func semearMapa(m *pseudonimo.Mapa, cad *workflow.Cadastro) (crianca bool) {
 		return false
 	}
 	for _, ps := range cad.Pessoas {
+		if ps.Instituicao {
+			continue // ente ofendido: não é dado pessoal (V4 §23.3, c)
+		}
 		m.CadastrarPessoa(ps.Nome, ps.Grafias)
 		crianca = crianca || ps.Crianca
 	}
@@ -456,6 +459,9 @@ func conferirObjetoSR(r analise.PropostaObjetoSR, cad *workflow.Cadastro) (porSi
 	}
 	achados := map[string]bool{}
 	for _, s := range r.Sindicados {
+		if strings.HasPrefix(s.ID, prefixoSindCadastro) {
+			continue // veio do próprio cadastro (comSindicadosDoCadastro)
+		}
 		ok := false
 		for _, id := range cad.Sindicados {
 			if ps, existe := cad.Pessoa(id); existe && mesmaPessoa(ps.Nome, s.Nome) {
@@ -467,7 +473,7 @@ func conferirObjetoSR(r analise.PropostaObjetoSR, cad *workflow.Cadastro) (porSi
 		}
 	}
 	for _, id := range cad.Sindicados {
-		if ps, existe := cad.Pessoa(id); existe && !achados[id] {
+		if ps, existe := cad.Pessoa(id); existe && !achados[id] && !temGrupoDoCadastro(r, ps) {
 			gerais = append(gerais, fmt.Sprintf("O sindicado informado no cadastro (%s) não foi encontrado na leitura da Portaria. Confira na Portaria.", nomeComPosto(ps)))
 		}
 	}
@@ -480,4 +486,15 @@ func opcaoOutroPDF(c *workflow.Contexto) workflow.Opcao {
 		return opcaoVoltarCadastro
 	}
 	return workflow.Opcao{ID: "outro", Rotulo: "Enviar outro PDF", Destino: workflow.RecebendoUpload}
+}
+
+// temGrupoDoCadastro: o sindicado do cadastro já aparece na pergunta como
+// grupo próprio (comSindicadosDoCadastro), com o seu alerta.
+func temGrupoDoCadastro(r analise.PropostaObjetoSR, ps workflow.PessoaCadastro) bool {
+	for _, s := range r.Sindicados {
+		if strings.HasPrefix(s.ID, prefixoSindCadastro) && mesmaPessoa(ps.Nome, s.Nome) {
+			return true
+		}
+	}
+	return false
 }
